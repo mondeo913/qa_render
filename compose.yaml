@@ -1,0 +1,83 @@
+name: siget-qa
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: siget_qa
+      POSTGRES_USER: siget
+      POSTGRES_PASSWORD: siget_qa_password
+      TZ: America/Mexico_City
+    volumes:
+      - siget_postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U siget -d siget_qa"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+    restart: unless-stopped
+
+  mailpit:
+    image: axllent/mailpit:v1.27
+    ports:
+      - "8025:8025"
+    restart: unless-stopped
+
+  app:
+    build:
+      context: .
+      dockerfile: docker/qa/Dockerfile
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mailpit:
+        condition: service_started
+    environment:
+      APP_NAME: SIGET ABCD QA
+      APP_ENV: qa
+      APP_KEY: base64:ozSvx1kBuLE3Kx4W1XVz5j/J5oRLE5JNs43I2qvgZ/8=
+      APP_DEBUG: "true"
+      APP_URL: ${APP_URL:-http://localhost:8000}
+      APP_LOCALE: es
+      APP_FALLBACK_LOCALE: es
+      APP_TIMEZONE: America/Mexico_City
+      LOG_CHANNEL: stderr
+      LOG_LEVEL: debug
+      DB_CONNECTION: pgsql
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_DATABASE: siget_qa
+      DB_USERNAME: siget
+      DB_PASSWORD: siget_qa_password
+      SESSION_DRIVER: database
+      SESSION_LIFETIME: 240
+      SESSION_SECURE_COOKIE: "false"
+      CACHE_STORE: database
+      QUEUE_CONNECTION: database
+      FILESYSTEM_DISK: local
+      SIGET_REPOSITORY_DISK: local
+      SIGET_ANTIVIRUS_ENABLED: "false"
+      MAIL_MAILER: smtp
+      MAIL_HOST: mailpit
+      MAIL_PORT: 1025
+      MAIL_FROM_ADDRESS: siget-qa@localhost
+      MAIL_FROM_NAME: SIGET ABCD QA
+      SIGET_MAILPIT_URL: ${MAILPIT_URL:-http://localhost:8025}
+      SIGET_ADMIN_EMAIL: admin@siget.local
+      SIGET_QA_PASSWORD: SigetQA_2026_Cambiar!
+      SIGET_METRICS_TOKEN: docker_qa_metrics_v1
+    ports:
+      - "8000:8000"
+    volumes:
+      - siget_storage:/var/www/html/storage
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:8000/up >/dev/null || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 60s
+    restart: unless-stopped
+
+volumes:
+  siget_postgres:
+  siget_storage:
