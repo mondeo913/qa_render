@@ -1,19 +1,23 @@
 {
-  "name": "SIGET QA - PHP 8.3",
-  "image": "mcr.microsoft.com/devcontainers/php:1-8.3-bookworm",
+  "name": "SIGET QA Docker",
+  "image": "mcr.microsoft.com/devcontainers/universal:2-linux",
   "features": {
-    "ghcr.io/devcontainers/features/node:1": {
-      "version": "22"
-    }
+    "ghcr.io/devcontainers/features/docker-outside-of-docker:1": {},
+    "ghcr.io/devcontainers/features/github-cli:1": {}
   },
-  "forwardPorts": [8000],
+  "forwardPorts": [8000, 8025],
   "portsAttributes": {
     "8000": {
       "label": "SIGET QA",
       "onAutoForward": "openBrowser",
       "visibility": "private"
+    },
+    "8025": {
+      "label": "Mailpit QA",
+      "onAutoForward": "silent",
+      "visibility": "private"
     }
   },
-  "postCreateCommand": "bash -lc 'php -v && composer --version && node --version && npm --version && if [ -f composer.json ]; then composer install --no-interaction --prefer-dist; fi && if [ -f package-lock.json ]; then npm ci; elif [ -f package.json ]; then npm install; fi'",
-  "remoteUser": "vscode"
+  "postCreateCommand": "chmod +x ARRANCAR_SIGET_DOCKER.sh DETENER_SIGET_DOCKER.sh",
+  "remoteUser": "codespace"
 }
