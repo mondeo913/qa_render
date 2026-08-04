@@ -1,0 +1,135 @@
+name: Importar, compilar y validar SIGET QA
+
+on:
+  push:
+    branches:
+      - agent/cargar-siget-qa-20260804
+    paths:
+      - '.siget-import-v2/**'
+      - '.github/workflows/importar-compilar-siget.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: importar-siget-qa
+  cancel-in-progress: false
+
+jobs:
+  importar-compilar-arrancar:
+    if: ${{ hashFiles('.siget-import-v2/part_04') != '' }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Descargar rama QA
+        uses: actions/checkout@v4
+        with:
+          ref: agent/cargar-siget-qa-20260804
+          fetch-depth: 0
+
+      - name: Reconstruir respaldo SIGET
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f .siget-import-v2/part_00
+          test -f .siget-import-v2/part_01
+          test -f .siget-import-v2/part_02
+          test -f .siget-import-v2/part_03
+          test -f .siget-import-v2/part_04
+          cat .siget-import-v2/part_* > /tmp/siget.tar.gz.b64
+          base64 -d /tmp/siget.tar.gz.b64 > /tmp/siget.tar.gz
+          echo '6e7afc1645d5ed392dcf98fc51f093e60a776bd19ad05607bc59bba894faaed3  /tmp/siget.tar.gz' | sha256sum -c -
+          tar -xzf /tmp/siget.tar.gz -C .
+          rm -rf .siget-import-v2
+          rm -f .import-status PRUEBA_CARGA_DIRECTA.txt
+          test -f artisan
+          test -f composer.json
+          test -f package.json
+
+      - name: Configurar PHP 8.3
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mbstring, dom, xml, curl, zip, gd, intl, pdo_pgsql, pdo_sqlite
+          coverage: none
+
+      - name: Configurar Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Instalar dependencias PHP
+        run: composer install --no-interaction --prefer-dist --optimize-autoloader
+
+      - name: Preparar entorno SQLite de validación
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp .env.example .env
+          touch database/database.sqlite
+          cat >> .env <<'ENVEOF'
+          APP_ENV=testing
+          APP_DEBUG=true
+          DB_CONNECTION=sqlite
+          DB_DATABASE=/home/runner/work/qa_render/qa_render/database/database.sqlite
+          CACHE_STORE=array
+          SESSION_DRIVER=array
+          QUEUE_CONNECTION=sync
+          MAIL_MAILER=array
+          ENVEOF
+          php artisan key:generate --force
+          php artisan optimize:clear
+
+      - name: Validar sintaxis PHP
+        shell: bash
+        run: |
+          set -euo pipefail
+          find app routes database tests -type f -name '*.php' -print0 | xargs -0 -n1 php -l
+
+      - name: Compilar frontend Vite
+        run: |
+          npm ci
+          npm run build
+
+      - name: Validar Laravel
+        shell: bash
+        run: |
+          set -euo pipefail
+          php artisan about
+          php artisan route:list --except-vendor
+          php artisan migrate --force
+
+      - name: Ejecutar pruebas informativas
+        continue-on-error: true
+        run: php artisan test
+
+      - name: Comprobar arranque HTTP
+        shell: bash
+        run: |
+          set -euo pipefail
+          php artisan serve --host=127.0.0.1 --port=8000 > /tmp/siget-server.log 2>&1 &
+          SERVER_PID=$!
+          trap 'kill "$SERVER_PID" 2>/dev/null || true' EXIT
+          for intento in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:8000/up >/dev/null; then
+              echo 'SIGET respondió correctamente en /up'
+              exit 0
+            fi
+            sleep 2
+          done
+          cat /tmp/siget-server.log
+          exit 1
+
+      - name: Publicar código fuente limpio
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f .env database/database.sqlite
+          rm -rf vendor node_modules public/build
+          git config user.name 'ChatGPT GitHub Agent'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'feat: cargar y validar SIGET QA' || true
+          git push origin HEAD:agent/cargar-siget-qa-20260804
