@@ -1,0 +1,128 @@
+name: Importar y compilar SIGET QA v3
+
+on:
+  push:
+    branches:
+      - agent/cargar-siget-qa-20260804
+    paths:
+      - '.siget-import-v3/**'
+      - '.github/workflows/importar-compilar-siget-v3.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: importar-siget-qa-v3
+  cancel-in-progress: false
+
+jobs:
+  importar-compilar-arrancar:
+    if: ${{ hashFiles('.siget-import-v3/zstd_01') != '' }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/cargar-siget-qa-20260804
+          fetch-depth: 0
+
+      - name: Reconstruir código SIGET
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat .siget-import-v3/zstd_00 .siget-import-v3/zstd_01 > /tmp/siget.tar.zst.b64
+          base64 -d /tmp/siget.tar.zst.b64 > /tmp/siget.tar.zst
+          echo '68caec5c1111ae19c59a8fc398229b15ab904f85ae8573c35cb95736a5855f20  /tmp/siget.tar.zst' | sha256sum -c -
+          zstd -d /tmp/siget.tar.zst -o /tmp/siget.tar
+          tar -xf /tmp/siget.tar -C .
+          rm -rf .siget-import-v2 .siget-import-v3
+          rm -f .import-status PRUEBA_CARGA_DIRECTA.txt
+          test -f artisan
+          test -f composer.json
+          test -f package.json
+
+      - name: Configurar PHP 8.3
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mbstring, dom, xml, curl, zip, gd, intl, pdo_pgsql, pdo_sqlite
+          coverage: none
+
+      - name: Configurar Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Instalar PHP
+        run: composer install --no-interaction --prefer-dist --optimize-autoloader
+
+      - name: Preparar Laravel QA
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp .env.example .env
+          touch database/database.sqlite
+          cat >> .env <<'ENVEOF'
+          APP_ENV=testing
+          APP_DEBUG=true
+          DB_CONNECTION=sqlite
+          DB_DATABASE=/home/runner/work/qa_render/qa_render/database/database.sqlite
+          CACHE_STORE=array
+          SESSION_DRIVER=array
+          QUEUE_CONNECTION=sync
+          MAIL_MAILER=array
+          ENVEOF
+          php artisan key:generate --force
+          php artisan optimize:clear
+
+      - name: Validar PHP
+        shell: bash
+        run: find app routes database tests -type f -name '*.php' -print0 | xargs -0 -n1 php -l
+
+      - name: Compilar Vite
+        run: |
+          npm ci
+          npm run build
+
+      - name: Validar Laravel y base QA
+        shell: bash
+        run: |
+          set -euo pipefail
+          php artisan about
+          php artisan route:list --except-vendor
+          php artisan migrate --force
+
+      - name: Pruebas informativas
+        continue-on-error: true
+        run: php artisan test
+
+      - name: Arranque HTTP
+        shell: bash
+        run: |
+          set -euo pipefail
+          php artisan serve --host=127.0.0.1 --port=8000 > /tmp/siget-server.log 2>&1 &
+          PID=$!
+          trap 'kill "$PID" 2>/dev/null || true' EXIT
+          for intento in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:8000/up >/dev/null; then
+              echo 'SIGET ARRANCÓ CORRECTAMENTE EN /up'
+              exit 0
+            fi
+            sleep 2
+          done
+          cat /tmp/siget-server.log
+          exit 1
+
+      - name: Publicar fuente limpia en la rama
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f .env database/database.sqlite
+          rm -rf vendor node_modules public/build
+          git config user.name 'ChatGPT GitHub Agent'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'feat: cargar, compilar y validar SIGET QA' || true
+          git push origin HEAD:agent/cargar-siget-qa-20260804
