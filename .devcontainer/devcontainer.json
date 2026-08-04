@@ -1,23 +1,34 @@
 {
-  "name": "SIGET QA Docker",
-  "image": "mcr.microsoft.com/devcontainers/universal:2-linux",
+  "name": "SIGET QA Todo Incluido",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": ".."
+  },
   "features": {
-    "ghcr.io/devcontainers/features/docker-outside-of-docker:1": {},
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "22"
+    },
     "ghcr.io/devcontainers/features/github-cli:1": {}
   },
-  "forwardPorts": [8000, 8025],
+  "forwardPorts": [8000],
   "portsAttributes": {
     "8000": {
       "label": "SIGET QA",
       "onAutoForward": "openBrowser",
       "visibility": "private"
-    },
-    "8025": {
-      "label": "Mailpit QA",
-      "onAutoForward": "silent",
-      "visibility": "private"
     }
   },
-  "postCreateCommand": "chmod +x ARRANCAR_SIGET_DOCKER.sh DETENER_SIGET_DOCKER.sh",
-  "remoteUser": "codespace"
+  "postCreateCommand": "bash .devcontainer/post-create.sh",
+  "postStartCommand": "bash .devcontainer/post-start.sh",
+  "remoteUser": "root",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "bmewburn.vscode-intelephense-client",
+        "xdebug.php-debug",
+        "onecentlin.laravel-blade",
+        "amiralizadeh9480.laravel-extra-intellisense"
+      ]
+    }
+  }
 }
