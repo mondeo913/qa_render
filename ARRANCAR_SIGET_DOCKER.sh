@@ -2,9 +2,19 @@
 set -Eeuo pipefail
 cd "$(dirname "$0")"
 
+FALTANTES=()
+for archivo in artisan composer.json package.json package-lock.json vite.config.js; do
+  [[ -f "$archivo" ]] || FALTANTES+=("$archivo")
+done
+if [[ ${#FALTANTES[@]} -gt 0 ]]; then
+  echo "ERROR: El código completo de SIGET no está en este directorio." >&2
+  echo "Faltan: ${FALTANTES[*]}" >&2
+  exit 5
+fi
+
 if ! command -v docker >/dev/null 2>&1; then
   echo "ERROR: Docker no está disponible en este Codespace." >&2
-  echo "Abra el repositorio en un Codespace nuevo usando .devcontainer/devcontainer.json." >&2
+  echo "Cree un Codespace nuevo desde esta rama para aplicar .devcontainer/devcontainer.json." >&2
   exit 10
 fi
 
