@@ -1,0 +1,85 @@
+SIGET K2 — GUÍA RÁPIDA DE INSTALACIÓN EN GITHUB CODESPACES
+============================================================
+
+ARCHIVO DE APLICACIÓN:
+SIGET_K2_CODESPACES_INSTALACION_RAIZ.zip
+
+SCRIPT:
+INSTALAR_Y_LEVANTAR_SIGET_K2.sh
+
+CASO A — Ya descomprimiste K2 en la raíz del repositorio
+--------------------------------------------------------
+1. Confirma que en la raíz existan:
+   .devcontainer/
+   app/
+   database/
+   resources/
+   routes/
+   artisan
+   composer.json
+   package.json
+
+2. Crea o abre el Codespace.
+
+3. Si es la primera vez o acabas de sustituir K1 por K2:
+   Ctrl+Shift+P → Codespaces: Rebuild Container
+
+4. En la terminal, desde la raíz:
+   chmod +x INSTALAR_Y_LEVANTAR_SIGET_K2.sh
+   ./INSTALAR_Y_LEVANTAR_SIGET_K2.sh
+
+5. Para instalar, levantar y además ejecutar la certificación completa:
+   ./INSTALAR_Y_LEVANTAR_SIGET_K2.sh --certificar
+
+CASO B — Solo subiste el ZIP a un Codespace genérico
+-----------------------------------------------------
+1. Coloca también INSTALAR_Y_LEVANTAR_SIGET_K2.sh en la misma carpeta.
+
+2. Ejecuta:
+   chmod +x INSTALAR_Y_LEVANTAR_SIGET_K2.sh
+   ./INSTALAR_Y_LEVANTAR_SIGET_K2.sh --zip SIGET_K2_CODESPACES_INSTALACION_RAIZ.zip
+
+3. El script descomprimirá K2. Si detecta que faltan las herramientas del
+   devcontainer, solicitará reconstruir el contenedor.
+
+4. Ejecuta:
+   Ctrl+Shift+P → Codespaces: Rebuild Container
+
+5. Después del rebuild, vuelve a ejecutar:
+   ./INSTALAR_Y_LEVANTAR_SIGET_K2.sh --certificar
+
+ACCESOS QA
+----------
+SIGET: puerto 8000
+Mailpit: puerto 8025
+Administrador QA: admin@siget.local
+
+La contraseña QA se genera/establece por el instalador K2 y queda registrada
+localmente dentro de .codespace/ACCESOS.txt. No utilice esas credenciales en
+producción.
+
+QUÉ HACE EL SCRIPT
+------------------
+- Verifica la estructura del proyecto.
+- Valida que el Codespace use el devcontainer K2.
+- Comprueba las extensiones PHP requeridas.
+- Inicializa o levanta PostgreSQL.
+- Crea/actualiza .env para QA Codespaces.
+- Ejecuta composer install.
+- Ejecuta npm ci/npm install.
+- Genera APP_KEY cuando sea necesario.
+- Ejecuta migraciones y seeders.
+- Inicializa datos QA de SIGET.
+- Configura storage y limpia cachés.
+- Compila Vite.
+- Levanta Laravel, queue worker, scheduler y Mailpit mediante Supervisor.
+- Verifica /up y Mailpit.
+- Opcionalmente ejecuta K2_CERTIFICAR_COMPLETO.sh.
+- Muestra URLs y rutas de logs.
+
+NO HACE
+-------
+- No convierte automáticamente un servidor productivo en un entorno seguro.
+- No utiliza credenciales productivas.
+- No expone los puertos como públicos.
+- No ejecuta migrate:fresh sobre una base ya marcada como inicializada por K2.

@@ -1,0 +1,4 @@
+ARCHIVO HISTÓRICO DE REFERENCIA
+K1 fue la base previa del tablero Kanban.
+La versión acumulativa vigente de este paquete es SIGET K2.
+No utilizar este archivo para identificar la versión ejecutable actual.

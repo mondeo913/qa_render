@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SIGET K2 QA · Codespaces</title>
+<style>
+:root{--navy:#0f172a;--blue:#2563eb;--green:#15803d;--soft:#f4f7fb;--border:#d9e2ef;--text:#172033}
+*{box-sizing:border-box}body{margin:0;font-family:Segoe UI,Arial,sans-serif;background:var(--soft);color:var(--text);line-height:1.55}
+header{background:linear-gradient(135deg,var(--navy),#173d77,var(--blue));color:#fff;padding:48px 22px}.wrap,main{max-width:1050px;margin:auto}
+header h1{font-size:2.35rem;margin:0 0 8px}main{padding:26px 16px 70px}.card{background:#fff;border:1px solid var(--border);border-radius:17px;padding:23px;margin:20px 0;box-shadow:0 12px 28px #1e293b0d}
+.step{display:grid;grid-template-columns:54px 1fr;gap:16px}.num{width:46px;height:46px;border-radius:14px;background:var(--blue);color:#fff;display:grid;place-items:center;font-weight:800;font-size:1.2rem}
+pre{background:#101827;color:#e8eef9;padding:16px;border-radius:11px;overflow:auto}.ok{border-left:5px solid var(--green)}
+table{width:100%;border-collapse:collapse}th,td{padding:10px;border-bottom:1px solid var(--border);text-align:left}th{background:#f8fafc}
+code{background:#edf2f8;padding:2px 5px;border-radius:5px}
+@media(max-width:720px){.step{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header><div class="wrap"><h1>SIGET K2 QA en Codespaces</h1><p>Compilación, PostgreSQL, Mailpit y pruebas QA desde el navegador, sin Fly.io.</p></div></header>
+<main>
+<section class="card ok"><h2>Archivo principal</h2><p>Use <strong>SIGET_ABCD_CODESPACES_QA_AUTOMATICO_V2_0.zip</strong>.</p></section>
+<section class="card step"><div class="num">1</div><div><h2>Cree un repositorio privado</h2><p>En GitHub cree <code>siget-abcd-qa</code> y agregue un README.</p></div></section>
+<section class="card step"><div class="num">2</div><div><h2>Abra un Codespace</h2><p>Seleccione <strong>Code → Codespaces → Create codespace on main</strong>.</p></div></section>
+<section class="card step"><div class="num">3</div><div><h2>Suba e importe el ZIP</h2><pre>unzip -q SIGET_ABCD_CODESPACES_QA_AUTOMATICO_V2_0.zip
+bash SIGET_ABCD_CODESPACES_QA_AUTOMATICO_V2_0/IMPORTAR_EN_REPOSITORIO_CODESPACES.sh</pre></div></section>
+<section class="card step"><div class="num">4</div><div><h2>Reconstruya el contenedor</h2><p>Presione <code>Ctrl+Shift+P</code> y seleccione <strong>Codespaces: Rebuild Container</strong>.</p></div></section>
+<section class="card step"><div class="num">5</div><div><h2>Pruebe SIGET</h2><pre>bash PROBAR_ABCD_QA.sh</pre><p>El reporte quedará en <code>ULTIMO_REPORTE_PRUEBAS_ABCD_QA.txt</code>.</p></div></section>
+<section class="card"><h2>Accesos</h2><table><tr><th>Usuario</th><td>admin@siget.local</td></tr><tr><th>Contraseña</th><td>SigetQA_2026_Cambiar!</td></tr><tr><th>SIGET</th><td>Puerto 8000</td></tr><tr><th>Mailpit</th><td>Puerto 8025</td></tr></table></section>
+</main>
+</body>
+</html>

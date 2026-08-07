@@ -1,0 +1,22 @@
+Versión actual del trabajo realizado (2026-08-04)
+
+Cambios aplicados:
+- Ajuste del texto de la pantalla de login:
+  - "Sistema de Gestión de Evidencias de Transmisión"
+- Corrección de carga de assets del frontend para el login y layout:
+  - Se dejó de depender de URLs absolutas problemáticas.
+  - Se cargan los assets desde rutas relativas del build: /build/assets/...
+- Ajuste de la plantilla principal del layout para que no falle cuando el usuario no tenga rol o relaciones completas.
+- Se hicieron guardas en el layout para evitar errores de Blade y permitir renderizar el panel aunque falten datos del usuario.
+- Se agregaron verificaciones de assets y se dejó un script de arranque actualizado para reanudar el entorno.
+
+Archivos principales modificados:
+- resources/views/auth/login.blade.php
+- resources/views/layouts/app.blade.php
+- app/Providers/AppServiceProvider.php
+- tests/Feature/AssetUrlHostTest.php
+- ARRANQUE_SIGET_ACTUALIZADO.sh
+
+Notas para mañana:
+- Si sigue fallando el acceso autenticado, revisar el estado real de la base de datos y del usuario administrador en el entorno QA.
+- Si se requiere, el siguiente paso es validar el flujo completo con el usuario administrador desde la base de datos real.

@@ -1,0 +1,8 @@
+Después de subir el ZIP a un Codespace vacío, ejecute:
+
+unzip -q SIGET_ABCD_CODESPACES_QA_AUTOMATICO_V2_0.zip
+bash SIGET_ABCD_CODESPACES_QA_AUTOMATICO_V2_0/IMPORTAR_EN_REPOSITORIO_CODESPACES.sh
+
+Luego presione Ctrl+Shift+P y elija:
+
+Codespaces: Rebuild Container

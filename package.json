@@ -1,0 +1,25 @@
+{
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "vite build",
+    "dev": "vite"
+  },
+  "devDependencies": {
+    "@popperjs/core": "^2.11.8",
+    "axios": "^1.7.9",
+    "bootstrap": "^5.3.3",
+    "concurrently": "^9.1.2",
+    "laravel-vite-plugin": "^1.2.0",
+    "sass": "^1.83.4",
+    "vite": "^6.0.11",
+    "bootstrap-icons": "^1.11.3"
+  },
+  "dependencies": {
+    "@fullcalendar/bootstrap5": "^6.1.17",
+    "@fullcalendar/core": "^6.1.17",
+    "@fullcalendar/daygrid": "^6.1.17",
+    "@fullcalendar/interaction": "^6.1.17",
+    "chart.js": "^4.4.7"
+  }
+}

@@ -1,0 +1,12 @@
+SIGET K2 QA CODESPACES
+Versión: 2.0.0-k2
+Fecha de integración: 2026-08-06
+Plataforma objetivo: GitHub Codespaces / Linux
+Backend: Laravel 12 / PHP 8.3 compatible
+Frontend: Blade / Bootstrap / Vite / Chart.js / FullCalendar
+Base de datos: PostgreSQL
+Correo QA: Mailpit
+Puerto SIGET: 8000
+Puerto Mailpit: 8025
+Identidad: SIGET — Sistema de Gestión de Evidencias de Transmisión
+Estado: candidato de integración; certificación integral pendiente en Codespaces

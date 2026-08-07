@@ -1,0 +1,253 @@
+============================================================
+ SIGET K2 QA - PRUEBAS AUTOMÁTICAS
+============================================================
+Fecha: 2026-08-04T16:37:26+00:00
+
+1. Pruebas PHPUnit
+
+   FAIL  Tests\Unit\CalendarAvailabilityServiceTest
+  ⨯ reprogrammed load is disabled
+
+   PASS  Tests\Unit\RoleMenuTest
+  ✓ role menus match the abcd workflow                                   0.02s  
+
+   FAIL  Tests\Feature\AccessScopeIsolationTest
+  ⨯ operator cannot access the other direction deliverable
+
+   FAIL  Tests\Feature\AccountingNoticeTest
+  ⨯ completion notice is informative and recorded
+
+   PASS  Tests\Feature\AssetUrlHostTest
+  ✓ login page uses current request host for assets                      0.08s  
+
+   FAIL  Tests\Feature\EvidenceWorkflowTest
+  ⨯ upload submit and approve updates the workflow
+
+   FAIL  Tests\Feature\HorizontalPautaParserTest
+  ⨯ it detects month day and x marks                                     0.20s  
+
+   FAIL  Tests\Feature\InstitutionalClosureTest
+  ⨯ cannot close without both checks
+
+   FAIL  Tests\Feature\PermissionMiddlewareTest
+  ⨯ operator cannot import calendar
+
+   FAIL  Tests\Feature\SuspensionRuleTest
+  ⨯ august 25 to september 8 is reprogrammed
+  ────────────────────────────────────────────────────────────────────────────  
+   FAILED  Tests\Unit\CalendarAvailabilityServiceTest > repr…  QueryException   
+  could not find driver (Connection: sqlite, Database: :memory:, SQL: select exists (select 1 from "main".sqlite_master where name = 'migrations' and type = 'table') as "exists")
+
+  at vendor/laravel/framework/src/Illuminate/Database/Connection.php:838
+    834▕             $exceptionType = $this->isUniqueConstraintError($e)
+    835▕                 ? UniqueConstraintViolationException::class
+    836▕                 : QueryException::class;
+    837▕ 
+  ➜ 838▕             throw new $exceptionType(
+    839▕                 $this->getNameWithReadWriteType(),
+    840▕                 $query,
+    841▕                 $this->prepareBindings($bindings),
+    842▕                 $e,
+
+
+  ────────────────────────────────────────────────────────────────────────────  
+   FAILED  Tests\Feature\AccessScopeIsolationTest > operator…  QueryException   
+  could not find driver (Connection: sqlite, Database: :memory:, SQL: select exists (select 1 from "main".sqlite_master where name = 'migrations' and type = 'table') as "exists")
+
+  at vendor/laravel/framework/src/Illuminate/Database/Connection.php:838
+    834▕             $exceptionType = $this->isUniqueConstraintError($e)
+    835▕                 ? UniqueConstraintViolationException::class
+    836▕                 : QueryException::class;
+    837▕ 
+  ➜ 838▕             throw new $exceptionType(
+    839▕                 $this->getNameWithReadWriteType(),
+    840▕                 $query,
+    841▕                 $this->prepareBindings($bindings),
+    842▕                 $e,
+
+
+  ────────────────────────────────────────────────────────────────────────────  
+   FAILED  Tests\Feature\AccountingNoticeTest > completion n…  QueryException   
+  could not find driver (Connection: sqlite, Database: :memory:, SQL: select exists (select 1 from "main".sqlite_master where name = 'migrations' and type = 'table') as "exists")
+
+  at vendor/laravel/framework/src/Illuminate/Database/Connection.php:838
+    834▕             $exceptionType = $this->isUniqueConstraintError($e)
+    835▕                 ? UniqueConstraintViolationException::class
+    836▕                 : QueryException::class;
+    837▕ 
+  ➜ 838▕             throw new $exceptionType(
+    839▕                 $this->getNameWithReadWriteType(),
+    840▕                 $query,
+    841▕                 $this->prepareBindings($bindings),
+    842▕                 $e,
+
+
+  ────────────────────────────────────────────────────────────────────────────  
+   FAILED  Tests\Feature\EvidenceWorkflowTest > upload submi…  QueryException   
+  could not find driver (Connection: sqlite, Database: :memory:, SQL: select exists (select 1 from "main".sqlite_master where name = 'migrations' and type = 'table') as "exists")
+
+  at vendor/laravel/framework/src/Illuminate/Database/Connection.php:838
+    834▕             $exceptionType = $this->isUniqueConstraintError($e)
+    835▕                 ? UniqueConstraintViolationException::class
+    836▕                 : QueryException::class;
+    837▕ 
+  ➜ 838▕             throw new $exceptionType(
+    839▕                 $this->getNameWithReadWriteType(),
+    840▕                 $query,
+    841▕                 $this->prepareBindings($bindings),
+    842▕                 $e,
+
+
+  ────────────────────────────────────────────────────────────────────────────  
+   FAILED  Tests\Feature\HorizontalPautaParserTest > it de…  RuntimeException   
+  No fue posible identificar la fila de meses y la fila de días.
+
+  at app/Services/HorizontalPautaParser.php:137
+    133▕             }
+    134▕         }
+    135▕ 
+    136▕         if ($monthRow === null || $dayRow === null) {
+  ➜ 137▕             throw new RuntimeException(
+    138▕                 'No fue posible identificar la fila de meses y la fila de días.'
+    139▕             );
+    140▕         }
+    141▕
+
+  1   app/Services/HorizontalPautaParser.php:137
+  2   app/Services/HorizontalPautaParser.php:39
+
+  ────────────────────────────────────────────────────────────────────────────  
+   FAILED  Tests\Feature\InstitutionalClosureTest > cannot c…  QueryException   
+  could not find driver (Connection: sqlite, Database: :memory:, SQL: select exists (select 1 from "main".sqlite_master where name = 'migrations' and type = 'table') as "exists")
+
+  at vendor/laravel/framework/src/Illuminate/Database/Connection.php:838
+    834▕             $exceptionType = $this->isUniqueConstraintError($e)
+    835▕                 ? UniqueConstraintViolationException::class
+    836▕                 : QueryException::class;
+    837▕ 
+  ➜ 838▕             throw new $exceptionType(
+    839▕                 $this->getNameWithReadWriteType(),
+    840▕                 $query,
+    841▕                 $this->prepareBindings($bindings),
+    842▕                 $e,
+
+
+  ────────────────────────────────────────────────────────────────────────────  
+   FAILED  Tests\Feature\PermissionMiddlewareTest > operator…  QueryException   
+  could not find driver (Connection: sqlite, Database: :memory:, SQL: select exists (select 1 from "main".sqlite_master where name = 'migrations' and type = 'table') as "exists")
+
+  at vendor/laravel/framework/src/Illuminate/Database/Connection.php:838
+    834▕             $exceptionType = $this->isUniqueConstraintError($e)
+    835▕                 ? UniqueConstraintViolationException::class
+    836▕                 : QueryException::class;
+    837▕ 
+  ➜ 838▕             throw new $exceptionType(
+    839▕                 $this->getNameWithReadWriteType(),
+    840▕                 $query,
+    841▕                 $this->prepareBindings($bindings),
+    842▕                 $e,
+
+
+  ────────────────────────────────────────────────────────────────────────────  
+   FAILED  Tests\Feature\SuspensionRuleTest > august 25 to s…  QueryException   
+  could not find driver (Connection: sqlite, Database: :memory:, SQL: select exists (select 1 from "main".sqlite_master where name = 'migrations' and type = 'table') as "exists")
+
+  at vendor/laravel/framework/src/Illuminate/Database/Connection.php:838
+    834▕             $exceptionType = $this->isUniqueConstraintError($e)
+    835▕                 ? UniqueConstraintViolationException::class
+    836▕                 : QueryException::class;
+    837▕ 
+  ➜ 838▕             throw new $exceptionType(
+    839▕                 $this->getNameWithReadWriteType(),
+    840▕                 $query,
+    841▕                 $this->prepareBindings($bindings),
+    842▕                 $e,
+
+
+
+  Tests:    8 failed, 2 passed (9 assertions)
+  Duration: 0.89s
+
+
+2. Estado de datos QA
++-------------+----------+
+| Componente  | Cantidad |
++-------------+----------+
+| Usuarios    | 16       |
+| Cargas      | 96       |
+| Entregables | 192      |
+| Evidencias  | 128      |
+| Revisiones  | 80       |
++-------------+----------+
+Administrador: admin@siget.local
+Contraseña QA: SigetQA_2026_Cambiar!
+
+3. Verificación web
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>SIGET K2 QA Codespaces</title>
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.bunny.net">
+    <link href="https://fonts.bunny.net/css?family=figtree:400,600&display=swap" rel="stylesheet" />
+
+    <!-- Styles -->
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+
+    <style type="text/tailwindcss">
+        @theme {
+            --font-sans: 'Figtree', 'ui-sans-serif', 'system-ui', 'sans-serif', "Apple Color Emoji", "Segoe UI Emoji";
+        }
+    </style>
+</head>
+<body class="antialiased">
+<div class="relative flex justify-center items-center min-h-screen bg-gray-100 selection:bg-red-500 selection:text-white">
+    <div class="w-full sm:w-3/4 xl:w-1/2 mx-auto p-6">
+        <div class="px-6 py-4 bg-white from-gray-700/50 via-transparent rounded-lg shadow-2xl shadow-gray-500/20 flex items-center focus:outline focus:outline-2 focus:outline-red-500">
+            <div class="relative flex h-3 w-3 group ">
+                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 group-[.status-down]:bg-red-600 opacity-75"></span>
+                <span class="relative inline-flex rounded-full h-3 w-3 bg-green-400 group-[.status-down]:bg-red-600"></span>
+            </div>
+
+            <div class="ml-6">
+                <h2 class="text-xl font-semibold text-gray-900">Application up</h2>
+
+                <p class="mt-2 text-gray-500 dark:text-gray-400 text-sm leading-relaxed">
+                    HTTP request received.
+
+                                            Response rendered in 143ms.
+                                    </p>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>
+
+Inicio de sesión: código 0
+Mailpit: código 0
+
+
+ESTADO DE SERVICIOS
+-------------------
+siget-mailpit                    RUNNING   pid 16861, uptime 0:00:05
+siget-queue                      RUNNING   pid 16862, uptime 0:00:05
+siget-scheduler                  RUNNING   pid 16863, uptime 0:00:05
+siget-web                        RUNNING   pid 16864, uptime 0:00:05
+
+127.0.0.1:5432 - accepting connections
+
+CÓDIGOS FINALES
+PHPUnit:      2
+Estado QA:    0
+Salud:        0
+Login:        0
+Mailpit:      0
+
+RESULTADO: REQUIERE REVISIÓN
+
+Reporte: /workspaces/siget-abcd-qa/ULTIMO_REPORTE_PRUEBAS_ABCD_QA.txt

@@ -1,0 +1,188 @@
+<?php
+
+use App\Http\Controllers\AdminController;
+use App\Http\Controllers\AlertController;
+use App\Http\Controllers\CalendarController;
+use App\Http\Controllers\CalendarImportController;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\EvidenceController;
+use App\Http\Controllers\EvidenceWorkflowController;
+use App\Http\Controllers\HistoryController;
+use App\Http\Controllers\IndicatorController;
+use App\Http\Controllers\InstitutionalClosureController;
+use App\Http\Controllers\LoadBoardController;
+use App\Http\Controllers\IntelligenceController;
+use App\Http\Controllers\ReportController;
+use App\Http\Controllers\ReviewInboxController;
+use App\Http\Controllers\RepositoryController;
+use App\Http\Controllers\ReviewAssignmentController;
+use App\Http\Controllers\ScheduledLoadController;
+use Illuminate\Support\Facades\Route;
+
+Route::redirect('/', '/dashboard');
+
+Route::middleware(['auth'])->group(function () {
+    Route::get('/dashboard', DashboardController::class)->name('dashboard');
+
+    Route::get('/calendario', [CalendarController::class, 'index'])
+        ->middleware('permission:calendar.view')
+        ->name('calendar.index');
+    Route::get('/calendario/eventos', [CalendarController::class, 'events'])
+        ->middleware('permission:calendar.view')
+        ->name('calendar.events');
+    Route::get('/calendario/fechas-programadas', [CalendarController::class, 'programmedDates'])
+        ->middleware('permission:calendar.view')
+        ->name('calendar.programmed-dates');
+
+    Route::post('/calendario/importar', [CalendarImportController::class, 'store'])
+        ->middleware('permission:calendar.import')
+        ->name('calendar.import.store');
+    Route::get('/calendario/importaciones/{import}/vista-previa', [CalendarImportController::class, 'preview'])
+        ->middleware('permission:calendar.confirm')
+        ->name('calendar.import.preview');
+    Route::post('/calendario/importaciones/{import}/confirmar', [CalendarImportController::class, 'confirm'])
+        ->middleware('permission:calendar.confirm')
+        ->name('calendar.import.confirm');
+
+    Route::get('/revision-institucional', ReviewInboxController::class)
+        ->middleware('permission:scheduled_load.review')
+        ->name('review.inbox');
+
+    Route::get('/tablero-cargas', LoadBoardController::class)
+        ->middleware('permission:scheduled_load.board')
+        ->name('loads.board');
+
+    Route::get('/cargas/{load}', [ScheduledLoadController::class, 'show'])
+        ->name('loads.show');
+    Route::get('/mis-cargas', [RepositoryController::class, 'index'])
+        ->name('loads.mine');
+
+    Route::post('/evidencias', [EvidenceController::class, 'store'])
+        ->middleware('permission:evidence.upload')
+        ->name('evidences.store');
+    Route::get('/evidencias/{evidence}', [EvidenceWorkflowController::class, 'show'])
+        ->name('evidences.show');
+    Route::post('/evidencias/{evidence}/enviar', [EvidenceWorkflowController::class, 'submit'])
+        ->middleware('permission:evidence.upload')
+        ->name('evidences.submit');
+    Route::post('/evidencias/{evidence}/revisar', [EvidenceWorkflowController::class, 'review'])
+        ->middleware('permission:evidence.review')
+        ->name('evidences.review');
+    Route::get('/archivos-evidencia/{file}/descargar', [EvidenceWorkflowController::class, 'download'])
+        ->middleware('permission:repository.download')
+        ->name('evidence-files.download');
+
+    Route::get('/repositorio', [RepositoryController::class, 'index'])
+        ->middleware('permission:repository.view')
+        ->name('repository.index');
+
+    Route::patch('/cargas/{load}/revision/checklist', [InstitutionalClosureController::class, 'checklist'])
+        ->middleware('permission:scheduled_load.verify')
+        ->name('loads.checklist');
+    Route::post('/cargas/{load}/expediente-firma', [InstitutionalClosureController::class, 'signaturePackage'])
+        ->middleware('permission:scheduled_load.signature_package')
+        ->name('loads.signature-package');
+    Route::post('/cargas/{load}/documento-firmado', [InstitutionalClosureController::class, 'signedDocument'])
+        ->middleware('permission:scheduled_load.upload_signed')
+        ->name('loads.signed-document');
+    Route::post('/cargas/{load}/cerrar', [InstitutionalClosureController::class, 'close'])
+        ->middleware('permission:scheduled_load.close')
+        ->name('loads.close');
+
+    Route::post('/cargas/{load}/fiscalizador', [ReviewAssignmentController::class, 'store'])
+        ->name('loads.assign-fiscalizador');
+
+    Route::get('/indicadores', [IndicatorController::class, 'index'])
+        ->middleware('permission:indicators.view')
+        ->name('indicators.index');
+    Route::get('/inteligencia', IntelligenceController::class)
+        ->middleware('permission:intelligence.view')
+        ->name('intelligence');
+
+    Route::get('/reportes', [ReportController::class, 'index'])
+        ->middleware('permission:reports.view')
+        ->name('reports.index');
+    Route::get('/reportes/csv', [ReportController::class, 'csv'])
+        ->middleware('permission:reports.export')
+        ->name('reports.csv');
+    Route::get('/reportes/pdf', [ReportController::class, 'pdf'])
+        ->middleware('permission:reports.export')
+        ->name('reports.pdf');
+
+    Route::get('/alertas', [AlertController::class, 'index'])
+        ->middleware('permission:alerts.view')
+        ->name('alerts.index');
+    Route::patch('/alertas/marcar-todas', [AlertController::class, 'readAll'])
+        ->middleware('permission:alerts.view')
+        ->name('alerts.read-all');
+    Route::patch('/alertas/{notification}/leer', [AlertController::class, 'read'])
+        ->middleware('permission:alerts.view')
+        ->name('alerts.read');
+
+    Route::get('/historial', HistoryController::class)
+        ->name('history.index');
+
+    Route::get('/admin/usuarios', [AdminController::class, 'users'])
+        ->middleware('permission:users.manage')
+        ->name('admin.users');
+    Route::post('/admin/usuarios', [AdminController::class, 'storeUser'])
+        ->middleware('permission:users.manage')
+        ->name('admin.users.store');
+    Route::patch('/admin/usuarios/{user}/estado', [AdminController::class, 'toggleUser'])
+        ->middleware('permission:users.manage')
+        ->name('admin.users.toggle');
+
+    Route::get('/admin/roles', [AdminController::class, 'roles'])
+        ->middleware('permission:roles.manage')
+        ->name('admin.roles');
+    Route::put('/admin/roles/{role}', [AdminController::class, 'updateRole'])
+        ->middleware('permission:roles.manage')
+        ->name('admin.roles.update');
+
+    Route::get('/admin/dependencias', [AdminController::class, 'agencies'])
+        ->middleware('permission:agencies.manage')
+        ->name('admin.agencies');
+    Route::post('/admin/dependencias', [AdminController::class, 'storeAgency'])
+        ->middleware('permission:agencies.manage')
+        ->name('admin.agencies.store');
+    Route::post('/admin/unidades', [AdminController::class, 'storeUnit'])
+        ->middleware('permission:agencies.manage')
+        ->name('admin.units.store');
+
+    Route::get('/plantillas', [AdminController::class, 'templates'])
+        ->middleware('permission:templates.manage')
+        ->name('admin.templates');
+    Route::post('/plantillas/requisitos', [AdminController::class, 'storeRequirement'])
+        ->middleware('permission:templates.manage')
+        ->name('admin.templates.requirements.store');
+
+    Route::get('/admin/catalogos', [AdminController::class, 'catalogs'])
+        ->middleware('permission:catalogs.manage')
+        ->name('admin.catalogs');
+    Route::post('/admin/catalogos', [AdminController::class, 'storeCatalog'])
+        ->middleware('permission:catalogs.manage')
+        ->name('admin.catalogs.store');
+    Route::post('/admin/catalogos/elementos', [AdminController::class, 'storeCatalogItem'])
+        ->middleware('permission:catalogs.manage')
+        ->name('admin.catalog-items.store');
+
+    Route::get('/admin/configuracion', [AdminController::class, 'settings'])
+        ->middleware('permission:settings.manage')
+        ->name('admin.settings');
+    Route::post('/admin/configuracion', [AdminController::class, 'updateSetting'])
+        ->middleware('permission:settings.manage')
+        ->name('admin.settings.update');
+
+    Route::get('/admin/logs', [AdminController::class, 'logs'])
+        ->middleware('permission:logs.view')
+        ->name('admin.logs');
+
+    Route::get('/qa/credenciales', function () {
+        abort_unless(auth()->user()?->role?->code === 'ADMINISTRADOR', 403);
+        return view('qa.credentials');
+    })->name('qa.credentials');
+});
+
+require __DIR__.'/auth.php';
+require __DIR__.'/operations.php';
+require __DIR__.'/metrics.php';

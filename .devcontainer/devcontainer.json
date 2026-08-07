@@ -1,0 +1,60 @@
+{
+  "name": "SIGET K2 QA Codespaces",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": "..",
+    "args": {
+      "MAILPIT_VERSION": "v1.30.6"
+    }
+  },
+  "remoteUser": "vscode",
+  "updateRemoteUserUID": true,
+  "forwardPorts": [
+    8000,
+    8025
+  ],
+  "portsAttributes": {
+    "8000": {
+      "label": "SIGET K2 QA",
+      "onAutoForward": "openBrowser",
+      "protocol": "http",
+      "visibility": "private"
+    },
+    "8025": {
+      "label": "Correo QA Mailpit",
+      "onAutoForward": "silent",
+      "protocol": "http",
+      "visibility": "private"
+    }
+  },
+  "hostRequirements": {
+    "cpus": 2,
+    "memory": "8gb",
+    "storage": "32gb"
+  },
+  "features": {
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "22"
+    }
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "bmewburn.vscode-intelephense-client",
+        "onecentlin.laravel-blade",
+        "mikestead.dotenv",
+        "xdebug.php-debug",
+        "eamodio.gitlens"
+      ],
+      "settings": {
+        "editor.formatOnSave": true,
+        "files.eol": "\n",
+        "php.validate.executablePath": "/usr/local/bin/php",
+        "terminal.integrated.defaultProfile.linux": "bash"
+      }
+    }
+  },
+  "postCreateCommand": "bash .devcontainer/install-siget.sh",
+  "postStartCommand": "bash .devcontainer/start-siget.sh",
+  "waitFor": "postCreateCommand"
+}

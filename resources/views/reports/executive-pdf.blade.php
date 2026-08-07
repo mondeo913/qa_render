@@ -1,0 +1,9 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><style>
+body{font-family:DejaVu Sans,sans-serif;font-size:10px;color:#182033}h1{font-size:22px;color:#12213a}h2{font-size:14px;margin-top:22px}.kpis{width:100%;border-collapse:collapse}.kpis td{border:1px solid #ccd3df;padding:12px;text-align:center}.kpis strong{display:block;font-size:18px}.table{width:100%;border-collapse:collapse}.table th,.table td{border:1px solid #dfe4ec;padding:6px}.table th{background:#12213a;color:#fff}
+</style></head><body>
+<h1>SIGET · Reporte ejecutivo</h1><p>Generado por {{ $generatedBy->name }} el {{ now()->format('d/m/Y H:i') }}</p>
+<table class="kpis"><tr><td>Total<strong>{{ $analytics['kpis']['total'] }}</strong></td><td>Cerradas<strong>{{ $analytics['kpis']['closed'] }}</strong></td><td>Vencidas<strong>{{ $analytics['kpis']['overdue'] }}</strong></td><td>Cumplimiento<strong>{{ $analytics['kpis']['compliance'] }}%</strong></td></tr></table>
+<h2>Distribución por estado</h2><table class="table"><thead><tr><th>Estado</th><th>Total</th></tr></thead><tbody>@foreach($analytics['status_distribution'] as $status=>$total)<tr><td>{{ $status }}</td><td>{{ $total }}</td></tr>@endforeach</tbody></table>
+<h2>Tendencia mensual</h2><table class="table"><thead><tr><th>Periodo</th><th>Total</th><th>Cerradas</th><th>Cumplimiento</th></tr></thead><tbody>@foreach($analytics['monthly_trend'] as $row)<tr><td>{{ $row['period'] }}</td><td>{{ $row['total'] }}</td><td>{{ $row['closed'] }}</td><td>{{ $row['compliance'] }}%</td></tr>@endforeach</tbody></table>
+<h2>Direcciones</h2><table class="table"><thead><tr><th>Dirección</th><th>Entregables</th><th>Validados</th><th>Cumplimiento</th></tr></thead><tbody>@foreach($analytics['unit_performance'] as $row)<tr><td>{{ $row['unit'] }}</td><td>{{ $row['total'] }}</td><td>{{ $row['validated'] }}</td><td>{{ $row['percentage'] }}%</td></tr>@endforeach</tbody></table>
+</body></html>

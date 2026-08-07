@@ -1,0 +1,27 @@
+{
+  "package": "SIGET_ABCD_CODESPACES_QA_AUTOMATICO_V2_0",
+  "version": "2.0.0",
+  "generated_at": "2026-08-03T17:47:24.503810",
+  "source": "SIGET_ABCD_FLYIO_QA_SIN_GITHUB_V1_0_5.zip",
+  "php_files_checked": 188,
+  "php_syntax_errors": [],
+  "shell_files_checked": 17,
+  "shell_syntax_errors": [],
+  "json_errors": [],
+  "missing_required_files": [],
+  "forbidden_files": [],
+  "checks": {
+    "proxy_fix": true,
+    "no_forwarded_host_trust": true,
+    "mailpit_latest_pinned": true,
+    "postgres_persistence": true,
+    "qa_tests_script": true,
+    "auto_install": true,
+    "auto_start": true,
+    "ports_8000_8025": true,
+    "qa_result_exit_code_fixed": true,
+    "git_identity_auto": true,
+    "qa_init_always": true
+  },
+  "runtime_note": "La descarga de dependencias y el arranque integral se ejecutan dentro de GitHub Codespaces."
+}

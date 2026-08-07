@@ -1,0 +1,4 @@
+SIGET K2.0.0
+Núcleo original QA + P0 + K1 + integración visual y funcional K2
+Identidad: SIGET — Sistema de Gestión de Evidencias de Transmisión
+Incluye tema claro/oscuro/automático, autenticación renovada, recuperación de contraseña, dashboards por rol, calendario con próximos eventos, centro de notificaciones, repositorio tipo File Manager y Kanban reforzado.

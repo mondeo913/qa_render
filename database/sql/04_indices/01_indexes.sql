@@ -1,0 +1,16 @@
+CREATE INDEX IF NOT EXISTS idx_users_role_status ON users(role_id, status);
+CREATE INDEX IF NOT EXISTS idx_users_agency_unit ON users(contracting_agency_id, organizational_unit_id);
+CREATE INDEX IF NOT EXISTS idx_units_agency_parent ON organizational_units(contracting_agency_id, parent_id);
+CREATE INDEX IF NOT EXISTS idx_imports_agency_status ON calendar_imports(contracting_agency_id, status);
+CREATE INDEX IF NOT EXISTS idx_import_rows_import_valid ON calendar_import_rows(calendar_import_id, is_valid);
+CREATE INDEX IF NOT EXISTS idx_loads_agency_effective ON scheduled_loads(contracting_agency_id, effective_open_at, effective_close_at);
+CREATE INDEX IF NOT EXISTS idx_loads_status_light ON scheduled_loads(status, traffic_light);
+CREATE INDEX IF NOT EXISTS idx_loads_original_window ON scheduled_loads(original_open_at, original_close_at);
+CREATE INDEX IF NOT EXISTS idx_reschedules_pending ON load_reschedules(status, new_open_at);
+CREATE INDEX IF NOT EXISTS idx_deliverables_load_status ON scheduled_load_deliverables(scheduled_load_id, status);
+CREATE INDEX IF NOT EXISTS idx_evidences_load_status ON evidences(scheduled_load_id, status);
+CREATE INDEX IF NOT EXISTS idx_files_evidence ON evidence_files(evidence_id);
+CREATE INDEX IF NOT EXISTS idx_files_sha256 ON evidence_files(sha256);
+CREATE INDEX IF NOT EXISTS idx_notifications_user_status ON notifications(user_id, status, scheduled_for);
+CREATE INDEX IF NOT EXISTS idx_audit_entity ON audit_logs(entity_type, entity_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_folders_load_path ON repository_folders(scheduled_load_id, path_key);
