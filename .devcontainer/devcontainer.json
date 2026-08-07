@@ -1,12 +1,6 @@
 {
   "name": "SIGET K2 QA Codespaces",
-  "build": {
-    "dockerfile": "Dockerfile",
-    "context": "..",
-    "args": {
-      "MAILPIT_VERSION": "v1.30.6"
-    }
-  },
+  "image": "mcr.microsoft.com/devcontainers/php:1-8.3-bookworm",
   "remoteUser": "vscode",
   "updateRemoteUserUID": true,
   "forwardPorts": [
@@ -54,7 +48,7 @@
       }
     }
   },
-  "postCreateCommand": "bash .devcontainer/install-siget.sh",
-  "postStartCommand": "bash .devcontainer/start-siget.sh",
+  "postCreateCommand": "bash .devcontainer/bootstrap-k2.sh",
+  "postStartCommand": "bash .devcontainer/start-siget.sh || true",
   "waitFor": "postCreateCommand"
 }
