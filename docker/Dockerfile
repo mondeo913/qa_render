@@ -8,6 +8,12 @@ ENV DEBIAN_FRONTEND=noninteractive
 ENV COMPOSER_ALLOW_SUPERUSER=1
 ENV COMPOSER_PROCESS_TIMEOUT=1200
 
+# Eliminar repositorios externos que puedan romper apt-get update
+RUN rm -f /etc/apt/sources.list.d/yarn.list \
+          /etc/apt/sources.list.d/yarnpkg.list \
+          /etc/apt/sources.list.d/yarn*.list \
+    || true
+
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
         ca-certificates \
