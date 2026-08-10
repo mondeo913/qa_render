@@ -1,8 +1,8 @@
 {
-  "name": "SIGET K2 QA Codespaces",
+  "name": "SIGET K2 QA - NUEVO",
 
   "build": {
-    "dockerfile": "Dockerfile",
+    "dockerfile": "Dockerfile.k2",
     "context": "..",
     "args": {
       "MAILPIT_VERSION": "v1.30.6"
@@ -25,7 +25,7 @@
       "visibility": "private"
     },
     "8025": {
-      "label": "Mailpit QA",
+      "label": "Mailpit SIGET K2",
       "onAutoForward": "silent",
       "protocol": "http",
       "visibility": "private"
@@ -53,6 +53,7 @@
         "xdebug.php-debug",
         "eamodio.gitlens"
       ],
+
       "settings": {
         "editor.formatOnSave": true,
         "files.eol": "\n",
@@ -62,7 +63,11 @@
     }
   },
 
-  "postCreateCommand": "bash .devcontainer/install-siget.sh || true",
-  "postStartCommand": "bash .devcontainer/start-siget.sh || true",
+  "postCreateCommand": "bash .devcontainer/install-k2.sh || true",
+
+  "postStartCommand": "bash .devcontainer/start-k2.sh || true",
+
   "waitFor": "postCreateCommand"
 }
+Observa esta línea:
+"dockerfile": "Dockerfile.k2"
