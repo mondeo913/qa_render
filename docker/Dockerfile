@@ -1,20 +1,69 @@
-FROM php:8.4-fpm-bookworm
+FROM mcr.microsoft.com/devcontainers/php:1-8.3-bookworm
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    git unzip libpq-dev libzip-dev libicu-dev libpng-dev libjpeg62-turbo-dev libfreetype6-dev \
-    libxml2-dev libonig-dev supervisor cron clamav \
-    && docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install pdo_pgsql pgsql intl zip gd mbstring bcmath opcache \
+ARG MAILPIT_VERSION=v1.30.6
+
+USER root
+
+ENV DEBIAN_FRONTEND=noninteractive
+ENV COMPOSER_ALLOW_SUPERUSER=1
+ENV COMPOSER_PROCESS_TIMEOUT=1200
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        ca-certificates \
+        curl \
+        git \
+        jq \
+        libfreetype6-dev \
+        libicu-dev \
+        libjpeg62-turbo-dev \
+        libonig-dev \
+        libpng-dev \
+        libpq-dev \
+        libzip-dev \
+        postgresql-client \
+        procps \
+        supervisor \
+        unzip \
+        zip \
+    && docker-php-ext-configure gd \
+        --with-freetype \
+        --with-jpeg \
+    && docker-php-ext-install -j"$(nproc)" \
+        bcmath \
+        gd \
+        intl \
+        mbstring \
+        opcache \
+        pdo_pgsql \
+        pgsql \
+        zip \
     && rm -rf /var/lib/apt/lists/*
 
-COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
-WORKDIR /var/www/html
-COPY . .
-RUN composer install --no-dev --prefer-dist --no-interaction --optimize-autoloader \
-    && chown -R www-data:www-data storage bootstrap/cache
+COPY --from=composer:2 /usr/bin/composer /usr/local/bin/composer
 
-COPY docker/entrypoint.sh /usr/local/bin/siget-entrypoint
-RUN chmod +x /usr/local/bin/siget-entrypoint
+RUN set -eux; \
+    architecture="$(dpkg --print-architecture)"; \
+    case "${architecture}" in \
+        amd64) mailpit_arch="amd64" ;; \
+        arm64) mailpit_arch="arm64" ;; \
+        *) \
+            echo "Arquitectura no soportada para Mailpit: ${architecture}" >&2; \
+            exit 1 \
+            ;; \
+    esac; \
+    mailpit_url="https://github.com/axllent/mailpit/releases/download/${MAILPIT_VERSION}/mailpit-linux-${mailpit_arch}.tar.gz"; \
+    curl -fL \
+        --retry 6 \
+        --retry-all-errors \
+        --retry-delay 3 \
+        "${mailpit_url}" \
+        -o /tmp/mailpit.tar.gz; \
+    tar -xzf /tmp/mailpit.tar.gz -C /usr/local/bin mailpit; \
+    chmod 0755 /usr/local/bin/mailpit; \
+    /usr/local/bin/mailpit version; \
+    rm -f /tmp/mailpit.tar.gz
 
-ENTRYPOINT ["siget-entrypoint"]
-CMD ["php-fpm"]
+COPY .devcontainer/php.ini /usr/local/etc/php/conf.d/99-siget-codespaces.ini
+
+USER vscode
