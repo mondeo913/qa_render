@@ -3,7 +3,10 @@
 
   "build": {
     "dockerfile": "Dockerfile",
-    "context": ".."
+    "context": "..",
+    "args": {
+      "MAILPIT_VERSION": "v1.30.6"
+    }
   },
 
   "remoteUser": "vscode",
@@ -22,7 +25,7 @@
       "visibility": "private"
     },
     "8025": {
-      "label": "Correo QA Mailpit",
+      "label": "Mailpit QA",
       "onAutoForward": "silent",
       "protocol": "http",
       "visibility": "private"
@@ -50,6 +53,7 @@
         "xdebug.php-debug",
         "eamodio.gitlens"
       ],
+
       "settings": {
         "editor.formatOnSave": true,
         "files.eol": "\n",
@@ -59,5 +63,9 @@
     }
   },
 
-  "postCreateCommand": "bash .devcontainer/bootstrap-codespaces.sh || true"
+  "postCreateCommand": "bash .devcontainer/install-siget.sh || true",
+
+  "postStartCommand": "bash .devcontainer/start-siget.sh || true",
+
+  "waitFor": "postCreateCommand"
 }
