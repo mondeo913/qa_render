@@ -1,19 +1,18 @@
 {
   "name": "SIGET K2 QA Codespaces",
-
   "build": {
     "dockerfile": "Dockerfile",
-    "context": ".."
+    "context": "..",
+    "args": {
+      "MAILPIT_VERSION": "v1.30.6"
+    }
   },
-
   "remoteUser": "vscode",
   "updateRemoteUserUID": true,
-
   "forwardPorts": [
     8000,
     8025
   ],
-
   "portsAttributes": {
     "8000": {
       "label": "SIGET K2 QA",
@@ -28,19 +27,16 @@
       "visibility": "private"
     }
   },
-
   "hostRequirements": {
     "cpus": 2,
     "memory": "8gb",
     "storage": "32gb"
   },
-
   "features": {
     "ghcr.io/devcontainers/features/node:1": {
       "version": "22"
     }
   },
-
   "customizations": {
     "vscode": {
       "extensions": [
@@ -58,6 +54,7 @@
       }
     }
   },
-
-  "postCreateCommand": "bash .devcontainer/bootstrap-codespaces.sh || true"
+  "postCreateCommand": "bash .devcontainer/install-siget.sh",
+  "postStartCommand": "bash .devcontainer/start-siget.sh",
+  "waitFor": "postCreateCommand"
 }
