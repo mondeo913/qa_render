@@ -18,7 +18,8 @@ final class EvidenceService
         private readonly CalendarAvailabilityService $availability,
         private readonly AccessScopeService $access,
         private readonly AuditService $audit,
-        private readonly LoadProgressService $progress
+        private readonly LoadProgressService $progress,
+        private readonly RepositoryService $repository
     ) {}
 
     public function upload(
@@ -55,7 +56,8 @@ final class EvidenceService
             $file,
             $user,
             $title,
-            $extension
+            $extension,
+            $load
         ) {
             $evidence = Evidence::query()->firstOrCreate(
                 ['deliverable_id' => $deliverable->id],
@@ -84,10 +86,24 @@ final class EvidenceService
                 ]);
             }
 
+            // Garantiza que la carga tenga su árbol institucional y que cada
+            // dirección tenga su carpeta propia antes de guardar el archivo.
             $folder = RepositoryFolder::query()
                 ->where('scheduled_load_id', $deliverable->scheduled_load_id)
                 ->where('organizational_unit_id', $deliverable->organizational_unit_id)
                 ->first();
+
+            if (!$folder) {
+                $this->repository->createLoadTree($load, $user->id);
+                $folder = RepositoryFolder::query()
+                    ->where('scheduled_load_id', $deliverable->scheduled_load_id)
+                    ->where('organizational_unit_id', $deliverable->organizational_unit_id)
+                    ->first();
+            }
+
+            if (!$folder) {
+                throw new RuntimeException('No se pudo crear el repositorio individual de la dirección.');
+            }
 
             $disk = config(
                 'siget.repository_disk',
@@ -103,7 +119,7 @@ final class EvidenceService
 
             EvidenceFile::query()->create([
                 'evidence_id' => $evidence->id,
-                'folder_id' => $folder?->id,
+                'folder_id' => $folder->id,
                 'uploaded_by' => $user->id,
                 'original_name' => $file->getClientOriginalName(),
                 'stored_name' => $storedName,
@@ -119,11 +135,13 @@ final class EvidenceService
                 'version' => $evidence->current_version,
                 'metadata' => [
                     'organizational_unit_id' => $deliverable->organizational_unit_id,
+                    'repository_folder_id' => $folder->id,
+                    'repository_path' => $folder->path_key,
                     'qa_upload' => app()->environment('local'),
                 ],
             ]);
 
-            $evidence->update(['folder_id' => $folder?->id]);
+            $evidence->update(['folder_id' => $folder->id]);
             $deliverable->update([
                 'status' => $evidence->current_version > 1
                     ? 'CORREGIDO'
@@ -140,6 +158,9 @@ final class EvidenceService
                     'deliverable_id' => $deliverable->id,
                     'filename' => $file->getClientOriginalName(),
                     'version' => $evidence->current_version,
+                    'organizational_unit_id' => $deliverable->organizational_unit_id,
+                    'repository_folder_id' => $folder->id,
+                    'repository_path' => $folder->path_key,
                 ]
             );
 
