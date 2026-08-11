@@ -139,20 +139,48 @@ if [ -f artisan ]; then
 
     php artisan --version
 
-    echo "Iniciando Laravel en segundo plano..."
+    echo "===== LARAVEL / PUERTO 8000 ====="
     mkdir -p .codespace
-    if ! (command -v curl >/dev/null 2>&1 && curl -fsS http://127.0.0.1:8000 >/dev/null 2>&1); then
-        nohup php artisan serve --host=0.0.0.0 --port=8000 > .codespace/laravel.log 2>&1 &
-        echo $! > .codespace/laravel.pid
-        sleep 2
+
+    # Remove a stale Laravel process/PID so the forwarded port always points
+    # to the current workspace and not to an old process from a previous wake-up.
+    if [ -f .codespace/laravel.pid ]; then
+        OLD_PID="$(cat .codespace/laravel.pid 2>/dev/null || true)"
+        if [ -n "${OLD_PID}" ] && kill -0 "${OLD_PID}" 2>/dev/null; then
+            echo "Deteniendo Laravel anterior (PID ${OLD_PID})..."
+            kill "${OLD_PID}" 2>/dev/null || true
+            sleep 1
+        fi
     fi
 
-    if curl -fsS http://127.0.0.1:8000/iniciar-sesion >/dev/null 2>&1; then
-        echo "Laravel: ACTIVO en http://localhost:8000"
+    # Kill only listeners owned by this workspace user on 8000.
+    if command -v fuser >/dev/null 2>&1; then
+        fuser -k 8000/tcp 2>/dev/null || true
+    fi
+
+    rm -f .codespace/laravel.pid
+    echo "Iniciando Laravel en 0.0.0.0:8000..."
+    nohup php artisan serve --host=0.0.0.0 --port=8000 > .codespace/laravel.log 2>&1 &
+    LARAVEL_PID=$!
+    echo "${LARAVEL_PID}" > .codespace/laravel.pid
+
+    READY=0
+    for i in $(seq 1 30); do
+        if curl -fsS http://127.0.0.1:8000/iniciar-sesion >/dev/null 2>&1; then
+            READY=1
+            break
+        fi
+        sleep 1
+    done
+
+    if [ "${READY}" -eq 1 ]; then
+        echo "Laravel: ACTIVO en http://0.0.0.0:8000"
+        echo "Port 8000: configurado para auto-forward + abrir navegador + público"
     else
-        echo "ADVERTENCIA: Laravel no respondió en 8000."
+        echo "ERROR: Laravel no respondió en 8000."
         echo "===== LARAVEL LOG ====="
         tail -n 100 .codespace/laravel.log 2>/dev/null || true
+        exit 1
     fi
 else
     echo "artisan no encontrado"
