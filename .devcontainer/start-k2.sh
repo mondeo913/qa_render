@@ -10,8 +10,7 @@ PGDATABASE="${DB_DATABASE:-siget_qa}"
 PGPASSWORD="${DB_PASSWORD:-${SIGET_PGPASSWORD:-siget_codespace_qa}}"
 export PGPASSWORD
 
-# Debian installs PostgreSQL server binaries under /usr/lib/postgresql/<version>/bin,
-# which is not necessarily on the vscode user's PATH.
+# Debian installs PostgreSQL server binaries under /usr/lib/postgresql/<version>/bin.
 PG_BINDIR=""
 if command -v pg_config >/dev/null 2>&1; then
     PG_BINDIR="$(pg_config --bindir 2>/dev/null || true)"
@@ -23,7 +22,7 @@ fi
 INITDB="${PG_BINDIR}/initdb"
 POSTGRES="${PG_BINDIR}/postgres"
 
- echo "=============================================="
+echo "=============================================="
 echo " SIGET K2 - INICIO"
 echo "=============================================="
 echo
@@ -39,7 +38,6 @@ mailpit version
 
 echo
 echo "===== POSTGRESQL ====="
-
 echo "PostgreSQL binario: ${PG_BINDIR:-NO ENCONTRADO}"
 
 if [ ! -x "${INITDB}" ]; then
@@ -64,9 +62,12 @@ fi
 
 if ! pg_isready -h "${PGHOST}" -p "${PGPORT}" >/dev/null 2>&1; then
     echo "Iniciando PostgreSQL en ${PGHOST}:${PGPORT}..."
+    # Explicit socket directory avoids the default /var/run/postgresql,
+    # which is not writable by the vscode user in Codespaces.
     "${POSTGRES}" -D "${PGDATA}" \
         -h "${PGHOST}" \
         -p "${PGPORT}" \
+        -k "${PGDATA}" \
         >"${PGDATA}/postgres.log" 2>&1 &
 fi
 
