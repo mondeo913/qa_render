@@ -52,6 +52,6 @@
     }
   },
   "postCreateCommand": "bash .devcontainer/install-k2.sh",
-  "postStartCommand": "bash .devcontainer/start-k2.sh",
+  "postStartCommand": "bash .devcontainer/start-k2.sh && bash .devcontainer/qa-runtime.sh",
   "waitFor": "postCreateCommand"
 }
