@@ -1,6 +1,5 @@
 {
-  "name": "SIGET K2 QA - NUEVO",
-
+  "name": "SIGET K2 QA",
   "build": {
     "dockerfile": "Dockerfile.k2",
     "context": "..",
@@ -8,15 +7,9 @@
       "MAILPIT_VERSION": "v1.30.6"
     }
   },
-
   "remoteUser": "vscode",
   "updateRemoteUserUID": true,
-
-  "forwardPorts": [
-    8000,
-    8025
-  ],
-
+  "forwardPorts": [8000, 8025],
   "portsAttributes": {
     "8000": {
       "label": "SIGET K2 QA",
@@ -31,19 +24,16 @@
       "visibility": "private"
     }
   },
-
   "hostRequirements": {
     "cpus": 2,
     "memory": "8gb",
     "storage": "32gb"
   },
-
   "features": {
     "ghcr.io/devcontainers/features/node:1": {
       "version": "22"
     }
   },
-
   "customizations": {
     "vscode": {
       "extensions": [
@@ -53,7 +43,6 @@
         "xdebug.php-debug",
         "eamodio.gitlens"
       ],
-
       "settings": {
         "editor.formatOnSave": true,
         "files.eol": "\n",
@@ -62,12 +51,7 @@
       }
     }
   },
-
-  "postCreateCommand": "bash .devcontainer/install-k2.sh || true",
-
-  "postStartCommand": "bash .devcontainer/start-k2.sh || true",
-
+  "postCreateCommand": "bash .devcontainer/install-k2.sh",
+  "postStartCommand": "bash .devcontainer/start-k2.sh",
   "waitFor": "postCreateCommand"
 }
-Observa esta línea:
-"dockerfile": "Dockerfile.k2"
