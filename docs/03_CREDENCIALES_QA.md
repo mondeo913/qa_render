@@ -1,22 +1,48 @@
-# Credenciales QA
+# Credenciales QA SIGET
 
-Contraseña común:
+> Solo para el entorno QA. No utilizar estas credenciales en producción.
+
+## Credencial común
 
 ```text
-SigetQA_2026_Cambiar!
+Password: SigetQA_2026_Cambiar!
 ```
 
-## Dependencia principal
+## Usuarios QA
 
-| Rol | Correo |
-|---|---|
-| Administrador | admin@siget.local |
-| Director General | director.general@siget.local |
-| Director Monitoreo | director@siget.local |
-| Director Producción | director.produccion@siget.local |
-| Enlace Institucional | enlace@siget.local |
-| Operador Monitoreo | operador.monitoreo@siget.local |
-| Operador Producción | operador.produccion@siget.local |
-| Fiscalizador | fiscalizador@siget.local |
+| Rol | Usuario / correo | Contraseña |
+|---|---|---|
+| Administrador | `admin@siget.local` | `SigetQA_2026_Cambiar!` |
+| Director General | `director.general@siget.local` | `SigetQA_2026_Cambiar!` |
+| Director de Transmisión | `director@siget.local` | `SigetQA_2026_Cambiar!` |
+| Director de Programación y Continuidad | `director.produccion@siget.local` | `SigetQA_2026_Cambiar!` |
+| Enlace Institucional | `enlace@siget.local` | `SigetQA_2026_Cambiar!` |
+| Operador de Transmisión | `operador.monitoreo@siget.local` | `SigetQA_2026_Cambiar!` |
+| Operador de Programación y Continuidad | `operador.produccion@siget.local` | `SigetQA_2026_Cambiar!` |
+| Fiscalizador | `fiscalizador@siget.local` | `SigetQA_2026_Cambiar!` |
 
-El archivo `.codespace/ACCESOS.txt` se genera con las URL exactas del Codespace.
+## Sincronización remota del entorno QA
+
+El repositorio contiene el comando idempotente que crea o actualiza únicamente estos usuarios QA:
+
+```bash
+php artisan siget:qa-users
+```
+
+También acepta una contraseña explícita:
+
+```bash
+php artisan siget:qa-users --password='SigetQA_2026_Cambiar!'
+```
+
+El comando asigna los roles, dependencia, unidades organizativas, permisos de lectura/escritura y estado `ACTIVE`. No reconstruye la base de datos ni elimina usuarios existentes.
+
+## Acceso
+
+URL local de Codespaces:
+
+```text
+http://localhost:8000/iniciar-sesion
+```
+
+Para la URL pública de Codespaces, utilizar el puerto 8000 publicado por el Codespace.
