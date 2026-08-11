@@ -115,6 +115,16 @@ if [ -f artisan ]; then
         exit 1
     fi
 
+    echo "Sincronizando catálogo base QA..."
+    if ! php artisan db:seed --class=RolePermissionSeeder --force; then
+        echo "ERROR: no se pudieron crear/sincronizar roles y permisos base."
+        exit 1
+    fi
+    if ! php artisan db:seed --class=AgencyTemplateSeeder --force; then
+        echo "ERROR: no se pudo crear/sincronizar la dependencia y unidades QA."
+        exit 1
+    fi
+
     echo "Sincronizando usuarios QA..."
     if ! php artisan siget:qa-users; then
         echo "ERROR: no se pudieron crear/sincronizar los usuarios QA."
