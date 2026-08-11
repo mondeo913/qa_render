@@ -19,9 +19,13 @@ use App\Http\Controllers\ReviewAssignmentController;
 use App\Http\Controllers\ScheduledLoadController;
 use Illuminate\Support\Facades\Route;
 
-Route::redirect('/', '/dashboard');
+Route::get('/', function () {
+    return auth()->check()
+        ? redirect()->route('dashboard')
+        : redirect()->route('login');
+});
 
-Route::middleware(['auth'])->group(function () {
+Route::middleware(['auth', 'no-cache-auth'])->group(function () {
     Route::get('/dashboard', DashboardController::class)->name('dashboard');
 
     Route::get('/calendario', [CalendarController::class, 'index'])
