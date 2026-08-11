@@ -22,7 +22,11 @@ fi
 INITDB="${PG_BINDIR}/initdb"
 POSTGRES="${PG_BINDIR}/postgres"
 
-echo "=============================================="
+# Use the PostgreSQL data directory for the Unix socket. This avoids the
+# non-writable /var/run/postgresql path in a non-root Codespace container.
+PGSOCKET="${PGDATA}"
+
+ echo "=============================================="
 echo " SIGET K2 - INICIO"
 echo "=============================================="
 echo
@@ -62,12 +66,10 @@ fi
 
 if ! pg_isready -h "${PGHOST}" -p "${PGPORT}" >/dev/null 2>&1; then
     echo "Iniciando PostgreSQL en ${PGHOST}:${PGPORT}..."
-    # Explicit socket directory avoids the default /var/run/postgresql,
-    # which is not writable by the vscode user in Codespaces.
     "${POSTGRES}" -D "${PGDATA}" \
         -h "${PGHOST}" \
         -p "${PGPORT}" \
-        -k "${PGDATA}" \
+        -k "${PGSOCKET}" \
         >"${PGDATA}/postgres.log" 2>&1 &
 fi
 
@@ -87,16 +89,28 @@ fi
 
 echo "PostgreSQL: $(pg_isready -h "${PGHOST}" -p "${PGPORT}")"
 
-if ! psql -h "${PGHOST}" -p "${PGPORT}" -U "${PGUSER}" -d postgres -tAc "SELECT 1 FROM pg_roles WHERE rolname='${PGUSER}'" 2>/dev/null | grep -q 1; then
-    psql -h "${PGHOST}" -p "${PGPORT}" -U "${PGUSER}" -d postgres -c "CREATE ROLE ${PGUSER} LOGIN PASSWORD '${PGPASSWORD}';"
+# Bootstrap over the trusted Unix socket first. The TCP connection uses
+# SCRAM authentication, so the password must be established before using
+# -h 127.0.0.1. This fixes fresh clusters where the role has no password yet.
+if ! psql -h "${PGSOCKET}" -p "${PGPORT}" -U "${PGUSER}" -d postgres -tAc "SELECT 1 FROM pg_roles WHERE rolname='${PGUSER}'" 2>/dev/null | grep -q 1; then
+    echo "Creando usuario PostgreSQL ${PGUSER}..."
+    psql -h "${PGSOCKET}" -p "${PGPORT}" -U "${PGUSER}" -d postgres -c "CREATE ROLE ${PGUSER} LOGIN PASSWORD '${PGPASSWORD}';"
 else
-    psql -h "${PGHOST}" -p "${PGPORT}" -U "${PGUSER}" -d postgres -c "ALTER ROLE ${PGUSER} WITH LOGIN PASSWORD '${PGPASSWORD}';" >/dev/null
+    psql -h "${PGSOCKET}" -p "${PGPORT}" -U "${PGUSER}" -d postgres -c "ALTER ROLE ${PGUSER} WITH LOGIN PASSWORD '${PGPASSWORD}';" >/dev/null
 fi
 
-if ! psql -h "${PGHOST}" -p "${PGPORT}" -U "${PGUSER}" -d postgres -tAc "SELECT 1 FROM pg_database WHERE datname='${PGDATABASE}'" | grep -q 1; then
-    echo "Creando base de datos ${PGDATABASE}..."
-    createdb -h "${PGHOST}" -p "${PGPORT}" -U "${PGUSER}" -O "${PGUSER}" "${PGDATABASE}"
+# Verify the actual TCP credentials Laravel will use.
+if ! PGPASSWORD="${PGPASSWORD}" psql -h "${PGHOST}" -p "${PGPORT}" -U "${PGUSER}" -d postgres -tAc "SELECT 1" >/dev/null 2>&1; then
+    echo "ERROR: las credenciales TCP de PostgreSQL no son válidas para ${PGUSER}."
+    exit 1
 fi
+
+if ! PGPASSWORD="${PGPASSWORD}" psql -h "${PGHOST}" -p "${PGPORT}" -U "${PGUSER}" -d postgres -tAc "SELECT 1 FROM pg_database WHERE datname='${PGDATABASE}'" | grep -q 1; then
+    echo "Creando base de datos ${PGDATABASE}..."
+    PGPASSWORD="${PGPASSWORD}" createdb -h "${PGHOST}" -p "${PGPORT}" -U "${PGUSER}" -O "${PGUSER}" "${PGDATABASE}"
+fi
+
+echo "Base de datos: ${PGDATABASE} - OK"
 
 echo
 echo "===== ARTISAN ====="
