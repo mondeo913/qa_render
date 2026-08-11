@@ -4,6 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use RuntimeException;
 
 return new class extends Migration {
     public function up(): void
@@ -19,20 +20,18 @@ return new class extends Migration {
             return;
         }
 
-        Artisan::call('db:seed', [
-            '--class' => 'RolePermissionSeeder',
-            '--force' => true,
-        ]);
+        foreach (['RolePermissionSeeder', 'AgencyTemplateSeeder', 'QaDemoSeeder'] as $seeder) {
+            if (Artisan::call('db:seed', [
+                '--class' => $seeder,
+                '--force' => true,
+            ]) !== 0) {
+                throw new RuntimeException("No se pudo ejecutar {$seeder} durante el bootstrap QA.");
+            }
+        }
 
-        Artisan::call('db:seed', [
-            '--class' => 'AgencyTemplateSeeder',
-            '--force' => true,
-        ]);
-
-        Artisan::call('db:seed', [
-            '--class' => 'QaDemoSeeder',
-            '--force' => true,
-        ]);
+        if (! DB::table('scheduled_loads')->exists()) {
+            throw new RuntimeException('El bootstrap QA terminó sin crear cargas programadas.');
+        }
     }
 
     public function down(): void
