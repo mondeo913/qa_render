@@ -15,7 +15,7 @@
       "label": "SIGET K2 QA",
       "onAutoForward": "openBrowser",
       "protocol": "http",
-      "visibility": "private"
+      "visibility": "public"
     },
     "8025": {
       "label": "Mailpit SIGET K2",
