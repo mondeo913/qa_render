@@ -115,6 +115,12 @@ if [ -f artisan ]; then
         exit 1
     fi
 
+    echo "Sincronizando usuarios QA..."
+    if ! php artisan siget:qa-users; then
+        echo "ERROR: no se pudieron crear/sincronizar los usuarios QA."
+        exit 1
+    fi
+
     echo "Limpiando cachés de Laravel..."
     if ! php artisan optimize:clear; then
         echo "ERROR: no se pudieron limpiar las cachés de Laravel."
@@ -122,6 +128,22 @@ if [ -f artisan ]; then
     fi
 
     php artisan --version
+
+    echo "Iniciando Laravel en segundo plano..."
+    mkdir -p .codespace
+    if ! (command -v curl >/dev/null 2>&1 && curl -fsS http://127.0.0.1:8000 >/dev/null 2>&1); then
+        nohup php artisan serve --host=0.0.0.0 --port=8000 > .codespace/laravel.log 2>&1 &
+        echo $! > .codespace/laravel.pid
+        sleep 2
+    fi
+
+    if curl -fsS http://127.0.0.1:8000/iniciar-sesion >/dev/null 2>&1; then
+        echo "Laravel: ACTIVO en http://localhost:8000"
+    else
+        echo "ADVERTENCIA: Laravel no respondió en 8000."
+        echo "===== LARAVEL LOG ====="
+        tail -n 100 .codespace/laravel.log 2>/dev/null || true
+    fi
 else
     echo "artisan no encontrado"
 fi
@@ -132,7 +154,17 @@ echo
 echo "PostgreSQL: 127.0.0.1:5432 (activo)"
 echo "Base de datos: ${PGDATABASE} (migrada)"
 echo "Laravel: http://localhost:8000"
+echo "Login: http://localhost:8000/iniciar-sesion"
 echo "Mailpit: http://localhost:8025"
 echo
-echo "Para levantar SIGET manualmente:"
-echo "php artisan serve --host=0.0.0.0 --port=8000"
+echo "Usuarios QA sincronizados:"
+echo "  admin@siget.local"
+echo "  director.general@siget.local"
+echo "  director@siget.local"
+echo "  director.produccion@siget.local"
+echo "  enlace@siget.local"
+echo "  operador.monitoreo@siget.local"
+echo "  operador.produccion@siget.local"
+echo "  fiscalizador@siget.local"
+echo
+echo "Password QA: ${SIGET_QA_PASSWORD:-SigetQA_2026_Cambiar!}"
