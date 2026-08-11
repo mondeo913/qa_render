@@ -10,7 +10,20 @@ PGDATABASE="${DB_DATABASE:-siget_qa}"
 PGPASSWORD="${DB_PASSWORD:-${SIGET_PGPASSWORD:-siget_codespace_qa}}"
 export PGPASSWORD
 
-echo "=============================================="
+# Debian installs PostgreSQL server binaries under /usr/lib/postgresql/<version>/bin,
+# which is not necessarily on the vscode user's PATH.
+PG_BINDIR=""
+if command -v pg_config >/dev/null 2>&1; then
+    PG_BINDIR="$(pg_config --bindir 2>/dev/null || true)"
+fi
+if [ -z "${PG_BINDIR}" ] || [ ! -x "${PG_BINDIR}/initdb" ] || [ ! -x "${PG_BINDIR}/postgres" ]; then
+    PG_BINDIR="$(find /usr/lib/postgresql -mindepth 2 -maxdepth 2 -type f -name initdb -executable -printf '%h\n' 2>/dev/null | sort -V | tail -n 1)"
+fi
+
+INITDB="${PG_BINDIR}/initdb"
+POSTGRES="${PG_BINDIR}/postgres"
+
+ echo "=============================================="
 echo " SIGET K2 - INICIO"
 echo "=============================================="
 echo
@@ -27,13 +40,17 @@ mailpit version
 echo
 echo "===== POSTGRESQL ====="
 
-if ! command -v initdb >/dev/null 2>&1; then
-    echo "ERROR: initdb no está instalado."
+echo "PostgreSQL binario: ${PG_BINDIR:-NO ENCONTRADO}"
+
+if [ ! -x "${INITDB}" ]; then
+    echo "ERROR: initdb no está disponible."
+    echo "Buscado en: ${INITDB}"
     exit 1
 fi
 
-if ! command -v postgres >/dev/null 2>&1; then
-    echo "ERROR: postgres no está instalado."
+if [ ! -x "${POSTGRES}" ]; then
+    echo "ERROR: postgres no está disponible."
+    echo "Buscado en: ${POSTGRES}"
     exit 1
 fi
 
@@ -42,12 +59,12 @@ mkdir -p "${PGDATA}"
 if [ ! -f "${PGDATA}/PG_VERSION" ]; then
     echo "Inicializando PostgreSQL en ${PGDATA}..."
     rm -rf "${PGDATA:?}"/*
-    initdb -D "${PGDATA}" --auth-local=trust --auth-host=scram-sha-256 --username="${PGUSER}"
+    "${INITDB}" -D "${PGDATA}" --auth-local=trust --auth-host=scram-sha-256 --username="${PGUSER}"
 fi
 
 if ! pg_isready -h "${PGHOST}" -p "${PGPORT}" >/dev/null 2>&1; then
     echo "Iniciando PostgreSQL en ${PGHOST}:${PGPORT}..."
-    postgres -D "${PGDATA}" \
+    "${POSTGRES}" -D "${PGDATA}" \
         -h "${PGHOST}" \
         -p "${PGPORT}" \
         >"${PGDATA}/postgres.log" 2>&1 &
@@ -93,7 +110,7 @@ fi
 echo
 echo "===== SIGET K2 LISTO ====="
 echo
-echo "PostgreSQL: http://127.0.0.1:5432"
+echo "PostgreSQL: 127.0.0.1:5432 (activo)"
 echo "Laravel: http://localhost:8000"
 echo "Mailpit: http://localhost:8025"
 echo
