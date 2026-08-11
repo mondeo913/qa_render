@@ -10,7 +10,6 @@ PGDATABASE="${DB_DATABASE:-siget_qa}"
 PGPASSWORD="${DB_PASSWORD:-${SIGET_PGPASSWORD:-siget_codespace_qa}}"
 export PGPASSWORD
 
-# Debian installs PostgreSQL server binaries under /usr/lib/postgresql/<version>/bin.
 PG_BINDIR=""
 if command -v pg_config >/dev/null 2>&1; then
     PG_BINDIR="$(pg_config --bindir 2>/dev/null || true)"
@@ -21,12 +20,9 @@ fi
 
 INITDB="${PG_BINDIR}/initdb"
 POSTGRES="${PG_BINDIR}/postgres"
-
-# Use the PostgreSQL data directory for the Unix socket. This avoids the
-# non-writable /var/run/postgresql path in a non-root Codespace container.
 PGSOCKET="${PGDATA}"
 
- echo "=============================================="
+echo "=============================================="
 echo " SIGET K2 - INICIO"
 echo "=============================================="
 echo
@@ -89,9 +85,7 @@ fi
 
 echo "PostgreSQL: $(pg_isready -h "${PGHOST}" -p "${PGPORT}")"
 
-# Bootstrap over the trusted Unix socket first. The TCP connection uses
-# SCRAM authentication, so the password must be established before using
-# -h 127.0.0.1. This fixes fresh clusters where the role has no password yet.
+# Bootstrap over the trusted Unix socket before using TCP/SCRAM.
 if ! psql -h "${PGSOCKET}" -p "${PGPORT}" -U "${PGUSER}" -d postgres -tAc "SELECT 1 FROM pg_roles WHERE rolname='${PGUSER}'" 2>/dev/null | grep -q 1; then
     echo "Creando usuario PostgreSQL ${PGUSER}..."
     psql -h "${PGSOCKET}" -p "${PGPORT}" -U "${PGUSER}" -d postgres -c "CREATE ROLE ${PGUSER} LOGIN PASSWORD '${PGPASSWORD}';"
@@ -99,7 +93,6 @@ else
     psql -h "${PGSOCKET}" -p "${PGPORT}" -U "${PGUSER}" -d postgres -c "ALTER ROLE ${PGUSER} WITH LOGIN PASSWORD '${PGPASSWORD}';" >/dev/null
 fi
 
-# Verify the actual TCP credentials Laravel will use.
 if ! PGPASSWORD="${PGPASSWORD}" psql -h "${PGHOST}" -p "${PGPORT}" -U "${PGUSER}" -d postgres -tAc "SELECT 1" >/dev/null 2>&1; then
     echo "ERROR: las credenciales TCP de PostgreSQL no son válidas para ${PGUSER}."
     exit 1
@@ -116,7 +109,18 @@ echo
 echo "===== ARTISAN ====="
 
 if [ -f artisan ]; then
-    php artisan optimize:clear || true
+    echo "Aplicando migraciones de Laravel..."
+    if ! php artisan migrate --force; then
+        echo "ERROR: las migraciones de Laravel fallaron."
+        exit 1
+    fi
+
+    echo "Limpiando cachés de Laravel..."
+    if ! php artisan optimize:clear; then
+        echo "ERROR: no se pudieron limpiar las cachés de Laravel."
+        exit 1
+    fi
+
     php artisan --version
 else
     echo "artisan no encontrado"
@@ -126,6 +130,7 @@ echo
 echo "===== SIGET K2 LISTO ====="
 echo
 echo "PostgreSQL: 127.0.0.1:5432 (activo)"
+echo "Base de datos: ${PGDATABASE} (migrada)"
 echo "Laravel: http://localhost:8000"
 echo "Mailpit: http://localhost:8025"
 echo
