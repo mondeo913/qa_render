@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\ScheduledLoad;
 use App\Models\User;
 use App\Services\AccessScopeService;
+use App\Services\CalendarAvailabilityService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
 
@@ -13,7 +14,8 @@ class ScheduledLoadController extends Controller
     public function show(
         Request $request,
         ScheduledLoad $load,
-        AccessScopeService $access
+        AccessScopeService $access,
+        CalendarAvailabilityService $availability
     ): View {
         abort_unless($access->canAccessLoad($request->user(), $load), 403);
 
@@ -44,6 +46,8 @@ class ScheduledLoadController extends Controller
 
         return view('repositorio.carga', [
             'load' => $load,
+            'uploadEnabled' => $availability->isEnabled($load, now()),
+            'uploadTooltip' => $availability->tooltip($load),
             'fiscalizadores' => in_array(
                 $request->user()->role?->code,
                 ['ADMINISTRADOR', 'ENLACE_INSTITUCIONAL'],
