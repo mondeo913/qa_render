@@ -25,12 +25,14 @@ class RepositoryController extends Controller
         $base = $access->scopeLoads(ScheduledLoad::query(), $user);
         $accessibleIds = (clone $base)->pluck('id');
 
-        // The repository is dependency-first. Each dependency is the container
-        // for its scheduled expedientes and all directions/evidences belonging to
-        // that dependency; there is no ungrouped "general" evidence view.
+        // Institutional repository hierarchy:
+        // DEPENDENCY -> PROGRAMMED MONTH -> CONTRACTED PAUTA -> DIRECTIONS -> EVIDENCES.
+        // Evidence remains traceable to its deliverable/direction, but the
+        // institutional review/reporting unit is the monthly pauta expediente.
         $dependencyLoads = (clone $base)
             ->with([
                 'agency.units',
+                'template',
                 'deliverables.organizationalUnit',
                 'deliverables.templateRequirement',
                 'deliverables.evidences.files',
@@ -42,13 +44,41 @@ class RepositoryController extends Controller
             ->map(function ($loads) {
                 $agency = $loads->first()?->agency;
                 $deliverables = $loads->flatMap->deliverables;
+                $groups = $loads->groupBy(function ($load) {
+                    $month = $load->effective_open_at?->format('Y-m')
+                        ?? ($load->period_label ?: 'sin-periodo');
+                    return $month.'|'.($load->template_id ?? 'sin-pauta');
+                })->map(function ($group) {
+                    $first = $group->first();
+                    $evidences = $group->flatMap->deliverables->flatMap->evidences;
+                    $directions = $group->flatMap->deliverables->pluck('organizationalUnit')
+                        ->filter()->unique('id')->sortBy('name')->values();
+                    return (object) [
+                        'loads' => $group->sortByDesc('effective_open_at')->values(),
+                        'month' => $first?->effective_open_at?->format('Y-m') ?? $first?->period_label,
+                        'month_label' => $first?->effective_open_at?->locale('es')->translatedFormat('F Y') ?? $first?->period_label ?? 'Sin periodo',
+                        'template' => $first?->template,
+                        'template_id' => $first?->template_id,
+                        'load_count' => $group->count(),
+                        'directions' => $directions,
+                        'deliverables' => $group->flatMap->deliverables,
+                        'evidences' => $evidences,
+                        'evidence_count' => $evidences->count(),
+                        'file_count' => $evidences->sum(fn ($e) => $e->files->count()),
+                        'required_count' => $group->flatMap->deliverables->filter(fn ($d) => $d->templateRequirement?->required)->count(),
+                        'first_load' => $first,
+                    ];
+                })->sortByDesc('month')->values();
+
                 return (object) [
                     'agency' => $agency,
                     'loads' => $loads->sortByDesc('effective_open_at')->values(),
                     'load_count' => $loads->count(),
                     'directions' => $deliverables->pluck('organizationalUnit')->filter()->unique('id')->sortBy('name')->values(),
-                    'evidence_count' => $deliverables->sum(fn ($d) => $d->evidences->sum(fn ($e) => $e->files->count())),
+                    'evidence_count' => $deliverables->sum(fn ($d) => $d->evidences->count()),
+                    'file_count' => $deliverables->sum(fn ($d) => $d->evidences->sum(fn ($e) => $e->files->count())),
                     'required_count' => $deliverables->filter(fn ($d) => $d->templateRequirement?->required)->count(),
+                    'monthlyPautas' => $groups,
                 ];
             })
             ->sortBy(fn ($summary) => $summary->agency?->name ?? '')
@@ -61,12 +91,12 @@ class RepositoryController extends Controller
 
         $query = ScheduledLoad::query()
             ->with([
-                'agency',
+                'agency', 'template',
                 'deliverables' => function ($d) use ($access, $user, $unitIds) {
                     if ($unitIds !== []) {
                         $access->scopeDeliverables($d, $user);
                     }
-                    $d->with(['organizationalUnit', 'evidences.files']);
+                    $d->with(['organizationalUnit', 'templateRequirement', 'evidences.files']);
                 },
             ])
             ->whereIn('id', $accessibleIds);
@@ -79,9 +109,8 @@ class RepositoryController extends Controller
             $query->where(fn ($b) =>
                 $b->whereRaw('LOWER(title) LIKE ?', [$term])
                     ->orWhereRaw('LOWER(period_label) LIKE ?', [$term])
-                    ->orWhereHas('agency', fn ($a) =>
-                        $a->whereRaw('LOWER(name) LIKE ?', [$term])
-                    )
+                    ->orWhereHas('agency', fn ($a) => $a->whereRaw('LOWER(name) LIKE ?', [$term]))
+                    ->orWhereHas('template', fn ($t) => $t->whereRaw('LOWER(name) LIKE ?', [$term]))
             );
         }
         if (!empty($filters['status'])) {
@@ -110,17 +139,8 @@ class RepositoryController extends Controller
         $recentFiles = (clone $recentFilesQuery)->latest()->limit(12)->get();
         $usedBytes = (clone $recentFilesQuery)->sum('size_bytes');
 
-        return view(
-            'repositorio.index',
-            compact(
-                'loads',
-                'filters',
-                'agencies',
-                'agencyCounts',
-                'recentFiles',
-                'usedBytes',
-                'dependencySummaries'
-            )
-        );
+        return view('repositorio.index', compact(
+            'loads', 'filters', 'agencies', 'agencyCounts', 'recentFiles', 'usedBytes', 'dependencySummaries'
+        ));
     }
 }
