@@ -1,5 +1,6 @@
 <?php
 namespace App\Http\Controllers;
+
 use App\Http\Requests\ClosureChecklistRequest;
 use App\Http\Requests\SignedDocumentRequest;
 use App\Models\ScheduledLoad;
@@ -8,6 +9,7 @@ use App\Services\ReportService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use RuntimeException;
 
 class InstitutionalClosureController extends Controller
 {
@@ -24,15 +26,25 @@ class InstitutionalClosureController extends Controller
             $request->boolean('package_prepared_for_signature'),
             $request->input('observations')
         );
-        return back()->with('success','Verificaciones institucionales guardadas.');
+        return back()->with('success','Verificaciones institucionales del expediente completo guardadas.');
     }
 
     public function signaturePackage(
         Request $request,
         ScheduledLoad $load,
-        ReportService $reports
+        ReportService $reports,
+        InstitutionalClosureService $service
     ) {
         $this->authorize('close',$load);
+
+        $validation = $service->validateExpediente($load);
+        if (!$validation['ready']) {
+            throw new RuntimeException(
+                'No se puede generar el expediente para firma hasta completar la pauta: '
+                .implode(' ', $validation['errors'])
+            );
+        }
+
         $path = $reports->generateSignaturePackage($load);
         return Storage::disk(config('siget.repository_disk','local'))
             ->download($path,'expediente-firma-'.$load->id.'.pdf');
@@ -50,7 +62,7 @@ class InstitutionalClosureController extends Controller
             $request->user()->id,
             $request->safe()->except('file')
         );
-        return back()->with('success','Documento firmado incorporado al repositorio.');
+        return back()->with('success','Documento firmado incorporado al expediente de la dependencia.');
     }
 
     public function close(
@@ -60,6 +72,6 @@ class InstitutionalClosureController extends Controller
     ): RedirectResponse {
         $this->authorize('close',$load);
         $service->close($load,$request->user()->id,$request->string('closing_comment')->toString());
-        return back()->with('success','La carga fue validada y cerrada.');
+        return back()->with('success','El expediente completo de la dependencia fue validado y cerrado.');
     }
 }
