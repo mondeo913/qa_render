@@ -137,6 +137,33 @@ if [ -f artisan ]; then
         exit 1
     fi
 
+    echo "===== FRONTEND / VITE ====="
+    if [ ! -f package.json ]; then
+        echo "ERROR: package.json no encontrado; no se puede construir la interfaz."
+        exit 1
+    fi
+    if [ ! -f package-lock.json ]; then
+        echo "ERROR: package-lock.json no encontrado; no se puede instalar el frontend de forma reproducible."
+        exit 1
+    fi
+    if [ ! -d node_modules ]; then
+        echo "Instalando dependencias npm..."
+        if ! npm ci; then
+            echo "ERROR: npm ci falló."
+            exit 1
+        fi
+    fi
+    echo "Construyendo assets de producción con Vite..."
+    if ! npm run build; then
+        echo "ERROR: npm run build falló; la interfaz SIGET no puede publicarse."
+        exit 1
+    fi
+    if [ ! -f public/build/manifest.json ]; then
+        echo "ERROR: Vite terminó sin generar public/build/manifest.json."
+        exit 1
+    fi
+    echo "Frontend: BUILD OK (public/build/manifest.json)"
+
     php artisan --version
 
     echo "===== LARAVEL / PUERTO 8000 ====="
