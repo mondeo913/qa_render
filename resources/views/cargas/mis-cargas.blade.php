@@ -27,9 +27,7 @@
                             <select id="agency_id" name="agency_id" class="form-select">
                                 <option value="">Todas las dependencias</option>
                                 @foreach($agencies as $agency)
-                                    <option value="{{ $agency->id }}" @selected((string)request('agency_id') === (string)$agency->id)>
-                                        {{ $agency->name }}
-                                    </option>
+                                    <option value="{{ $agency->id }}" @if((string) request('agency_id') === (string) $agency->id) selected @endif>{{ $agency->name }}</option>
                                 @endforeach
                             </select>
                         </div>
@@ -38,9 +36,7 @@
                             <select id="month" name="month" class="form-select">
                                 <option value="">Todos los meses</option>
                                 @foreach($months as $month)
-                                    <option value="{{ $month }}" @selected(request('month') === $month)>
-                                        {{ \Carbon\Carbon::createFromFormat('Y-m', $month)->translatedFormat('F Y') }}
-                                    </option>
+                                    <option value="{{ $month }}" @if(request('month') === $month) selected @endif>{{ \Carbon\Carbon::createFromFormat('Y-m', $month)->translatedFormat('F Y') }}</option>
                                 @endforeach
                             </select>
                         </div>
@@ -49,9 +45,7 @@
                             <select id="template_id" name="template_id" class="form-select">
                                 <option value="">Todas las pautas</option>
                                 @foreach($templates as $template)
-                                    <option value="{{ $template->id }}" @selected((string)request('template_id') === (string)$template->id)>
-                                        {{ $template->name }}
-                                    </option>
+                                    <option value="{{ $template->id }}" @if((string) request('template_id') === (string) $template->id) selected @endif>{{ $template->name }}</option>
                                 @endforeach
                             </select>
                         </div>
@@ -60,31 +54,29 @@
                             <select id="unit_id" name="unit_id" class="form-select">
                                 <option value="">Todas las direcciones</option>
                                 @foreach($filterUnits as $unit)
-                                    <option value="{{ $unit->id }}" @selected((string)request('unit_id') === (string)$unit->id)>
-                                        {{ $unit->name }}
-                                    </option>
+                                    <option value="{{ $unit->id }}" @if((string) request('unit_id') === (string) $unit->id) selected @endif>{{ $unit->name }}</option>
                                 @endforeach
                             </select>
                         </div>
                         <div class="col-12 d-flex gap-2">
-                            <button class="btn btn-primary" type="submit">
-                                <i class="bi bi-funnel me-1"></i>Filtrar evidencias programadas
-                            </button>
-                            <a class="btn btn-outline-secondary" href="{{ route('loads.mine') }}">
-                                <i class="bi bi-arrow-counterclockwise me-1"></i>Limpiar
-                            </a>
+                            <button class="btn btn-primary" type="submit"><i class="bi bi-funnel me-1"></i>Filtrar evidencias programadas</button>
+                            <a class="btn btn-outline-secondary" href="{{ route('loads.mine') }}"><i class="bi bi-arrow-counterclockwise me-1"></i>Limpiar</a>
                         </div>
                     </div>
                 </div>
             </form>
 
-            @forelse($loads->groupBy(fn ($load) => optional($load->agency)->id ?? 'sin-dependencia') as $agencyLoads)
-                @php($agency = $agencyLoads->first()->agency)
+            @forelse($loads->groupBy(function ($load) {
+                return optional($load->agency)->id ?: 'sin-dependencia';
+            }) as $agencyLoads)
+                @php
+                    $agency = $agencyLoads->first()->agency;
+                @endphp
                 <section class="card border mb-4">
                     <div class="card-header bg-body d-flex justify-content-between align-items-center flex-wrap gap-2">
                         <div>
                             <div class="small text-secondary">Dependencia</div>
-                            <h2 class="h5 mb-0">{{ $agency?->name ?? 'Sin dependencia' }}</h2>
+                            <h2 class="h5 mb-0">{{ optional($agency)->name ?: 'Sin dependencia' }}</h2>
                         </div>
                         <span class="badge text-bg-primary">{{ $agencyLoads->count() }} carga(s) programada(s)</span>
                     </div>
@@ -95,16 +87,12 @@
                                 <div class="card-header bg-body d-flex justify-content-between align-items-center gap-3 flex-wrap">
                                     <div>
                                         <div class="small text-secondary">
-                                            {{ $load->period_label }} · {{ $load->effective_open_at?->format('d/m/Y H:i') }}
+                                            {{ $load->period_label }} · {{ optional($load->effective_open_at)->format('d/m/Y H:i') }}
                                         </div>
                                         <h3 class="h6 mb-1">{{ $load->title }}</h3>
-                                        <div class="small text-secondary">
-                                            <i class="bi bi-file-earmark-text me-1"></i>{{ optional($load->template)->name ?? 'Pauta contratada' }}
-                                        </div>
+                                        <div class="small text-secondary"><i class="bi bi-file-earmark-text me-1"></i>{{ optional($load->template)->name ?: 'Pauta contratada' }}</div>
                                     </div>
-                                    <a href="{{ route('loads.show', $load) }}" class="btn btn-sm btn-outline-primary">
-                                        <i class="bi bi-folder2-open me-1"></i>Ver carga
-                                    </a>
+                                    <a href="{{ route('loads.show', $load) }}" class="btn btn-sm btn-outline-primary"><i class="bi bi-folder2-open me-1"></i>Ver carga</a>
                                 </div>
 
                                 <div class="card-body">
@@ -114,17 +102,15 @@
                                                 $evidence = $deliverable->evidences->sortByDesc('id')->first();
                                                 $direction = $deliverable->organizationalUnit;
                                                 $requirement = $deliverable->templateRequirement;
-                                                $minFiles = (int) ($requirement?->min_files ?? 1);
-                                                $currentFiles = $evidence?->files->where('version', $evidence->current_version)->count() ?? 0;
-                                                $status = $evidence?->status?->value ?? (string) ($evidence?->status ?? '');
+                                                $minFiles = (int) (optional($requirement)->min_files ?: 1);
+                                                $currentFiles = $evidence ? $evidence->files->where('version', $evidence->current_version)->count() : 0;
+                                                $status = $evidence ? (is_object($evidence->status) && property_exists($evidence->status, 'value') ? $evidence->status->value : (string) $evidence->status) : '';
                                                 $closed = in_array($status, ['ENVIADO', 'VALIDADO', 'CERRADO'], true);
                                             @endphp
                                             <div class="col-xl-6">
                                                 <div class="border rounded p-3 h-100">
                                                     <div class="d-flex justify-content-between gap-2 flex-wrap">
-                                                        <span class="badge text-bg-light">
-                                                            <i class="bi bi-diagram-3 me-1"></i>{{ $direction?->name ?? 'Sin dirección' }}
-                                                        </span>
+                                                        <span class="badge text-bg-light"><i class="bi bi-diagram-3 me-1"></i>{{ optional($direction)->name ?: 'Sin dirección' }}</span>
                                                         @if($closed)
                                                             <span class="badge text-bg-success"><i class="bi bi-check-circle me-1"></i>Cerrada y enviada</span>
                                                         @elseif($evidence)
@@ -134,57 +120,40 @@
                                                         @endif
                                                     </div>
 
-                                                    <h4 class="h6 mt-3 mb-1">{{ $requirement?->name ?? 'Entregable programado' }}</h4>
-                                                    @if($requirement?->description)
+                                                    <h4 class="h6 mt-3 mb-1">{{ optional($requirement)->name ?: 'Entregable programado' }}</h4>
+                                                    @if(optional($requirement)->description)
                                                         <p class="small text-secondary mb-2">{{ $requirement->description }}</p>
                                                     @endif
 
                                                     @if($evidence)
-                                                        <div class="small mb-3">
-                                                            <strong>{{ $evidence->title }}</strong>
-                                                            <span class="text-secondary">· {{ $evidence->files->count() }} archivo(s) total</span>
-                                                        </div>
+                                                        <div class="small mb-3"><strong>{{ $evidence->title }}</strong><span class="text-secondary"> · {{ $evidence->files->count() }} archivo(s) total</span></div>
                                                     @endif
 
                                                     @if(!$evidence)
                                                         <form action="{{ route('evidences.store') }}" method="POST" enctype="multipart/form-data">
                                                             @csrf
                                                             <input type="hidden" name="deliverable_id" value="{{ $deliverable->id }}">
-                                                            <div class="mb-2">
-                                                                <input name="title" class="form-control" placeholder="Título de la evidencia programada" required>
-                                                            </div>
+                                                            <div class="mb-2"><input name="title" class="form-control" placeholder="Título de la evidencia programada" required></div>
                                                             <div class="input-group">
                                                                 <input name="file" type="file" class="form-control" required>
-                                                                <button class="btn btn-primary" type="submit">
-                                                                    <i class="bi bi-paperclip me-1"></i>Adjuntar evidencia
-                                                                </button>
+                                                                <button class="btn btn-primary" type="submit"><i class="bi bi-paperclip me-1"></i>Adjuntar evidencia</button>
                                                             </div>
                                                         </form>
                                                     @elseif(!$closed)
                                                         <div class="d-flex flex-wrap gap-2">
-                                                            <a href="{{ route('evidences.show', $evidence) }}" class="btn btn-sm btn-outline-primary">
-                                                                <i class="bi bi-folder2-open me-1"></i>Gestionar archivos
-                                                            </a>
+                                                            <a href="{{ route('evidences.show', $evidence) }}" class="btn btn-sm btn-outline-primary"><i class="bi bi-folder2-open me-1"></i>Gestionar archivos</a>
                                                             <form action="{{ route('evidences.submit', $evidence) }}" method="POST" class="d-inline">
                                                                 @csrf
-                                                                <button class="btn btn-sm btn-success" type="submit" @disabled($currentFiles < $minFiles)>
-                                                                    <i class="bi bi-send-check me-1"></i>Cerrar evidencia y enviar
-                                                                </button>
+                                                                <button class="btn btn-sm btn-success" type="submit" @if($currentFiles < $minFiles) disabled @endif><i class="bi bi-send-check me-1"></i>Cerrar evidencia y enviar</button>
                                                             </form>
                                                         </div>
                                                         @if($currentFiles < $minFiles)
-                                                            <div class="small text-danger mt-2">
-                                                                Debes adjuntar al menos {{ $minFiles }} archivo(s) antes de cerrar y enviar.
-                                                            </div>
+                                                            <div class="small text-danger mt-2">Debes adjuntar al menos {{ $minFiles }} archivo(s) antes de cerrar y enviar.</div>
                                                         @endif
                                                     @else
                                                         <div class="d-flex flex-wrap gap-2">
-                                                            <a href="{{ route('evidences.show', $evidence) }}" class="btn btn-sm btn-outline-secondary">
-                                                                <i class="bi bi-eye me-1"></i>Consultar evidencia
-                                                            </a>
-                                                            <span class="small text-success align-self-center">
-                                                                <i class="bi bi-check2-circle me-1"></i>Disponible para revisión institucional y por dirección.
-                                                            </span>
+                                                            <a href="{{ route('evidences.show', $evidence) }}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-eye me-1"></i>Consultar evidencia</a>
+                                                            <span class="small text-success align-self-center"><i class="bi bi-check2-circle me-1"></i>Disponible para revisión institucional y por dirección.</span>
                                                         </div>
                                                     @endif
                                                 </div>
@@ -199,15 +168,10 @@
                     </div>
                 </section>
             @empty
-                <div class="text-center py-5 text-secondary">
-                    <i class="bi bi-inbox fs-1 d-block mb-3"></i>
-                    No tienes evidencias programadas asignadas dentro de tu alcance con los filtros seleccionados.
-                </div>
+                <div class="text-center py-5 text-secondary"><i class="bi bi-inbox fs-1 d-block mb-3"></i>No tienes evidencias programadas asignadas dentro de tu alcance con los filtros seleccionados.</div>
             @endforelse
 
-            <div class="mt-3">
-                {{ $loads->links() }}
-            </div>
+            <div class="mt-3">{{ $loads->links() }}</div>
         </div>
     </section>
 </div>
