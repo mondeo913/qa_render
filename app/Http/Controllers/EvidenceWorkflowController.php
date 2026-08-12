@@ -42,10 +42,12 @@ class EvidenceWorkflowController extends Controller
     ): RedirectResponse {
         $workflow->submit($evidence, $request->user());
 
-        return back()->with(
-            'success',
-            'La evidencia fue enviada a revisión.'
-        );
+        return redirect()
+            ->route('loads.mine')
+            ->with(
+                'success',
+                'Evidencia cerrada y enviada. La misma evidencia queda disponible, sin duplicar archivos, en el Repositorio de Revisión institucional y en el repositorio correspondiente a su Dirección.'
+            );
     }
 
     public function review(
