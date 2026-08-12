@@ -13,22 +13,30 @@ return new class extends Migration {
             return;
         }
 
-        // QaDemoSeeder uses source_column when creating calendar import rows.
-        // This migration must be self-contained because it runs before any
-        // later 2026-08-12 schema repair migration on a fresh/pending QA DB.
-        if (! Schema::hasColumn('calendar_import_rows', 'source_column')) {
-            Schema::table('calendar_import_rows', function (Blueprint $table): void {
+        // The QA seeder may run before later repair migrations on a pending DB.
+        // Keep this bootstrap self-contained so it can safely initialize a
+        // schema that predates the fields used by the current models/seeders.
+        Schema::table('calendar_import_rows', function (Blueprint $table): void {
+            if (! Schema::hasColumn('calendar_import_rows', 'source_column')) {
                 $table->string('source_column', 50)->nullable()->after('row_number');
-            });
-        }
+            }
+        });
 
         if (!Schema::hasTable('scheduled_loads')) {
             return;
         }
 
-        // The Codespaces QA bootstrap previously created roles, units and users,
-        // but did not create scheduled loads. Without loads, "Mis cargas" could
-        // render the evidence section while offering no file input at all.
+        Schema::table('scheduled_loads', function (Blueprint $table): void {
+            if (! Schema::hasColumn('scheduled_loads', 'priority')) {
+                $table->string('priority', 20)->default('NORMAL')->after('retroactive');
+            }
+            if (! Schema::hasColumn('scheduled_loads', 'completion_percentage')) {
+                $table->decimal('completion_percentage', 5, 2)->default(0)->after('priority');
+            }
+        });
+
+        // The bootstrap must only seed once, but schema repair above must run
+        // even when demo data already exists.
         if (DB::table('scheduled_loads')->exists()) {
             return;
         }
