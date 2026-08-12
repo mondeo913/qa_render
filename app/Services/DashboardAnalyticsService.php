@@ -7,7 +7,6 @@ use App\Models\ScheduledLoad;
 use App\Models\ScheduledLoadDeliverable;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 final class DashboardAnalyticsService
@@ -29,6 +28,7 @@ final class DashboardAnalyticsService
         ])->count();
 
         $activeStatuses = [
+            'PROGRAMADA',
             'ABIERTA',
             'EN_CAPTURA',
             'PARCIALMENTE_ENTREGADA',
@@ -38,6 +38,7 @@ final class DashboardAnalyticsService
             'LISTA_PARA_FIRMA',
             'PENDIENTE_DOCUMENTO_FIRMADO',
             'VALIDADA',
+            'REABIERTA',
         ];
 
         $active = (clone $base())->whereIn('status', $activeStatuses)->count();
@@ -99,8 +100,20 @@ final class DashboardAnalyticsService
             ])
             ->all();
 
-        $evidenceFunnel = Evidence::query()
-            ->whereIn('scheduled_load_id', (clone $base())->select('scheduled_loads.id'))
+        // El embudo parte de los entregables, no solo de evidencias ya creadas,
+        // para que las cargas programadas también aparezcan como pendientes.
+        $deliverableFunnelQuery = ScheduledLoadDeliverable::query();
+        $this->access->scopeDeliverables($deliverableFunnelQuery, $user);
+        $deliverableFunnel = $deliverableFunnelQuery
+            ->whereIn('scheduled_load_id', $accessibleLoadIds)
+            ->select('status', DB::raw('COUNT(*) AS total'))
+            ->groupBy('status')
+            ->pluck('total', 'status')
+            ->all();
+
+        $evidenceFunnelQuery = Evidence::query()
+            ->whereIn('scheduled_load_id', $accessibleLoadIds);
+        $evidenceFunnel = $evidenceFunnelQuery
             ->select('status', DB::raw('COUNT(*) AS total'))
             ->groupBy('status')
             ->pluck('total', 'status')
@@ -141,6 +154,7 @@ final class DashboardAnalyticsService
             'status_distribution' => $statusDistribution,
             'monthly_trend' => $monthlyTrend,
             'unit_performance' => $unitPerformance,
+            'deliverable_funnel' => $deliverableFunnel,
             'evidence_funnel' => $evidenceFunnel,
             'agency_performance' => $agencyPerformance,
             'upcoming' => $upcoming,
