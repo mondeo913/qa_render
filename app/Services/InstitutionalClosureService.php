@@ -21,7 +21,8 @@ final class InstitutionalClosureService
         private readonly ReportService $reports,
         private readonly AlertService $alerts,
         private readonly AccountingNoticeService $accounting,
-        private readonly LoadProgressService $progress
+        private readonly LoadProgressService $progress,
+        private readonly LoadStatusService $loadStatus
     ) {}
 
     public function updateChecklist(
@@ -43,12 +44,19 @@ final class InstitutionalClosureService
             ]
         );
 
-        $load->update([
-            'status'=>$evidencesCorrect && $packagePrepared
-                ? ScheduledLoadStatus::LISTA_PARA_FIRMA
-                : ScheduledLoadStatus::EN_REVISION_INSTITUCIONAL,
-            'traffic_light'=>TrafficLight::PURPLE,
-        ]);
+        $newStatus = $evidencesCorrect && $packagePrepared
+            ? ScheduledLoadStatus::LISTA_PARA_FIRMA->value
+            : ScheduledLoadStatus::EN_REVISION_INSTITUCIONAL->value;
+
+        $this->loadStatus->transition(
+            $load,
+            $newStatus,
+            \App\Models\User::query()->find($userId),
+            $evidencesCorrect && $packagePrepared
+                ? 'Checklist institucional completo; expediente listo para firma.'
+                : 'Checklist institucional actualizado.'
+        );
+        $load->update(['traffic_light'=>TrafficLight::PURPLE]);
 
         return $review;
     }
@@ -81,7 +89,7 @@ final class InstitutionalClosureService
             $disk = config('siget.repository_disk',config('filesystems.default'));
             $storedName = Str::uuid().'.'.$extension;
             $path = $file->storeAs('siget/signed/'.$load->id,$storedName,$disk);
-            
+
             EvidenceFile::query()->create([
                 'signed_document_id'=>$document->id,
                 'uploaded_by'=>$userId,
@@ -97,8 +105,13 @@ final class InstitutionalClosureService
                 'version'=>1,
             ]);
 
+            $this->loadStatus->transition(
+                $load,
+                ScheduledLoadStatus::VALIDADA->value,
+                \App\Models\User::query()->find($userId),
+                'Documento firmado incorporado al expediente.'
+            );
             $load->update([
-                'status'=>ScheduledLoadStatus::VALIDADA,
                 'traffic_light'=>TrafficLight::GREEN,
                 'validated_at'=>now(),
                 'validated_by'=>$userId,
@@ -162,8 +175,13 @@ final class InstitutionalClosureService
             $closure->update(['closure_certificate_path'=>$certificate]);
 
             $load->deliverables()->update(['status'=>DeliverableStatus::CERRADO->value]);
+            $this->loadStatus->transition(
+                $load,
+                ScheduledLoadStatus::VALIDADO_Y_CERRADO->value,
+                \App\Models\User::query()->find($userId),
+                'Expediente validado y cerrado.'
+            );
             $load->update([
-                'status'=>ScheduledLoadStatus::VALIDADO_Y_CERRADO,
                 'traffic_light'=>TrafficLight::DARK_GREEN,
                 'is_blocked'=>true,
                 'block_reason'=>'Carga validada y cerrada',
