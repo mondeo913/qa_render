@@ -52,6 +52,15 @@ return new class extends Migration {
             });
         }
 
+        // QaDemoSeeder also writes revision_number to evidences. The original
+        // evidence repository migration predates that field, so repair it here
+        // before invoking the seeder.
+        if (Schema::hasTable('evidences') && ! Schema::hasColumn('evidences', 'revision_number')) {
+            Schema::table('evidences', function (Blueprint $table): void {
+                $table->unsignedInteger('revision_number')->default(1)->after('current_version');
+            });
+        }
+
         // The bootstrap must only seed once, but schema repair above must run
         // even when demo data already exists.
         if (DB::table('scheduled_loads')->exists()) {
