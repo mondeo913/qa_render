@@ -14,6 +14,8 @@
                 <span class="badge text-bg-primary mb-2">{{ $load->agency?->name }}</span>
                 <h2 class="h3 mb-1">{{ $load->title }}</h2>
                 <p class="text-secondary mb-0">{{ $load->period_label }} · {{ $load->effective_open_at?->format('d/m/Y H:i') }} a {{ $load->effective_close_at?->format('d/m/Y H:i') }}</p>
+                <div class="mt-2"><span class="badge {{ $uploadEnabled ? 'text-bg-success' : 'text-bg-secondary' }}"><i class="bi {{ $uploadEnabled ? 'bi-unlock' : 'bi-lock' }} me-1"></i>{{ $uploadEnabled ? 'Fecha habilitada para evidencias' : 'Fecha programada / carga no habilitada' }}</span></div>
+                <small class="text-secondary d-block mt-1">{{ $uploadTooltip }}</small>
             </div>
             <div class="text-end">
                 <span class="badge siget-status fs-6">{{ $status }}</span>
@@ -75,9 +77,10 @@
                         <input type="hidden" name="deliverable_id" value="{{ $deliverable->id }}">
                         <div class="mb-2"><input name="title" class="form-control" placeholder="Título de la evidencia"></div>
                         <div class="input-group">
-                            <input name="file" type="file" class="form-control" required>
-                            <button class="btn btn-primary"><i class="bi bi-cloud-arrow-up"></i> Cargar</button>
+                            <input name="file" type="file" class="form-control" required @disabled(!$uploadEnabled)>
+                            <button class="btn btn-primary" @disabled(!$uploadEnabled)><i class="bi bi-cloud-arrow-up"></i> {{ $uploadEnabled ? 'Cargar evidencia' : 'Carga cerrada' }}</button>
                         </div>
+                        @unless($uploadEnabled)<small class="text-secondary d-block mt-2"><i class="bi bi-calendar-event me-1"></i>{{ $uploadTooltip }}</small>@endunless
                     </form>
                 @endif
             </div>
