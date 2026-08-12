@@ -24,18 +24,40 @@ class RepositoryController extends Controller
         $unitIds = $access->accessibleUnitIds($user);
         $base = $access->scopeLoads(ScheduledLoad::query(), $user);
         $accessibleIds = (clone $base)->pluck('id');
-        $agencyCounts = (clone $base)
-            ->selectRaw('contracting_agency_id, COUNT(*) AS total')
+
+        // The repository is dependency-first. Each dependency is the container
+        // for its scheduled expedientes and all directions/evidences belonging to
+        // that dependency; there is no ungrouped "general" evidence view.
+        $dependencyLoads = (clone $base)
+            ->with([
+                'agency.units',
+                'deliverables.organizationalUnit',
+                'deliverables.templateRequirement',
+                'deliverables.evidences.files',
+            ])
+            ->get();
+
+        $dependencySummaries = $dependencyLoads
             ->groupBy('contracting_agency_id')
-            ->pluck('total', 'contracting_agency_id');
-        $agencies = (clone $base)
-            ->with('agency')
-            ->get()
-            ->pluck('agency')
-            ->filter()
-            ->unique('id')
-            ->sortBy('name')
+            ->map(function ($loads) {
+                $agency = $loads->first()?->agency;
+                $deliverables = $loads->flatMap->deliverables;
+                return (object) [
+                    'agency' => $agency,
+                    'loads' => $loads->sortByDesc('effective_open_at')->values(),
+                    'load_count' => $loads->count(),
+                    'directions' => $deliverables->pluck('organizationalUnit')->filter()->unique('id')->sortBy('name')->values(),
+                    'evidence_count' => $deliverables->sum(fn ($d) => $d->evidences->sum(fn ($e) => $e->files->count())),
+                    'required_count' => $deliverables->filter(fn ($d) => $d->templateRequirement?->required)->count(),
+                ];
+            })
+            ->sortBy(fn ($summary) => $summary->agency?->name ?? '')
             ->values();
+
+        $agencyCounts = $dependencySummaries->mapWithKeys(fn ($summary) => [
+            $summary->agency->id => $summary->load_count,
+        ]);
+        $agencies = $dependencySummaries->pluck('agency')->filter()->values();
 
         $query = ScheduledLoad::query()
             ->with([
@@ -74,9 +96,6 @@ class RepositoryController extends Controller
 
         $loads = $query->orderByDesc('effective_open_at')->paginate(24)->withQueryString();
 
-        // Los archivos recientes también deben respetar la dirección del operador;
-        // no basta con filtrar únicamente por la carga, porque una misma carga puede
-        // contener entregables de varias direcciones.
         $recentFilesQuery = EvidenceFile::query()
             ->with(['evidence.scheduledLoad.agency', 'evidence.deliverable.organizationalUnit'])
             ->whereHas('evidence', function ($e) use ($accessibleIds, $access, $user, $unitIds) {
@@ -88,16 +107,20 @@ class RepositoryController extends Controller
                 });
             });
 
-        $recentFiles = (clone $recentFilesQuery)
-            ->latest()
-            ->limit(12)
-            ->get();
-
+        $recentFiles = (clone $recentFilesQuery)->latest()->limit(12)->get();
         $usedBytes = (clone $recentFilesQuery)->sum('size_bytes');
 
         return view(
             'repositorio.index',
-            compact('loads', 'filters', 'agencies', 'agencyCounts', 'recentFiles', 'usedBytes')
+            compact(
+                'loads',
+                'filters',
+                'agencies',
+                'agencyCounts',
+                'recentFiles',
+                'usedBytes',
+                'dependencySummaries'
+            )
         );
     }
 }
