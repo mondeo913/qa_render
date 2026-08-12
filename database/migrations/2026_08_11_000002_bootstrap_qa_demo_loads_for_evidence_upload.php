@@ -52,12 +52,17 @@ return new class extends Migration {
             });
         }
 
-        // QaDemoSeeder also writes revision_number to evidences. The original
-        // evidence repository migration predates that field, so repair it here
-        // before invoking the seeder.
+        // Fields used by QaDemoSeeder but missing from the original evidence
+        // repository migration.
         if (Schema::hasTable('evidences') && ! Schema::hasColumn('evidences', 'revision_number')) {
             Schema::table('evidences', function (Blueprint $table): void {
                 $table->unsignedInteger('revision_number')->default(1)->after('current_version');
+            });
+        }
+
+        if (Schema::hasTable('evidence_reviews') && ! Schema::hasColumn('evidence_reviews', 'review_type')) {
+            Schema::table('evidence_reviews', function (Blueprint $table): void {
+                $table->string('review_type', 40)->default('INSTITUTIONAL')->after('comments');
             });
         }
 
