@@ -15,25 +15,42 @@ return new class extends Migration {
 
         // The QA seeder may run before later repair migrations on a pending DB.
         // Keep this bootstrap self-contained so it can safely initialize a
-        // schema that predates the fields used by the current models/seeders.
-        Schema::table('calendar_import_rows', function (Blueprint $table): void {
-            if (! Schema::hasColumn('calendar_import_rows', 'source_column')) {
+        // schema that predates the fields/tables used by the current seeders.
+        if (! Schema::hasColumn('calendar_import_rows', 'source_column')) {
+            Schema::table('calendar_import_rows', function (Blueprint $table): void {
                 $table->string('source_column', 50)->nullable()->after('row_number');
-            }
-        });
+            });
+        }
 
         if (!Schema::hasTable('scheduled_loads')) {
             return;
         }
 
-        Schema::table('scheduled_loads', function (Blueprint $table): void {
-            if (! Schema::hasColumn('scheduled_loads', 'priority')) {
+        if (! Schema::hasColumn('scheduled_loads', 'priority')) {
+            Schema::table('scheduled_loads', function (Blueprint $table): void {
                 $table->string('priority', 20)->default('NORMAL')->after('retroactive');
-            }
-            if (! Schema::hasColumn('scheduled_loads', 'completion_percentage')) {
+            });
+        }
+        if (! Schema::hasColumn('scheduled_loads', 'completion_percentage')) {
+            Schema::table('scheduled_loads', function (Blueprint $table): void {
                 $table->decimal('completion_percentage', 5, 2)->default(0)->after('priority');
-            }
-        });
+            });
+        }
+
+        // ReviewAssignment is used by QaDemoSeeder but the base migrations did
+        // not create its table. Create it here before invoking the seeder.
+        if (! Schema::hasTable('review_assignments')) {
+            Schema::create('review_assignments', function (Blueprint $table): void {
+                $table->id();
+                $table->foreignId('scheduled_load_id')->constrained('scheduled_loads')->cascadeOnDelete();
+                $table->foreignId('fiscalizador_id')->constrained('users');
+                $table->foreignId('assigned_by')->nullable()->constrained('users');
+                $table->boolean('active')->default(true)->index();
+                $table->text('notes')->nullable();
+                $table->timestampsTz();
+                $table->unique(['scheduled_load_id', 'fiscalizador_id'], 'review_assignment_unique');
+            });
+        }
 
         // The bootstrap must only seed once, but schema repair above must run
         // even when demo data already exists.
