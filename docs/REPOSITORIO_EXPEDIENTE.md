@@ -1,23 +1,19 @@
-# SIGET — Repositorio y expediente institucional
+# SIGET — Repositorio institucional por dependencia, mes y pauta
 
 ## Regla funcional
 
-El repositorio se presenta primero por **dependencia**. Al abrir una dependencia se integran todos sus expedientes programados y las evidencias de todas sus direcciones. La captura de archivos puede continuar siendo por entregable/dirección, pero la validación institucional, la generación del expediente para firma y el cierre se realizan sobre el expediente completo.
+El módulo **Repositorio de Revisión** del Enlace Institucional no presenta evidencias como expedientes independientes.
 
-## Validación antes de firma/cierre
+La jerarquía institucional es:
 
-El expediente requiere que los requisitos obligatorios de la pauta:
+**Dependencia → Mes programado → Pauta/plantilla contratada → Direcciones → Evidencias programadas → Archivos.**
 
-- estén representados por las direcciones de la dependencia;
-- tengan evidencia y archivos dentro de mínimos/máximos;
-- respeten extensiones y tamaño configurados por la pauta;
-- estén validados cuando el requisito lo exige;
-- tengan el entregable validado;
-- respeten la fecha programada de entrega;
-- y que el periodo programado de la carga haya concluido.
+Cada carpeta mensual/pauta representa el expediente institucional completo de esa dependencia para ese periodo. Dentro se integran las evidencias de todas las direcciones de la dependencia.
 
-La generación del expediente para firma queda bloqueada hasta que la validación integral sea satisfactoria. El cierre requiere además el documento firmado.
+La captura puede continuar siendo por entregable/dirección para conservar trazabilidad, pero la unidad de revisión, validación y reporte del Enlace Institucional es el conjunto mensual de la pauta.
 
-## Compatibilidad de descargas
+## Validación
 
-`NoCacheAuthenticated` escribe las cabeceras directamente sobre el `HeaderBag` de Symfony para soportar `StreamedResponse`/descargas de Laravel 12.
+La revisión integral debe considerar el conjunto de la carpeta mensual/pauta: requisitos obligatorios, representación de las direcciones, existencia y cantidad de archivos, extensiones, tamaños, estados de validación y fechas programadas.
+
+La generación del reporte institucional debe corresponder al expediente agrupado y no a cada evidencia individual.
