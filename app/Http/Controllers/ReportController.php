@@ -19,6 +19,7 @@ class ReportController extends Controller
         abort_unless($request->user()->hasPermission('reports.view'), 403);
 
         $filters = $request->validate([
+            'agency_id' => ['nullable', 'integer'],
             'status' => ['nullable', 'string'],
             'from' => ['nullable', 'date'],
             'to' => ['nullable', 'date'],
@@ -36,16 +37,42 @@ class ReportController extends Controller
     ): StreamedResponse {
         abort_unless($request->user()->hasPermission('reports.export'), 403);
 
+        $filters = $request->validate([
+            'agency_id' => ['nullable', 'integer'],
+            'status' => ['nullable', 'string'],
+            'from' => ['nullable', 'date'],
+            'to' => ['nullable', 'date'],
+        ]);
+
         $query = $access->scopeLoads(
-            ScheduledLoad::query()->with('agency'),
+            ScheduledLoad::query()->with([
+                'agency',
+                'deliverables.templateRequirement',
+                'deliverables.evidences.files',
+            ]),
             $request->user()
-        )->orderBy('effective_open_at');
+        );
+
+        if (!empty($filters['agency_id'])) {
+            $query->where('contracting_agency_id', (int) $filters['agency_id']);
+        }
+        if (!empty($filters['status'])) {
+            $query->where('status', $filters['status']);
+        }
+        if (!empty($filters['from'])) {
+            $query->whereDate('effective_open_at', '>=', $filters['from']);
+        }
+        if (!empty($filters['to'])) {
+            $query->whereDate('effective_open_at', '<=', $filters['to']);
+        }
+
+        $query->orderBy('effective_open_at');
 
         ReportExport::query()->create([
             'requested_by' => $request->user()->id,
             'report_type' => 'LOADS',
             'format' => 'CSV',
-            'filters' => $request->query(),
+            'filters' => $filters,
             'status' => 'GENERATED',
         ]);
 
@@ -60,10 +87,25 @@ class ReportController extends Controller
                 'Estado',
                 'Semáforo',
                 'Avance %',
+                'Servicios de pauta',
+                'Entregables',
+                'Evidencias',
+                'Evidencias validadas',
+                'Archivos',
             ]);
 
             $query->chunk(200, function ($loads) use ($handle) {
                 foreach ($loads as $load) {
+                    $deliverables = $load->deliverables;
+                    $evidences = $deliverables->flatMap->evidences;
+                    $validated = $evidences->filter(function ($evidence) {
+                        $status = $evidence->status instanceof \BackedEnum
+                            ? $evidence->status->value
+                            : (string) $evidence->status;
+                        return $status === 'VALIDADO';
+                    })->count();
+                    $files = $evidences->sum(fn ($evidence) => $evidence->files->count());
+
                     fputcsv($handle, [
                         $load->id,
                         $load->agency?->name,
@@ -77,6 +119,11 @@ class ReportController extends Controller
                             ? $load->traffic_light->value
                             : $load->traffic_light,
                         $load->completion_percentage,
+                        data_get($load->metadata, 'service_count', 0),
+                        $deliverables->count(),
+                        $evidences->count(),
+                        $validated,
+                        $files,
                     ]);
                 }
             });
