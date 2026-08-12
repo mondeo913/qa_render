@@ -4,7 +4,6 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
-use RuntimeException;
 
 return new class extends Migration {
     public function up(): void
@@ -25,12 +24,12 @@ return new class extends Migration {
                 '--class' => $seeder,
                 '--force' => true,
             ]) !== 0) {
-                throw new RuntimeException("No se pudo ejecutar {$seeder} durante el bootstrap QA.");
+                throw new \RuntimeException("No se pudo ejecutar {$seeder} durante el bootstrap QA.");
             }
         }
 
         if (! DB::table('scheduled_loads')->exists()) {
-            throw new RuntimeException('El bootstrap QA terminó sin crear cargas programadas.');
+            throw new \RuntimeException('El bootstrap QA terminó sin crear cargas programadas.');
         }
     }
 
