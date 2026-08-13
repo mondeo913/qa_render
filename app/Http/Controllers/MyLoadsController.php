@@ -20,6 +20,9 @@ class MyLoadsController extends Controller
 
         $scopedQuery = $access->scopeLoads(
             ScheduledLoad::query()
+                // Once an evidence record exists for the load, the monthly pauta
+                // is no longer pending and must disappear from Mis cargas.
+                ->whereDoesntHave('deliverables.evidences')
                 ->with([
                     'agency',
                     'template',
@@ -75,15 +78,17 @@ class MyLoadsController extends Controller
 
         $loads = (clone $baseQuery)
             ->orderByDesc('effective_open_at')
+            ->orderByDesc('id')
             ->paginate(18)
             ->withQueryString();
 
-        // Filter options are scoped to the same user/direction, but do not apply
-        // the selected template/month so the month list can react to the template.
+        // Filter options use the same pending-load scope and do not apply the
+        // selected template/month so the month list can react to the template.
         $filterLoads = (clone $scopedQuery)
             ->without(['deliverables'])
             ->with(['agency', 'template'])
             ->orderByDesc('effective_open_at')
+            ->orderByDesc('id')
             ->get();
 
         $filterUnits = (clone $scopedQuery)
