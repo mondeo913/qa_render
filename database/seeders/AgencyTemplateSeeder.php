@@ -50,7 +50,7 @@ class AgencyTemplateSeeder extends Seeder
                     'required'=>true,
                     'min_files'=>1,
                     'max_files'=>3,
-                    'allowed_extensions'=>['xlsx','xls','pdf'],
+                    'allowed_extensions'=>['xlsx','xls','pdf','doc','docx'],
                     'sort_order'=>10,
                 ]
             );

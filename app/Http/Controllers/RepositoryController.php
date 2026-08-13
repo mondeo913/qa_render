@@ -25,17 +25,17 @@ class RepositoryController extends Controller
         $base = $access->scopeLoads(ScheduledLoad::query(), $user);
         $accessibleIds = (clone $base)->pluck('id');
 
-        // Institutional repository hierarchy:
-        // DEPENDENCY -> PROGRAMMED MONTH -> CONTRACTED PAUTA -> DIRECTIONS -> EVIDENCES.
-        // Evidence remains traceable to its deliverable/direction, but the
-        // institutional review/reporting unit is the monthly pauta expediente.
+        // The repository must use the same operational scope as the current
+        // user. In particular, an operator's assigned organizational unit is
+        // authoritative, so another direction must never appear in summaries.
         $dependencyLoads = (clone $base)
             ->with([
-                'agency.units',
+                'agency',
                 'template',
-                'deliverables.organizationalUnit',
-                'deliverables.templateRequirement',
-                'deliverables.evidences.files',
+                'deliverables' => function ($d) use ($access, $user) {
+                    $access->scopeDeliverables($d, $user);
+                    $d->with(['organizationalUnit', 'templateRequirement', 'evidences.files']);
+                },
             ])
             ->get();
 
