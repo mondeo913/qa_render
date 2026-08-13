@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\RoleCode;
 use App\Models\EvidenceFile;
 use App\Models\ScheduledLoad;
 use App\Services\AccessScopeService;
@@ -22,18 +23,30 @@ class RepositoryController extends Controller
 
         $user = $request->user();
         $unitIds = $access->accessibleUnitIds($user);
+        $operatorUnitId = RoleCode::isOperator($user->role?->code) && $user->organizational_unit_id
+            ? (int) $user->organizational_unit_id
+            : null;
+
+        // El repositorio de un operador es estrictamente de su direccion.
+        // No dependemos solamente del alcance general: se refuerza aqui para
+        // evitar que otra direccion aparezca en resumenes, expedientes o archivos.
         $base = $access->scopeLoads(ScheduledLoad::query(), $user);
+        if ($operatorUnitId !== null) {
+            $base->whereHas('deliverables', fn ($d) =>
+                $d->where('organizational_unit_id', $operatorUnitId)
+            );
+        }
         $accessibleIds = (clone $base)->pluck('id');
 
-        // The repository must use the same operational scope as the current
-        // user. In particular, an operator's assigned organizational unit is
-        // authoritative, so another direction must never appear in summaries.
         $dependencyLoads = (clone $base)
             ->with([
                 'agency',
                 'template',
-                'deliverables' => function ($d) use ($access, $user) {
+                'deliverables' => function ($d) use ($access, $user, $operatorUnitId) {
                     $access->scopeDeliverables($d, $user);
+                    if ($operatorUnitId !== null) {
+                        $d->where('organizational_unit_id', $operatorUnitId);
+                    }
                     $d->with(['organizationalUnit', 'templateRequirement', 'evidences.files']);
                 },
             ])
@@ -92,9 +105,12 @@ class RepositoryController extends Controller
         $query = ScheduledLoad::query()
             ->with([
                 'agency', 'template',
-                'deliverables' => function ($d) use ($access, $user, $unitIds) {
+                'deliverables' => function ($d) use ($access, $user, $unitIds, $operatorUnitId) {
                     if ($unitIds !== []) {
                         $access->scopeDeliverables($d, $user);
+                    }
+                    if ($operatorUnitId !== null) {
+                        $d->where('organizational_unit_id', $operatorUnitId);
                     }
                     $d->with(['organizationalUnit', 'templateRequirement', 'evidences.files']);
                 },
@@ -127,11 +143,14 @@ class RepositoryController extends Controller
 
         $recentFilesQuery = EvidenceFile::query()
             ->with(['evidence.scheduledLoad.agency', 'evidence.deliverable.organizationalUnit'])
-            ->whereHas('evidence', function ($e) use ($accessibleIds, $access, $user, $unitIds) {
+            ->whereHas('evidence', function ($e) use ($accessibleIds, $access, $user, $unitIds, $operatorUnitId) {
                 $e->whereIn('scheduled_load_id', $accessibleIds);
-                $e->whereHas('deliverable', function ($d) use ($access, $user, $unitIds) {
+                $e->whereHas('deliverable', function ($d) use ($access, $user, $unitIds, $operatorUnitId) {
                     if ($unitIds !== []) {
                         $access->scopeDeliverables($d, $user);
+                    }
+                    if ($operatorUnitId !== null) {
+                        $d->where('organizational_unit_id', $operatorUnitId);
                     }
                 });
             });
