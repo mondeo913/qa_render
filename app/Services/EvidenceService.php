@@ -37,18 +37,26 @@ final class EvidenceService
         $load = $deliverable->scheduledLoad;
 
         if (!$this->availability->isEnabled($load, now())) {
-            throw new RuntimeException('La fecha no está habilitada para carga.');
+            throw new RuntimeException('La fecha aún no está habilitada para carga.');
         }
 
         $requirement = $deliverable->templateRequirement;
         $extension = strtolower($file->getClientOriginalExtension());
+        $allowedExtensions = array_values(array_filter(array_map(
+            static fn ($value) => strtolower(trim((string) $value)),
+            $requirement->allowed_extensions ?? []
+        )));
 
-        if (!in_array($extension, $requirement->allowed_extensions ?? [], true)) {
-            throw new RuntimeException('El formato del archivo no está permitido.');
+        if (!in_array($extension, $allowedExtensions, true)) {
+            $allowed = implode(', ', array_map(static fn ($value) => '.'.$value, $allowedExtensions));
+            throw new RuntimeException(
+                'Archivo no permitido. El formato '.$extension.' no está autorizado para esta evidencia.'
+                .($allowed ? ' Formatos permitidos: '.$allowed.'.' : '')
+            );
         }
 
         if ($file->getSize() > $requirement->max_size_mb * 1024 * 1024) {
-            throw new RuntimeException('El archivo excede el tamaño máximo.');
+            throw new RuntimeException('El archivo excede el tamaño máximo permitido.');
         }
 
         return DB::transaction(function () use (
@@ -86,8 +94,6 @@ final class EvidenceService
                 ]);
             }
 
-            // Garantiza que la carga tenga su árbol institucional y que cada
-            // dirección tenga su carpeta propia antes de guardar el archivo.
             $folder = RepositoryFolder::query()
                 ->where('scheduled_load_id', $deliverable->scheduled_load_id)
                 ->where('organizational_unit_id', $deliverable->organizational_unit_id)
