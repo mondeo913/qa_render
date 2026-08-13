@@ -134,7 +134,6 @@ final class AccessScopeService
             return false;
         }
 
-        // Los directores tienen supervisión, pero no revisión operativa.
         if (RoleCode::isDirectionDirector($user->role?->code)) {
             return false;
         }
@@ -170,6 +169,12 @@ final class AccessScopeService
     /** @return list<int> */
     private function readableUnitIds(User $user): array
     {
+        // Para operadores, la unidad organizacional del usuario es la fuente
+        // autoritativa. No se amplía por scopes adicionales de otra dirección.
+        if (RoleCode::isOperator($user->role?->code) && $user->organizational_unit_id) {
+            return [(int) $user->organizational_unit_id];
+        }
+
         $unitIds = $user->scopes()
             ->where('can_read', true)
             ->whereNotNull('organizational_unit_id')
