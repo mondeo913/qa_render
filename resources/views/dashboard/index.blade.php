@@ -1,130 +1,14 @@
 @extends('layouts.app')
-@section('title', 'Dashboard')
+@section('title','Dashboard SIGET')
 @section('page-title', $presentation['title'])
 @section('page-subtitle', $presentation['subtitle'])
 @section('content')
-@php
-    $k = $analytics['kpis'];
-    $r = auth()->user()->role?->code;
-    $enlace = $r === 'ENLACE_INSTITUCIONAL';
-    $operador = in_array($r, ['OPERADOR', 'OPERADOR_TRANSMISION', 'OPERADOR_PROGRAMACION_CONTINUIDAD'], true);
-
-    if ($enlace) {
-        $cards = [
-            ['Pendientes de revisión', $k['review_pending'], 'bi-clipboard-check', 'warning'],
-            ['Observadas', $k['observed'], 'bi-chat-square-text', 'danger'],
-            ['Cerradas', $k['closed'], 'bi-patch-check', 'success'],
-            ['Vencen en 3 días', $k['due_soon'], 'bi-alarm', 'info'],
-            ['Vencidas', $k['overdue'], 'bi-exclamation-octagon', 'danger'],
-            ['Cumplimiento', $k['compliance'].'%', 'bi-speedometer2', 'primary'],
-        ];
-    } elseif ($operador) {
-        $cards = [
-            ['Cargas asignadas', $k['total'], 'bi-collection', 'primary'],
-            ['En operación', $k['active'], 'bi-broadcast-pin', 'info'],
-            ['Observadas', $k['observed'], 'bi-chat-square-text', 'warning'],
-            ['Vencen en 3 días', $k['due_soon'], 'bi-alarm', 'danger'],
-            ['Cerradas', $k['closed'], 'bi-patch-check', 'success'],
-            ['Avance promedio', $k['completion_average'].'%', 'bi-bar-chart-line', 'primary'],
-        ];
-    } else {
-        $cards = [
-            ['Total', $k['total'], 'bi-collection', 'primary'],
-            ['Activas', $k['active'], 'bi-broadcast-pin', 'info'],
-            ['En revisión', $k['review_pending'], 'bi-clipboard-check', 'warning'],
-            ['Cerradas', $k['closed'], 'bi-patch-check', 'success'],
-            ['Vencidas', $k['overdue'], 'bi-exclamation-octagon', 'danger'],
-            ['Cumplimiento', $k['compliance'].'%', 'bi-speedometer2', 'primary'],
-        ];
-    }
-
-    $monthlyChart = [
-        'type' => 'line',
-        'labels' => collect($analytics['monthly_trend'])->pluck('period')->values(),
-        'datasets' => [
-            ['label' => 'Programadas', 'data' => collect($analytics['monthly_trend'])->pluck('total')->values()],
-            ['label' => 'Cerradas', 'data' => collect($analytics['monthly_trend'])->pluck('closed')->values()],
-            ['label' => 'Cumplimiento %', 'data' => collect($analytics['monthly_trend'])->pluck('compliance')->values(), 'yAxisID' => 'y1'],
-        ],
-    ];
-    $statusChart = [
-        'type' => 'doughnut',
-        'labels' => array_keys($analytics['status_distribution']),
-        'datasets' => [['label' => 'Cargas', 'data' => array_values($analytics['status_distribution'])]],
-    ];
-    $unitChart = [
-        'type' => 'bar',
-        'labels' => collect($analytics['unit_performance'])->pluck('unit')->values(),
-        'datasets' => [['label' => 'Cumplimiento %', 'data' => collect($analytics['unit_performance'])->pluck('percentage')->values()]],
-    ];
-    $evidenceChart = [
-        'type' => 'bar',
-        'labels' => ['Pendiente', 'En captura', 'Enviado', 'Observado', 'Corregido', 'Validado', 'Cerrado'],
-        'datasets' => [[
-            'label' => 'Entregables',
-            'data' => [
-                $analytics['deliverable_funnel']['PENDIENTE'] ?? 0,
-                $analytics['deliverable_funnel']['EN_CAPTURA'] ?? 0,
-                $analytics['deliverable_funnel']['ENVIADO'] ?? 0,
-                $analytics['deliverable_funnel']['OBSERVADO'] ?? 0,
-                $analytics['deliverable_funnel']['CORREGIDO'] ?? 0,
-                $analytics['deliverable_funnel']['VALIDADO'] ?? 0,
-                $analytics['deliverable_funnel']['CERRADO'] ?? 0,
-            ],
-        ]],
-    ];
-@endphp
-
-<section class="siget-hero mb-4">
-    <span class="badge text-bg-primary mb-2">{{ $presentation['scope'] }}</span>
-    <h2>{{ $presentation['title'] }}</h2>
-    <p>{{ $presentation['subtitle'] }}</p>
-    <div class="siget-hero-actions">
-        <a class="btn btn-primary" href="{{ route($presentation['action']['route']) }}"><i class="bi {{ $presentation['action']['icon'] }} me-1"></i>{{ $presentation['action']['label'] }}</a>
-        <a class="btn btn-outline-secondary" href="{{ route('calendar.index') }}"><i class="bi bi-calendar3 me-1"></i>Calendario inteligente</a>
-        <a class="btn btn-outline-secondary" href="{{ route('repository.index') }}"><i class="bi bi-folder2-open me-1"></i>Repositorio</a>
-    </div>
-</section>
-
-<div class="row g-3 mb-4">
-    @foreach ($cards as [$label, $value, $icon, $type])
-        <div class="col-6 col-xl-2"><div class="siget-kpi"><div class="siget-kpi-icon text-bg-{{ $type }}"><i class="bi {{ $icon }}"></i></div><div><small>{{ $label }}</small><strong>{{ $value }}</strong></div></div></div>
-    @endforeach
-</div>
-
-<div class="row g-4">
-    <div class="col-xl-8"><div class="card siget-card h-100"><div class="card-header"><div><h2>Tendencia mensual</h2><p>Programadas, cerradas y cumplimiento.</p></div></div><div class="card-body"><div class="siget-chart-wrap"><canvas id="monthlyTrendChart"></canvas></div></div></div></div>
-    <div class="col-xl-4"><div class="card siget-card h-100"><div class="card-header"><div><h2>Distribución por estado</h2><p>Situación actual de las cargas.</p></div></div><div class="card-body"><div class="siget-chart-wrap"><canvas id="statusChart"></canvas></div></div></div></div>
-    <div class="col-xl-6"><div class="card siget-card h-100"><div class="card-header"><div><h2>Cumplimiento por dirección</h2><p>Entregables validados o cerrados.</p></div></div><div class="card-body"><div class="siget-chart-wrap"><canvas id="unitChart"></canvas></div></div></div></div>
-    <div class="col-xl-6"><div class="card siget-card h-100"><div class="card-header"><div><h2>Flujo de evidencias</h2><p>Entregables pendientes, capturados, enviados, observados y validados.</p></div></div><div class="card-body"><div class="siget-chart-wrap"><canvas id="evidenceLifecycleChart"></canvas></div></div></div></div>
-    <div class="col-xl-6"><div class="card siget-card h-100"><div class="card-header"><div><h2>Dependencias con mayor seguimiento</h2><p>Cumplimiento y cargas vencidas.</p></div></div><div class="card-body">
-        @forelse ($analytics['agency_performance'] as $a)
-            <div class="siget-progress-row"><div><strong>{{ $a['agency'] }}</strong><small>{{ $a['closed'] }} de {{ $a['total'] }} cerradas</small></div><div class="progress"><div class="progress-bar" style="width:{{ $a['percentage'] }}%"></div></div><strong>{{ $a['percentage'] }}%</strong><span class="badge {{ $a['overdue'] ? 'text-bg-danger' : 'text-bg-success' }}">{{ $a['overdue'] }} vencidas</span></div>
-        @empty
-            <p class="text-secondary">Sin datos por dependencia.</p>
-        @endforelse
-    </div></div></div>
-</div>
-
-<div class="row g-4 mt-1">
-    <div class="col-xl-6"><div class="card siget-card"><div class="card-header"><div><h2>Próximas cargas</h2><p>Ordenadas por fecha límite.</p></div><a href="{{ route('calendar.index') }}" class="btn btn-sm btn-outline-primary">Ver calendario</a></div><div class="table-responsive"><table class="table align-middle mb-0"><thead><tr><th>Carga</th><th>Fecha límite</th><th>Avance</th></tr></thead><tbody>
-        @forelse ($analytics['upcoming'] as $load)
-            <tr><td><a href="{{ route('loads.show', $load) }}"><strong>{{ $load->title }}</strong></a><small>{{ $load->agency?->name }}</small></td><td>{{ $load->effective_close_at?->format('d/m/Y H:i') }}</td><td><div class="progress"><div class="progress-bar" style="width:{{ $load->completion_percentage }}%"></div></div><small>{{ $load->completion_percentage }}%</small></td></tr>
-        @empty
-            <tr><td colspan="3" class="text-center py-4">Sin cargas próximas.</td></tr>
-        @endforelse
-    </tbody></table></div></div></div>
-    <div class="col-xl-6"><div class="card siget-card"><div class="card-header"><div><h2>Actividad reciente</h2><p>Últimos expedientes actualizados.</p></div><a href="{{ route('repository.index') }}" class="btn btn-sm btn-outline-primary">Ver repositorio</a></div><div class="list-group list-group-flush">
-        @forelse ($analytics['recent'] as $load)
-            <a href="{{ route('loads.show', $load) }}" class="list-group-item list-group-item-action d-flex justify-content-between"><span><strong>{{ $load->title }}</strong><small>{{ $load->agency?->name }} · {{ $load->period_label }}</small></span><span class="badge siget-status">{{ $load->status instanceof \BackedEnum ? $load->status->value : $load->status }}</span></a>
-        @empty
-            <div class="p-4">Sin actividad.</div>
-        @endforelse
-    </div></div></div>
-</div>
-
-<script type="application/json" data-siget-chart="monthlyTrendChart">{!! json_encode($monthlyChart) !!}</script>
-<script type="application/json" data-siget-chart="statusChart">{!! json_encode($statusChart) !!}</script>
-<script type="application/json" data-siget-chart="unitChart">{!! json_encode($unitChart) !!}</script>
-<script type="application/json" data-siget-chart="evidenceLifecycleChart">{!! json_encode($evidenceChart) !!}</script>
+@php $k=$analytics['kpis']; $r=auth()->user()->role?->code; @endphp
+<section class="siget-hero mb-4"><span class="badge text-bg-primary mb-2">{{ $presentation['scope'] }}</span><h2>Admindek Project · SIGET</h2><p>Vista ejecutiva con dependencia, dirección, estado y periodo como contexto único de todos los indicadores.</p></section>
+<form method="GET" class="card siget-card mb-4"><div class="card-header"><div><h2>Filtros de análisis</h2><p>La selección se aplica a KPIs, gráficas, alertas, actividad y trazabilidad.</p></div><span class="badge text-bg-light">{{ $filters['agency_id'] ? 'Dependencia seleccionada' : 'Vista institucional' }}</span></div><div class="card-body row g-3 align-items-end"><div class="col-xl-3 col-md-6"><label class="form-label">Dependencia</label><select name="agency_id" class="form-select" onchange="this.form.submit()"><option value="">Todas las dependencias</option>@foreach($agencies as $agency)<option value="{{ $agency->id }}" @selected(($filters['agency_id']??null)==$agency->id)>{{ $agency->name }}</option>@endforeach</select></div><div class="col-xl-3 col-md-6"><label class="form-label">Dirección / unidad</label><select name="organizational_unit_id" class="form-select"><option value="">Todas</option>@foreach($units as $unit)<option value="{{ $unit->id }}" @selected(($filters['organizational_unit_id']??null)==$unit->id)>{{ $unit->name }}</option>@endforeach</select></div><div class="col-xl-2 col-md-4"><label class="form-label">Estado</label><select name="status" class="form-select"><option value="">Todos</option>@foreach(['PROGRAMADA','EN_CAPTURA','EN_REVISION_INSTITUCIONAL','OBSERVADA','VALIDADA','VALIDADO_Y_CERRADO','VENCIDA','REPROGRAMADA'] as $status)<option value="{{ $status }}" @selected(($filters['status']??null)==$status)>{{ str_replace('_',' ',$status) }}</option>@endforeach</select></div><div class="col-xl-2 col-md-4"><label class="form-label">Desde</label><input type="date" name="from" value="{{ $filters['from']??'' }}" class="form-control"></div><div class="col-xl-2 col-md-4"><label class="form-label">Hasta</label><input type="date" name="to" value="{{ $filters['to']??'' }}" class="form-control"></div><div class="col-12 d-flex gap-2"><button class="btn btn-primary"><i class="bi bi-funnel me-1"></i>Aplicar filtros</button><a href="{{ route('dashboard') }}" class="btn btn-outline-secondary">Restablecer</a>@if(Route::has('intelligence'))<a href="{{ route('intelligence', request()->query()) }}" class="btn btn-outline-primary ms-auto"><i class="bi bi-graph-up-arrow me-1"></i>Centro de Inteligencia</a>@endif</div></div></form>
+<div class="row g-3 mb-4">@foreach([['Cumplimiento',$k['compliance'].'%','bi-speedometer2','primary'],['Total',$k['total'],'bi-collection','info'],['En operación',$k['active'],'bi-broadcast-pin','info'],['Cerradas',$k['closed'],'bi-patch-check','success'],['En riesgo',$k['observed']+$k['overdue'],'bi-exclamation-triangle','warning'],['Vencidas',$k['overdue'],'bi-exclamation-octagon','danger']] as [$label,$value,$icon,$type])<div class="col-6 col-xl-2"><div class="siget-kpi"><div class="siget-kpi-icon text-bg-{{ $type }}"><i class="bi {{ $icon }}"></i></div><div><small>{{ $label }}</small><strong>{{ $value }}</strong></div></div></div>@endforeach</div>
+<div class="row g-4"><div class="col-xl-8"><div class="card siget-card h-100"><div class="card-header"><div><h2>Tendencia institucional</h2><p>Volumen, cierres y cumplimiento del alcance seleccionado.</p></div></div><div class="card-body"><div class="siget-chart-wrap"><canvas id="monthlyTrendChart"></canvas></div></div></div></div><div class="col-xl-4"><div class="card siget-card h-100"><div class="card-header"><div><h2>Estado actual</h2><p>Distribución del flujo operativo.</p></div></div><div class="card-body"><div class="siget-chart-wrap"><canvas id="statusChart"></canvas></div></div></div></div><div class="col-xl-6"><div class="card siget-card h-100"><div class="card-header"><div><h2>Dependencias / alcance</h2><p>Comparación de cumplimiento y vencimientos.</p></div></div><div class="card-body"><div class="siget-chart-wrap"><canvas id="agencyChart"></canvas></div></div></div></div><div class="col-xl-6"><div class="card siget-card h-100"><div class="card-header"><div><h2>Direcciones y unidades</h2><p>Desempeño dentro de la dependencia seleccionada.</p></div></div><div class="card-body"><div class="siget-chart-wrap"><canvas id="directionChart"></canvas></div></div></div></div></div>
+<div class="row g-4 mt-1"><div class="col-xl-7"><div class="card siget-card"><div class="card-header"><div><h2>Prioridades de atención</h2><p>Registros que requieren seguimiento o intervención.</p></div><a class="btn btn-sm btn-outline-primary" href="{{ route('intelligence', request()->query()) }}">Analizar</a></div><div class="table-responsive"><table class="table align-middle mb-0"><thead><tr><th>Situación</th><th>Dependencia</th><th>Carga / evidencia</th><th>Fecha</th><th></th></tr></thead><tbody>@forelse($analytics['risk_items'] as $item)<tr><td><span class="badge {{ $item->status instanceof \BackedEnum && $item->status->value==='VENCIDA' ? 'text-bg-danger' : 'text-bg-warning' }}">{{ $item->status instanceof \BackedEnum ? $item->status->value : $item->status }}</span></td><td>{{ $item->agency?->name }}</td><td><a href="{{ route('loads.show',$item) }}"><strong>{{ $item->title }}</strong></a><small>{{ $item->period_label }}</small></td><td>{{ $item->effective_close_at?->format('d/m/Y') }}</td><td><a href="{{ route('loads.show',$item) }}" class="btn btn-sm btn-outline-primary">Ver</a></td></tr>@empty<tr><td colspan="5" class="text-center py-4">No hay registros críticos en el alcance.</td></tr>@endforelse</tbody></table></div></div></div><div class="col-xl-5"><div class="card siget-card"><div class="card-header"><div><h2>Flujo de evidencias</h2><p>Trazabilidad documental del alcance.</p></div></div><div class="card-body"><div class="siget-chart-wrap"><canvas id="evidenceLifecycleChart"></canvas></div></div></div></div></div>
+<div class="row g-4 mt-1"><div class="col-xl-6"><div class="card siget-card"><div class="card-header"><div><h2>Próximas cargas</h2><p>Ordenadas por fecha límite.</p></div><a href="{{ route('calendar.index') }}" class="btn btn-sm btn-outline-primary">Calendario</a></div><div class="table-responsive"><table class="table align-middle mb-0"><thead><tr><th>Carga</th><th>Fecha</th><th>Avance</th></tr></thead><tbody>@forelse($analytics['upcoming'] as $load)<tr><td><a href="{{ route('loads.show',$load) }}"><strong>{{ $load->title }}</strong></a><small>{{ $load->agency?->name }}</small></td><td>{{ $load->effective_close_at?->format('d/m/Y H:i') }}</td><td>{{ $load->completion_percentage }}%</td></tr>@empty<tr><td colspan="3" class="text-center py-4">Sin cargas próximas.</td></tr>@endforelse</tbody></table></div></div></div><div class="col-xl-6"><div class="card siget-card"><div class="card-header"><div><h2>Actividad reciente</h2><p>Últimos cambios dentro del alcance.</p></div><a href="{{ route('repository.index') }}" class="btn btn-sm btn-outline-primary">Repositorio</a></div><div class="list-group list-group-flush">@forelse($analytics['recent'] as $load)<a href="{{ route('loads.show',$load) }}" class="list-group-item list-group-item-action d-flex justify-content-between"><span><strong>{{ $load->title }}</strong><small>{{ $load->agency?->name }} · {{ $load->period_label }}</small></span><span class="badge siget-status">{{ $load->status instanceof \BackedEnum ? $load->status->value : $load->status }}</span></a>@empty<div class="p-4">Sin actividad.</div>@endforelse</div></div></div></div>
+<script type="application/json" data-siget-chart="monthlyTrendChart">{!! json_encode(['type'=>'line','labels'=>collect($analytics['monthly_trend'])->pluck('period'),'datasets'=>[['label'=>'Programadas','data'=>collect($analytics['monthly_trend'])->pluck('total')],['label'=>'Cerradas','data'=>collect($analytics['monthly_trend'])->pluck('closed')],['label'=>'Cumplimiento %','data'=>collect($analytics['monthly_trend'])->pluck('compliance'),'yAxisID'=>'y1']]]) !!}</script><script type="application/json" data-siget-chart="statusChart">{!! json_encode(['type'=>'doughnut','labels'=>array_keys($analytics['status_distribution']),'datasets'=>[['label'=>'Cargas','data'=>array_values($analytics['status_distribution'])]]]) !!}</script><script type="application/json" data-siget-chart="agencyChart">{!! json_encode(['type'=>'bar','labels'=>collect($analytics['agency_performance'])->pluck('agency'),'datasets'=>[['label'=>'Cumplimiento %','data'=>collect($analytics['agency_performance'])->pluck('percentage')],['label'=>'Vencidas','data'=>collect($analytics['agency_performance'])->pluck('overdue')]]]) !!}</script><script type="application/json" data-siget-chart="directionChart">{!! json_encode(['type'=>'bar','labels'=>collect($analytics['direction_performance'])->pluck('unit'),'datasets'=>[['label'=>'Cumplimiento %','data'=>collect($analytics['direction_performance'])->pluck('percentage')],['label'=>'Vencidas','data'=>collect($analytics['direction_performance'])->pluck('overdue')]]]) !!}</script><script type="application/json" data-siget-chart="evidenceLifecycleChart">{!! json_encode(['type'=>'bar','labels'=>array_keys($analytics['deliverable_funnel']),'datasets'=>[['label'=>'Entregables','data'=>array_values($analytics['deliverable_funnel'])]]]) !!}</script>
 @endsection
