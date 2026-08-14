@@ -1,45 +1,11 @@
 @extends('layouts.app')
 @section('title','Centro de Inteligencia')
 @section('page-title','Centro de Inteligencia Institucional')
+@section('page-subtitle','Diagnóstico de riesgos, desviaciones y trazabilidad; no replica el Dashboard Ejecutivo.')
 @section('content')
-<form method="GET" class="card siget-card mb-4">
-    <div class="card-body row g-3 align-items-end">
-        <div class="col-md-4">
-            <label class="form-label">Dependencia</label>
-            <select name="agency_id" class="form-select">
-                <option value="">Todas</option>
-                @foreach($agencies as $agency)
-                    <option value="{{ $agency->id }}" @selected(($filters['agency_id'] ?? null)==$agency->id)>{{ $agency->name }}</option>
-                @endforeach
-            </select>
-        </div>
-        <div class="col-md-2"><label class="form-label">Desde</label><input type="date" name="from" value="{{ $filters['from'] ?? '' }}" class="form-control"></div>
-        <div class="col-md-2"><label class="form-label">Hasta</label><input type="date" name="to" value="{{ $filters['to'] ?? '' }}" class="form-control"></div>
-        <div class="col-md-2"><button class="btn btn-primary w-100"><i class="bi bi-funnel"></i> Aplicar</button></div>
-        <div class="col-md-2"><a href="{{ route('intelligence') }}" class="btn btn-outline-secondary w-100">Limpiar</a></div>
-    </div>
-</form>
-
-<div class="row g-3 mb-4">
-    @foreach([
-        ['Cumplimiento global',$analytics['kpis']['compliance'].'%'],
-        ['Avance promedio',$analytics['kpis']['completion_average'].'%'],
-        ['Cargas cerradas',$analytics['kpis']['closed']],
-        ['Cargas vencidas',$analytics['kpis']['overdue']],
-    ] as [$label,$value])
-        <div class="col-md-3"><div class="siget-intelligence-kpi"><span>{{ $label }}</span><strong>{{ $value }}</strong></div></div>
-    @endforeach
-</div>
-
-<div class="row g-4">
-    <div class="col-lg-8"><div class="card siget-card"><div class="card-header"><div><h2>Evolución del cumplimiento</h2><p>Comparativo de volumen y cierres</p></div></div><div class="card-body"><canvas id="intelligenceTrend" height="120"></canvas></div></div></div>
-    <div class="col-lg-4"><div class="card siget-card"><div class="card-header"><div><h2>Estados</h2><p>Composición operativa</p></div></div><div class="card-body"><canvas id="intelligenceStatus" height="220"></canvas></div></div></div>
-    <div class="col-lg-6"><div class="card siget-card"><div class="card-header"><div><h2>Desempeño por dirección</h2><p>Porcentaje de entregables concluidos</p></div></div><div class="card-body"><canvas id="intelligenceUnits" height="150"></canvas></div></div></div>
-    <div class="col-lg-6"><div class="card siget-card"><div class="card-header"><div><h2>Madurez de evidencias</h2><p>Embudo del proceso documental</p></div></div><div class="card-body"><canvas id="intelligenceEvidence" height="150"></canvas></div></div></div>
-</div>
-
-<script type="application/json" data-siget-chart="intelligenceTrend">{!! json_encode(['type'=>'line','labels'=>collect($analytics['monthly_trend'])->pluck('period'),'datasets'=>[['label'=>'Cargas','data'=>collect($analytics['monthly_trend'])->pluck('total')],['label'=>'Cerradas','data'=>collect($analytics['monthly_trend'])->pluck('closed')],['label'=>'Cumplimiento %','data'=>collect($analytics['monthly_trend'])->pluck('compliance'),'yAxisID'=>'y1']]]) !!}</script>
-<script type="application/json" data-siget-chart="intelligenceStatus">{!! json_encode(['type'=>'doughnut','labels'=>array_keys($analytics['status_distribution']),'datasets'=>[['label'=>'Cargas','data'=>array_values($analytics['status_distribution'])]]]) !!}</script>
-<script type="application/json" data-siget-chart="intelligenceUnits">{!! json_encode(['type'=>'bar','labels'=>collect($analytics['unit_performance'])->pluck('unit'),'datasets'=>[['label'=>'Cumplimiento %','data'=>collect($analytics['unit_performance'])->pluck('percentage')]]]) !!}</script>
-<script type="application/json" data-siget-chart="intelligenceEvidence">{!! json_encode(['type'=>'bar','labels'=>array_keys($analytics['evidence_funnel']),'datasets'=>[['label'=>'Evidencias','data'=>array_values($analytics['evidence_funnel'])]]]) !!}</script>
+<form method="GET" class="card siget-card mb-4"><div class="card-header"><div><h2>Contexto de inteligencia</h2><p>Todos los hallazgos se calculan sobre el mismo alcance seleccionado.</p></div></div><div class="card-body row g-3 align-items-end"><div class="col-xl-3 col-md-6"><label class="form-label">Dependencia</label><select name="agency_id" class="form-select" onchange="this.form.submit()"><option value="">Todas</option>@foreach($agencies as $agency)<option value="{{ $agency->id }}" @selected(($filters['agency_id']??null)==$agency->id)>{{ $agency->name }}</option>@endforeach</select></div><div class="col-xl-3 col-md-6"><label class="form-label">Dirección / unidad</label><select name="organizational_unit_id" class="form-select"><option value="">Todas</option>@foreach($units as $unit)<option value="{{ $unit->id }}" @selected(($filters['organizational_unit_id']??null)==$unit->id)>{{ $unit->name }}</option>@endforeach</select></div><div class="col-xl-2 col-md-4"><label class="form-label">Estado</label><select name="status" class="form-select"><option value="">Todos</option>@foreach(['VENCIDA','OBSERVADA','EN_REVISION_INSTITUCIONAL','PENDIENTE_DOCUMENTO_FIRMADO','VALIDADO_Y_CERRADO'] as $status)<option value="{{ $status }}" @selected(($filters['status']??null)==$status)>{{ str_replace('_',' ',$status) }}</option>@endforeach</select></div><div class="col-xl-2 col-md-4"><label class="form-label">Desde</label><input type="date" name="from" value="{{ $filters['from']??'' }}" class="form-control"></div><div class="col-xl-2 col-md-4"><label class="form-label">Hasta</label><input type="date" name="to" value="{{ $filters['to']??'' }}" class="form-control"></div><div class="col-12 d-flex gap-2"><button class="btn btn-primary"><i class="bi bi-funnel me-1"></i>Analizar</button><a href="{{ route('intelligence') }}" class="btn btn-outline-secondary">Limpiar</a><a href="{{ route('dashboard',request()->query()) }}" class="btn btn-outline-primary ms-auto">Volver al Dashboard Ejecutivo</a></div></div></form>
+<div class="row g-3 mb-4">@foreach([['Riesgos críticos',$analytics['kpis']['overdue'],'bi-exclamation-octagon','danger'],['Observadas',$analytics['kpis']['observed'],'bi-chat-square-text','warning'],['En revisión',$analytics['kpis']['review_pending'],'bi-clipboard-check','info'],['Cumplimiento',$analytics['kpis']['compliance'].'%','bi-speedometer2','success']] as [$label,$value,$icon,$type])<div class="col-6 col-xl-3"><div class="siget-kpi"><div class="siget-kpi-icon text-bg-{{ $type }}"><i class="bi {{ $icon }}"></i></div><div><small>{{ $label }}</small><strong>{{ $value }}</strong></div></div></div>@endforeach</div>
+<div class="row g-4"><div class="col-xl-7"><div class="card siget-card h-100"><div class="card-header"><div><h2>Mapa de riesgo por dirección</h2><p>Concentración de vencidas y cumplimiento dentro del alcance.</p></div></div><div class="card-body"><div class="siget-chart-wrap"><canvas id="riskDirectionChart"></canvas></div></div></div></div><div class="col-xl-5"><div class="card siget-card h-100"><div class="card-header"><div><h2>Concentración por dependencia</h2><p>Permite identificar dónde se acumula el riesgo.</p></div></div><div class="card-body"><div class="siget-chart-wrap"><canvas id="riskAgencyChart"></canvas></div></div></div></div></div>
+<div class="row g-4 mt-1"><div class="col-xl-8"><div class="card siget-card"><div class="card-header"><div><h2>Bandeja de intervención</h2><p>Registros que explican el riesgo y permiten bajar a la trazabilidad.</p></div></div><div class="table-responsive"><table class="table align-middle mb-0"><thead><tr><th>Prioridad</th><th>Dependencia</th><th>Registro</th><th>Dirección</th><th>Fecha límite</th><th>Ruta</th></tr></thead><tbody>@forelse($analytics['risk_items'] as $item)<tr><td><span class="badge {{ $item->status instanceof \BackedEnum && $item->status->value==='VENCIDA'?'text-bg-danger':'text-bg-warning' }}">{{ $item->status instanceof \BackedEnum?$item->status->value:$item->status }}</span></td><td>{{ $item->agency?->name }}</td><td><strong>{{ $item->title }}</strong><small>{{ $item->period_label }}</small></td><td>{{ $item->deliverables->first()?->organizationalUnit?->name ?? '—' }}</td><td>{{ $item->effective_close_at?->format('d/m/Y H:i') }}</td><td><a href="{{ route('loads.show',$item) }}" class="btn btn-sm btn-outline-primary">Registro</a></td></tr>@empty<tr><td colspan="6" class="text-center py-4">Sin riesgos en el alcance seleccionado.</td></tr>@endforelse</tbody></table></div></div></div><div class="col-xl-4"><div class="card siget-card h-100"><div class="card-header"><div><h2>Ruta de trazabilidad</h2><p>La inteligencia termina en el origen del dato.</p></div></div><div class="card-body"><div class="siget-trace"><div><span>1</span><strong>Dependencia</strong><small>Contexto seleccionado</small></div><div><span>2</span><strong>Dirección</strong><small>Unidad responsable</small></div><div><span>3</span><strong>Indicador / estado</strong><small>Resultado y riesgo</small></div><div><span>4</span><strong>Registro</strong><small>Carga y periodo</small></div><div><span>5</span><strong>Evidencia / historial</strong><small>Detalle y seguimiento</small></div></div></div></div></div>
+<script type="application/json" data-siget-chart="riskDirectionChart">{!! json_encode(['type'=>'bar','labels'=>collect($analytics['direction_performance'])->pluck('unit'),'datasets'=>[['label'=>'Vencidas','data'=>collect($analytics['direction_performance'])->pluck('overdue')],['label'=>'Cumplimiento %','data'=>collect($analytics['direction_performance'])->pluck('percentage')]]]) !!}</script><script type="application/json" data-siget-chart="riskAgencyChart">{!! json_encode(['type'=>'bar','labels'=>collect($analytics['agency_performance'])->pluck('agency'),'datasets'=>[['label'=>'Vencidas','data'=>collect($analytics['agency_performance'])->pluck('overdue')]]]) !!}</script>
 @endsection
