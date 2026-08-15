@@ -23,19 +23,18 @@ class DashboardController extends Controller
 
         $agencies = ContractingAgency::query()->where('active', true)->orderBy('name')->get();
 
-        $unitQuery = OrganizationalUnit::query()
+        $units = OrganizationalUnit::query()
             ->where('active', true)
             ->when(!empty($filters['agency_id']), fn ($q) => $q->where('contracting_agency_id', (int) $filters['agency_id']))
-            ->orderBy('contracting_agency_id')
-            ->orderBy('name');
-
-        $units = $unitQuery->get()
-            ->groupBy(fn ($unit) => ($unit->contracting_agency_id ?? 0).'|'.mb_strtolower(trim($unit->name)))
+            ->orderBy('name')
+            ->get()
+            ->groupBy(fn ($unit) => mb_strtolower(trim($unit->name)))
             ->map(function ($group) {
                 $unit = $group->first();
                 $unit->filter_unit_ids = $group->pluck('id')->map(fn ($id) => (int) $id)->values()->all();
                 return $unit;
             })
+            ->sortBy(fn ($unit) => mb_strtolower(trim($unit->name)))
             ->values();
 
         return view('dashboard.index', [
