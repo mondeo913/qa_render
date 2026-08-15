@@ -15,20 +15,27 @@ class DashboardController extends Controller
     {
         $filters = $request->validate([
             'agency_id' => ['nullable', 'integer'],
-            'organizational_unit_id' => ['nullable', 'integer'],
+            'organizational_unit_id' => ['nullable', 'string', 'max:500'],
             'status' => ['nullable', 'string', 'max:60'],
             'from' => ['nullable', 'date'],
             'to' => ['nullable', 'date', 'after_or_equal:from'],
         ]);
 
         $agencies = ContractingAgency::query()->where('active', true)->orderBy('name')->get();
-        $units = OrganizationalUnit::query()
+
+        $unitQuery = OrganizationalUnit::query()
             ->where('active', true)
             ->when(!empty($filters['agency_id']), fn ($q) => $q->where('contracting_agency_id', (int) $filters['agency_id']))
             ->orderBy('contracting_agency_id')
-            ->orderBy('name')
-            ->get()
-            ->unique(fn ($unit) => ($unit->contracting_agency_id ?? 0).'|'.mb_strtolower(trim($unit->name)))
+            ->orderBy('name');
+
+        $units = $unitQuery->get()
+            ->groupBy(fn ($unit) => ($unit->contracting_agency_id ?? 0).'|'.mb_strtolower(trim($unit->name)))
+            ->map(function ($group) {
+                $unit = $group->first();
+                $unit->filter_unit_ids = $group->pluck('id')->map(fn ($id) => (int) $id)->values()->all();
+                return $unit;
+            })
             ->values();
 
         return view('dashboard.index', [
