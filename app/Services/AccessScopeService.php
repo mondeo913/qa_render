@@ -16,54 +16,35 @@ final class AccessScopeService
     {
         $role = $user->role?->code;
 
-        if (in_array($role, [RoleCode::ADMINISTRADOR->value, RoleCode::DIRECTOR_GENERAL->value], true)) {
-            return $query;
-        }
+        if (in_array($role, [RoleCode::ADMINISTRADOR->value, RoleCode::DIRECTOR_GENERAL->value], true)) return $query;
 
         if ($role === RoleCode::ENLACE_INSTITUCIONAL->value) {
-            $agencyIds = $user->scopes()->where('can_read', true)
-                ->whereNotNull('contracting_agency_id')
-                ->pluck('contracting_agency_id');
-
+            $agencyIds = $user->scopes()->where('can_read', true)->whereNotNull('contracting_agency_id')->pluck('contracting_agency_id');
             return $agencyIds->isNotEmpty()
-                ? $query->whereIn('contracting_agency_id', $agencyIds)
-                : $query->where('contracting_agency_id', $user->contracting_agency_id);
+                ? $query->whereIn('scheduled_loads.contracting_agency_id', $agencyIds)
+                : $query->where('scheduled_loads.contracting_agency_id', $user->contracting_agency_id);
         }
 
         if (RoleCode::isDirectionDirector($role)) {
             $unitIds = $this->readableUnitIds($user);
             $agencyIds = $this->readableAgencyIds($user);
-
-            return $query
-                ->whereIn('contracting_agency_id', $agencyIds)
-                ->whereHas('deliverables', fn (Builder $deliverables) =>
-                    $deliverables->whereIn('organizational_unit_id', $unitIds)
-                );
+            return $query->whereIn('scheduled_loads.contracting_agency_id', $agencyIds)
+                ->whereHas('deliverables', fn (Builder $deliverables) => $deliverables->whereIn('organizational_unit_id', $unitIds));
         }
 
         if (RoleCode::isOperator($role)) {
             $unitIds = $this->readableUnitIds($user);
             $agencyIds = $this->readableAgencyIds($user);
-
-            return $query
-                ->whereIn('contracting_agency_id', $agencyIds)
+            return $query->whereIn('scheduled_loads.contracting_agency_id', $agencyIds)
                 ->whereHas('deliverables', function (Builder $deliverables) use ($user, $unitIds) {
-                    $deliverables
-                        ->whereIn('organizational_unit_id', $unitIds)
-                        ->where(function (Builder $responsibility) use ($user) {
-                            $responsibility
-                                ->whereNull('responsible_user_id')
-                                ->orWhere('responsible_user_id', $user->id);
-                        });
+                    $deliverables->whereIn('organizational_unit_id', $unitIds)->where(function (Builder $responsibility) use ($user) {
+                        $responsibility->whereNull('responsible_user_id')->orWhere('responsible_user_id', $user->id);
+                    });
                 });
         }
 
         if ($role === RoleCode::FISCALIZADOR->value) {
-            return $query->whereHas('reviewAssignments', fn (Builder $assignments) =>
-                $assignments
-                    ->where('fiscalizador_id', $user->id)
-                    ->where('active', true)
-            );
+            return $query->whereHas('reviewAssignments', fn (Builder $assignments) => $assignments->where('fiscalizador_id', $user->id)->where('active', true));
         }
 
         return $query->whereRaw('1 = 0');
@@ -71,30 +52,19 @@ final class AccessScopeService
 
     public function accessibleUnitIds(User $user): array
     {
-        if (!RoleCode::isDirectionDirector($user->role?->code)
-            && !RoleCode::isOperator($user->role?->code)) {
-            return [];
-        }
-
+        if (!RoleCode::isDirectionDirector($user->role?->code) && !RoleCode::isOperator($user->role?->code)) return [];
         return $this->readableUnitIds($user);
     }
 
     public function scopeDeliverables(Builder|Relation $query, User $user): Builder|Relation
     {
         $unitIds = $this->accessibleUnitIds($user);
-
-        if ($unitIds !== []) {
-            $query->whereIn('organizational_unit_id', $unitIds);
-        }
-
+        if ($unitIds !== []) $query->whereIn('scheduled_load_deliverables.organizational_unit_id', $unitIds);
         if (RoleCode::isOperator($user->role?->code)) {
             $query->where(function (Builder $responsibility) use ($user) {
-                $responsibility
-                    ->whereNull('responsible_user_id')
-                    ->orWhere('responsible_user_id', $user->id);
+                $responsibility->whereNull('scheduled_load_deliverables.responsible_user_id')->orWhere('scheduled_load_deliverables.responsible_user_id', $user->id);
             });
         }
-
         return $query;
     }
 
@@ -105,22 +75,10 @@ final class AccessScopeService
 
     public function canAccessDeliverable(User $user, ScheduledLoadDeliverable $deliverable): bool
     {
-        if (!$this->canAccessLoad($user, $deliverable->scheduledLoad)) {
-            return false;
-        }
-
-        if (!RoleCode::isOperator($user->role?->code)) {
-            return true;
-        }
-
-        return in_array(
-            (int) $deliverable->organizational_unit_id,
-            $this->readableUnitIds($user),
-            true
-        ) && (
-            $deliverable->responsible_user_id === null
-            || $deliverable->responsible_user_id === $user->id
-        );
+        if (!$this->canAccessLoad($user, $deliverable->scheduledLoad)) return false;
+        if (!RoleCode::isOperator($user->role?->code)) return true;
+        return in_array((int) $deliverable->organizational_unit_id, $this->readableUnitIds($user), true)
+            && ($deliverable->responsible_user_id === null || $deliverable->responsible_user_id === $user->id);
     }
 
     public function canAccessEvidence(User $user, Evidence $evidence): bool
@@ -130,62 +88,26 @@ final class AccessScopeService
 
     public function canReviewEvidence(User $user, Evidence $evidence): bool
     {
-        if (!$user->hasPermission('evidence.review')) {
-            return false;
-        }
-
-        if (RoleCode::isDirectionDirector($user->role?->code)) {
-            return false;
-        }
-
-        if (!$this->canAccessLoad($user, $evidence->scheduledLoad)) {
-            return false;
-        }
-
-        return in_array(
-            $user->role?->code,
-            [RoleCode::ENLACE_INSTITUCIONAL->value, RoleCode::FISCALIZADOR->value],
-            true
-        );
+        if (!$user->hasPermission('evidence.review')) return false;
+        if (RoleCode::isDirectionDirector($user->role?->code)) return false;
+        if (!$this->canAccessLoad($user, $evidence->scheduledLoad)) return false;
+        return in_array($user->role?->code, [RoleCode::ENLACE_INSTITUCIONAL->value, RoleCode::FISCALIZADOR->value], true);
     }
 
     /** @return list<int> */
     private function readableAgencyIds(User $user): array
     {
-        $agencyIds = $user->scopes()
-            ->where('can_read', true)
-            ->whereNotNull('contracting_agency_id')
-            ->pluck('contracting_agency_id')
-            ->map(fn ($id) => (int) $id)
-            ->all();
-
-        if ($user->contracting_agency_id) {
-            $agencyIds[] = (int) $user->contracting_agency_id;
-        }
-
+        $agencyIds = $user->scopes()->where('can_read', true)->whereNotNull('contracting_agency_id')->pluck('contracting_agency_id')->map(fn ($id) => (int) $id)->all();
+        if ($user->contracting_agency_id) $agencyIds[] = (int) $user->contracting_agency_id;
         return array_values(array_unique($agencyIds));
     }
 
     /** @return list<int> */
     private function readableUnitIds(User $user): array
     {
-        // Para operadores, la unidad organizacional del usuario es la fuente
-        // autoritativa. No se amplía por scopes adicionales de otra dirección.
-        if (RoleCode::isOperator($user->role?->code) && $user->organizational_unit_id) {
-            return [(int) $user->organizational_unit_id];
-        }
-
-        $unitIds = $user->scopes()
-            ->where('can_read', true)
-            ->whereNotNull('organizational_unit_id')
-            ->pluck('organizational_unit_id')
-            ->map(fn ($id) => (int) $id)
-            ->all();
-
-        if ($user->organizational_unit_id) {
-            $unitIds[] = (int) $user->organizational_unit_id;
-        }
-
+        if (RoleCode::isOperator($user->role?->code) && $user->organizational_unit_id) return [(int) $user->organizational_unit_id];
+        $unitIds = $user->scopes()->where('can_read', true)->whereNotNull('organizational_unit_id')->pluck('organizational_unit_id')->map(fn ($id) => (int) $id)->all();
+        if ($user->organizational_unit_id) $unitIds[] = (int) $user->organizational_unit_id;
         return array_values(array_unique($unitIds));
     }
 }
