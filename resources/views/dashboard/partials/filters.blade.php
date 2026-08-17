@@ -1,10 +1,10 @@
 <form method="GET" class="card siget-card mb-4">
 <div class="card-header"><div><h2>Contexto de análisis</h2><p>Los filtros solo cambian el alcance de visualización; no modifican la lógica de SIGET.</p></div></div>
 @php
-    // El index puede usar $agencies/$units para series analíticas. Recuperamos aquí
-    // los datos originales enviados por DashboardController sin alterar el flujo.
-    $filterAgencies = is_array($__data ?? null) && array_key_exists('agencies', $__data) ? $__data['agencies'] : ($agencies ?? []);
-    $filterUnits = is_array($__data ?? null) && array_key_exists('units', $__data) ? $__data['units'] : ($units ?? []);
+    // El dashboard usa $agencies/$units para series analíticas; los filtros usan
+    // explícitamente los catálogos originales enviados por DashboardController.
+    $filterAgencies = $filterAgencies ?? [];
+    $filterUnits = $filterUnits ?? [];
 @endphp
 <div class="card-body row g-3 align-items-end">
 <div class="col-xl-3 col-md-6"><label class="form-label">Dependencia</label><select name="agency_id" class="form-select"><option value="">Todas las dependencias</option>@foreach($filterAgencies as $agency)@php $agencyId=data_get($agency,'id'); $agencyName=data_get($agency,'name',''); @endphp<option value="{{ $agencyId }}" @selected((string)($filters['agency_id'] ?? '') === (string)$agencyId)>{{ $agencyName }}</option>@endforeach</select></div>
