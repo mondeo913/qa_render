@@ -1,0 +1,10 @@
+<form method="GET" class="card siget-card mb-4">
+<div class="card-header"><div><h2>Contexto de análisis</h2><p>Los filtros solo cambian el alcance de visualización; no modifican la lógica de SIGET.</p></div></div>
+<div class="card-body row g-3 align-items-end">
+<div class="col-xl-3 col-md-6"><label class="form-label">Dependencia</label><select name="agency_id" class="form-select"><option value="">Todas las dependencias</option>@foreach($agencies as $agency)<option value="{{ $agency->id }}" @selected(($filters['agency_id'] ?? null) == $agency->id)>{{ $agency->name }}</option>@endforeach</select></div>
+<div class="col-xl-3 col-md-6"><label class="form-label">Dirección / unidad</label><select name="organizational_unit_id" class="form-select"><option value="">Todas las direcciones / unidades</option>@foreach($units as $unit)@php $filterIds=implode(',', $unit->filter_unit_ids ?? [$unit->id]); @endphp<option value="{{ $filterIds }}" @selected((string)($filters['organizational_unit_id'] ?? '') === $filterIds)>{{ $unit->name }}</option>@endforeach</select></div>
+<div class="col-xl-2 col-md-4"><label class="form-label">Estado</label><select name="status" class="form-select"><option value="">Todos</option>@foreach(['PROGRAMADA','ABIERTA','EN_CAPTURA','PARCIALMENTE_ENTREGADA','ENTREGADA','EN_REVISION_INSTITUCIONAL','OBSERVADA','VALIDADA','VALIDADO_Y_CERRADO','VENCIDA','REPROGRAMADA'] as $status)<option value="{{ $status }}" @selected(($filters['status'] ?? null) === $status)>{{ str_replace('_',' ',$status) }}</option>@endforeach</select></div>
+<div class="col-xl-2 col-md-4"><label class="form-label">Desde</label><input type="date" name="from" value="{{ $filters['from'] ?? '' }}" class="form-control"></div>
+<div class="col-xl-2 col-md-4"><label class="form-label">Hasta</label><input type="date" name="to" value="{{ $filters['to'] ?? '' }}" class="form-control"></div>
+<div class="col-12 d-flex gap-2"><button class="btn btn-primary"><i class="bi bi-funnel me-1"></i>Aplicar filtros</button><a href="{{ route('dashboard') }}" class="btn btn-outline-secondary">Restablecer</a></div>
+</div></form>
