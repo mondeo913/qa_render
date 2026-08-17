@@ -42,6 +42,9 @@ class DashboardController extends Controller
             'filters' => $filters,
             'agencies' => $agencies,
             'units' => $units,
+            // Aliases exclusivos para los filtros: no alteran consultas, permisos ni flujo.
+            'filterAgencies' => $agencies,
+            'filterUnits' => $units,
             'presentation' => RolePresentation::for($request->user()->role?->code),
         ]);
     }
