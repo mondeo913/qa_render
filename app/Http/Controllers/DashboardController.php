@@ -21,20 +21,31 @@ class DashboardController extends Controller
             'to' => ['nullable', 'date', 'after_or_equal:from'],
         ]);
 
-        $agencies = ContractingAgency::query()->where('active', true)->orderBy('name')->get();
+        $agencies = ContractingAgency::query()
+            ->where('active', true)
+            ->orderBy('name')
+            ->get();
 
+        // El catálogo del filtro debe mostrar una sola Dirección / Unidad por nombre,
+        // aunque existan registros equivalentes asociados a distintas dependencias.
+        // Solo normalizamos la presentación del catálogo; las consultas y permisos
+        // continúan recibiendo todos los IDs equivalentes mediante filter_unit_ids.
         $units = OrganizationalUnit::query()
             ->where('active', true)
             ->when(!empty($filters['agency_id']), fn ($q) => $q->where('contracting_agency_id', (int) $filters['agency_id']))
             ->orderBy('name')
             ->get()
-            ->groupBy(fn ($unit) => mb_strtolower(trim($unit->name)))
+            ->groupBy(function ($unit) {
+                $name = preg_replace('/\s+/u', ' ', trim((string) $unit->name));
+                return mb_strtolower($name);
+            })
             ->map(function ($group) {
                 $unit = $group->first();
+                $unit->name = preg_replace('/\s+/u', ' ', trim((string) $unit->name));
                 $unit->filter_unit_ids = $group->pluck('id')->map(fn ($id) => (int) $id)->values()->all();
                 return $unit;
             })
-            ->sortBy(fn ($unit) => mb_strtolower(trim($unit->name)))
+            ->sortBy(fn ($unit) => mb_strtolower(trim((string) $unit->name)))
             ->values();
 
         return view('dashboard.index', [
