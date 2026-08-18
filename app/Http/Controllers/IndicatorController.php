@@ -45,8 +45,16 @@ class IndicatorController extends Controller
             ->sortBy(fn ($unit) => mb_strtolower(trim($unit->name)))
             ->values();
 
+        $analyticsData = $analytics->forUser($request->user(), $filters);
+
+        // The Indicators view compares by Dirección. Prefer the normalized
+        // direction-level dataset and keep the existing view contract intact.
+        if (empty($analyticsData['unit_performance']) && !empty($analyticsData['direction_performance'])) {
+            $analyticsData['unit_performance'] = $analyticsData['direction_performance'];
+        }
+
         return view('reportes.indicadores', [
-            'analytics' => $analytics->forUser($request->user(), $filters),
+            'analytics' => $analyticsData,
             'filters' => $filters,
             'filterAgencies' => $agencies,
             'filterUnits' => $units,
