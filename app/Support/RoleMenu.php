@@ -53,7 +53,6 @@ final class RoleMenu
                 ['label' => 'Reportes', 'route' => 'reports.index', 'icon' => 'bi-file-bar-graph'],
                 ['label' => 'Indicadores', 'route' => 'indicators.index', 'icon' => 'bi-bar-chart'],
                 ['label' => 'Historial', 'route' => 'history.index', 'icon' => 'bi-clock-history'],
-                ['label' => 'Operaciones', 'route' => 'operations.index', 'icon' => 'bi-activity'],
             ],
             'OPERADOR',
             'OPERADOR_TRANSMISION',
