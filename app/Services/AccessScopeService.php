@@ -105,9 +105,26 @@ final class AccessScopeService
     /** @return list<int> */
     private function readableUnitIds(User $user): array
     {
-        if (RoleCode::isOperator($user->role?->code) && $user->organizational_unit_id) return [(int) $user->organizational_unit_id];
-        $unitIds = $user->scopes()->where('can_read', true)->whereNotNull('organizational_unit_id')->pluck('organizational_unit_id')->map(fn ($id) => (int) $id)->all();
-        if ($user->organizational_unit_id) $unitIds[] = (int) $user->organizational_unit_id;
+        // Cada Director de Dirección solo consulta la unidad que lidera.
+        if (RoleCode::isDirectionDirector($user->role?->code) && $user->organizational_unit_id) {
+            return [(int) $user->organizational_unit_id];
+        }
+
+        if (RoleCode::isOperator($user->role?->code) && $user->organizational_unit_id) {
+            return [(int) $user->organizational_unit_id];
+        }
+
+        $unitIds = $user->scopes()
+            ->where('can_read', true)
+            ->whereNotNull('organizational_unit_id')
+            ->pluck('organizational_unit_id')
+            ->map(fn ($id) => (int) $id)
+            ->all();
+
+        if ($user->organizational_unit_id) {
+            $unitIds[] = (int) $user->organizational_unit_id;
+        }
+
         return array_values(array_unique($unitIds));
     }
 }

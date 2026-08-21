@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\ContractingAgency;
 use App\Models\OrganizationalUnit;
+use App\Services\AccessScopeService;
 use App\Services\DashboardAnalyticsService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
@@ -12,7 +13,8 @@ class IndicatorController extends Controller
 {
     public function index(
         Request $request,
-        DashboardAnalyticsService $analytics
+        DashboardAnalyticsService $analytics,
+        AccessScopeService $access
     ): View {
         abort_unless($request->user()->hasPermission('indicators.view'), 403);
 
@@ -31,9 +33,13 @@ class IndicatorController extends Controller
             ->orderBy('name')
             ->get();
 
+        // Mantener el filtro de Dirección alineado con el alcance real del usuario.
+        $accessibleUnitIds = $access->accessibleUnitIds($request->user());
+
         $units = OrganizationalUnit::query()
             ->where('active', true)
             ->when(!empty($filters['agency_id']), fn ($q) => $q->where('contracting_agency_id', (int) $filters['agency_id']))
+            ->when($accessibleUnitIds !== [], fn ($q) => $q->whereIn('id', $accessibleUnitIds))
             ->orderBy('name')
             ->get()
             ->groupBy(fn ($unit) => mb_strtolower(trim($unit->name)))
