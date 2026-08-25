@@ -21,6 +21,48 @@
     $stability = max(0, round(100 - ($total ? 100*$reprogrammed/$total : 0),1));
     $selectedIndicator = $filters['indicator'] ?? 'cumplimiento';
     $frequency = $filters['frequency'] ?? 'mensual';
+
+    $isDirectionDirector = in_array(
+        auth()->user()?->role?->code,
+        [
+            'DIRECTOR_TRANSMISION',
+            'DIRECTOR_PROGRAMACION_CONTINUIDAD',
+        ],
+        true
+    );
+
+    $indicatorStatuses = $isDirectionDirector
+        ? [
+            'PROGRAMADA',
+            'REPROGRAMADA',
+            'VALIDADO_Y_CERRADO',
+            'VENCIDA',
+        ]
+        : [
+            'PROGRAMADA',
+            'ABIERTA',
+            'EN_CAPTURA',
+            'ENTREGADA',
+            'EN_REVISION_INSTITUCIONAL',
+            'OBSERVADA',
+            'VALIDADA',
+            'VALIDADO_Y_CERRADO',
+            'VENCIDA',
+            'REPROGRAMADA',
+        ];
+
+    $indicatorStatusLabels = [
+        'PROGRAMADA' => 'PROGRAMADO',
+        'REPROGRAMADA' => 'REPROGRAMADO',
+        'VALIDADO_Y_CERRADO' => 'VALIDADO Y CERRADO',
+        'VENCIDA' => 'VENCIDO',
+        'ABIERTA' => 'ABIERTA',
+        'EN_CAPTURA' => 'EN CAPTURA',
+        'ENTREGADA' => 'ENTREGADA',
+        'EN_REVISION_INSTITUCIONAL' => 'EN REVISIÓN INSTITUCIONAL',
+        'OBSERVADA' => 'OBSERVADA',
+        'VALIDADA' => 'VALIDADA',
+    ];
     $labels = $monthly->pluck('period')->values()->all();
     $trendCompliance = $monthly->pluck('compliance')->map(fn($v)=>(float)$v)->values()->all();
     $trendLoads = $monthly->pluck('total')->map(fn($v)=>(int)$v)->values()->all();
@@ -61,7 +103,7 @@
             <div class="col-xl-2 col-md-6"><label>Dirección / unidad</label><select name="organizational_unit_id" class="form-select form-select-sm"><option value="">Todas las direcciones</option>@foreach(($filterUnits ?? []) as $unit)@php $ids=data_get($unit,'filter_unit_ids'); $ids=is_array($ids)?implode(',',array_map('strval',$ids)):data_get($unit,'id'); @endphp<option value="{{ $ids }}" @selected((string)($filters['organizational_unit_id']??'')===(string)$ids)>{{ data_get($unit,'name') }}</option>@endforeach</select></div>
             <div class="col-xl-2 col-md-6"><label>Indicador</label><select name="indicator" class="form-select form-select-sm"><option value="cumplimiento" @selected($selectedIndicator==='cumplimiento')>Cumplimiento institucional</option><option value="cierre" @selected($selectedIndicator==='cierre')>Cierre efectivo</option><option value="riesgo" @selected($selectedIndicator==='riesgo')>Presión de riesgo</option><option value="estabilidad" @selected($selectedIndicator==='estabilidad')>Estabilidad operativa</option><option value="reprogramaciones" @selected($selectedIndicator==='reprogramaciones')>Reprogramaciones</option><option value="vencimientos" @selected($selectedIndicator==='vencimientos')>Vencimientos</option></select></div>
             <div class="col-xl-2 col-md-6"><label>Frecuencia</label><select name="frequency" class="form-select form-select-sm"><option value="diario" @selected($frequency==='diario')>Diario</option><option value="semanal" @selected($frequency==='semanal')>Semanal</option><option value="mensual" @selected($frequency==='mensual')>Mensual</option><option value="trimestral" @selected($frequency==='trimestral')>Trimestral</option></select></div>
-            <div class="col-xl-1 col-md-6"><label>Estado</label><select name="status" class="form-select form-select-sm"><option value="">Todos</option>@foreach(['PROGRAMADA','ABIERTA','EN_CAPTURA','ENTREGADA','EN_REVISION_INSTITUCIONAL','OBSERVADA','VALIDADA','VALIDADO_Y_CERRADO','VENCIDA','REPROGRAMADA'] as $s)<option value="{{ $s }}" @selected(($filters['status']??'')===$s)>{{ str_replace('_',' ',$s) }}</option>@endforeach</select></div>
+            <div class="col-xl-1 col-md-6"><label>Estado</label><select name="status" class="form-select form-select-sm"><option value="">Todos</option>@foreach($indicatorStatuses as $s)<option value="{{ $s }}" @selected(($filters['status']??'')===$s)>{{ $indicatorStatusLabels[$s] ?? str_replace('_',' ',$s) }}</option>@endforeach</select></div>
             <div class="col-xl-1 col-md-6"><label>Desde</label><input type="date" name="from" value="{{ $filters['from']??'' }}" class="form-control form-control-sm"></div>
             <div class="col-xl-1 col-md-6"><label>Hasta</label><input type="date" name="to" value="{{ $filters['to']??'' }}" class="form-control form-control-sm"></div>
             <div class="col-xl-1 col-md-6"><button class="btn btn-primary btn-sm w-100">Aplicar</button><a href="{{ route('indicators.index') }}" class="btn btn-clear btn-sm w-100 mt-1">Limpiar</a></div>
