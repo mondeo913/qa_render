@@ -39,6 +39,41 @@ class QaDemoSeeder extends Seeder
             ->with(['units', 'templates.requirements'])
             ->get();
 
+        // Garantía estructural de las dos direcciones.
+        // Es idempotente: no duplica ni elimina registros existentes.
+        foreach ($agencies as $agency) {
+            OrganizationalUnit::query()->firstOrCreate(
+                [
+                    'contracting_agency_id' => $agency->id,
+                    'code' => 'DIR_A',
+                ],
+                [
+                    'parent_id' => null,
+                    'name' => 'Dirección de Transmisión',
+                    'unit_type' => 'DIRECTION',
+                    'active' => true,
+                ]
+            );
+
+            OrganizationalUnit::query()->firstOrCreate(
+                [
+                    'contracting_agency_id' => $agency->id,
+                    'code' => 'DIR_B',
+                ],
+                [
+                    'parent_id' => null,
+                    'name' => 'Dirección de Programación y Continuidad',
+                    'unit_type' => 'DIRECTION',
+                    'active' => true,
+                ]
+            );
+        }
+
+        // Recargar las relaciones ya reconciliadas.
+        $agencies = ContractingAgency::query()
+            ->with(['units', 'templates.requirements'])
+            ->get();
+
         $users = [];
 
         foreach ($agencies as $agencyIndex => $agency) {

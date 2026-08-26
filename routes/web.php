@@ -60,7 +60,11 @@ Route::middleware(['auth', 'no-cache-auth'])->group(function () {
     Route::put('/admin/roles/{role}', [AdminController::class, 'updateRole'])->middleware('permission:roles.manage')->name('admin.roles.update');
     Route::get('/admin/dependencias', [AdminController::class, 'agencies'])->middleware('permission:agencies.manage')->name('admin.agencies');
     Route::post('/admin/dependencias', [AdminController::class, 'storeAgency'])->middleware('permission:agencies.manage')->name('admin.agencies.store');
+    Route::patch('/admin/dependencias/{agency}', [AdminController::class, 'updateAgency'])->middleware('permission:agencies.manage')->name('admin.agencies.update');
+
     Route::post('/admin/unidades', [AdminController::class, 'storeUnit'])->middleware('permission:agencies.manage')->name('admin.units.store');
+    Route::patch('/admin/unidades/{unit}', [AdminController::class, 'updateUnit'])->middleware('permission:agencies.manage')->name('admin.units.update');
+
     Route::get('/plantillas', [AdminController::class, 'templates'])->middleware('permission:templates.manage')->name('admin.templates');
     Route::post('/plantillas/requisitos', [AdminController::class, 'storeRequirement'])->middleware('permission:templates.manage')->name('admin.templates.requirements.store');
     Route::get('/admin/catalogos', [AdminController::class, 'catalogs'])->middleware('permission:catalogs.manage')->name('admin.catalogs');

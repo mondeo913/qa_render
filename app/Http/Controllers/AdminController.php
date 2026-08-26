@@ -16,6 +16,7 @@ use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\DB;
 
 class AdminController extends Controller
 {
@@ -128,9 +129,18 @@ class AdminController extends Controller
             'legal_name' => ['nullable', 'string', 'max:260'],
         ]);
 
-        ContractingAgency::query()->create($data + ['active' => true]);
+        DB::transaction(function () use ($data): void {
+            $agency = ContractingAgency::query()->create(
+                $data + ['active' => true]
+            );
 
-        return back()->with('success', 'Dependencia creada.');
+            $this->ensureAgencyDirections($agency);
+        });
+
+        return back()->with(
+            'success',
+            'Dependencia creada con sus dos direcciones institucionales.'
+        );
     }
 
     public function storeUnit(Request $request): RedirectResponse
@@ -153,6 +163,131 @@ class AdminController extends Controller
         OrganizationalUnit::query()->create($data + ['active' => true]);
 
         return back()->with('success', 'Unidad organizacional creada.');
+    }
+
+
+    public function updateAgency(
+        Request $request,
+        ContractingAgency $agency
+    ): RedirectResponse {
+        $this->authorizeAdmin($request, 'agencies.manage');
+
+        $data = $request->validate([
+            'code' => [
+                'required',
+                'string',
+                'max:50',
+                Rule::unique('contracting_agencies', 'code')
+                    ->ignore($agency->id),
+            ],
+            'name' => ['required', 'string', 'max:220'],
+            'legal_name' => ['nullable', 'string', 'max:260'],
+            'active' => ['nullable', 'boolean'],
+        ]);
+
+        DB::transaction(function () use ($agency, $data): void {
+            $agency->update([
+                'code' => $data['code'],
+                'name' => $data['name'],
+                'legal_name' => $data['legal_name'] ?? null,
+                'active' => array_key_exists('active', $data)
+                    ? (bool) $data['active']
+                    : $agency->active,
+            ]);
+
+            $this->ensureAgencyDirections($agency);
+        });
+
+        return back()->with(
+            'success',
+            'Dependencia actualizada.'
+        );
+    }
+
+    private function ensureAgencyDirections(
+        ContractingAgency $agency
+    ): void {
+        $directions = [
+            [
+                'code' => 'DIR_A',
+                'name' => 'Dirección de Transmisión',
+            ],
+            [
+                'code' => 'DIR_B',
+                'name' => 'Dirección de Programación y Continuidad',
+            ],
+        ];
+
+        foreach ($directions as $direction) {
+            OrganizationalUnit::query()->firstOrCreate(
+                [
+                    'contracting_agency_id' => $agency->id,
+                    'code' => $direction['code'],
+                ],
+                [
+                    'parent_id' => null,
+                    'name' => $direction['name'],
+                    'unit_type' => 'DIRECTION',
+                    'active' => true,
+                ]
+            );
+        }
+    }
+
+    public function updateUnit(
+        Request $request,
+        OrganizationalUnit $unit
+    ): RedirectResponse {
+        $this->authorizeAdmin($request, 'agencies.manage');
+
+        $data = $request->validate([
+            'code' => [
+                'required',
+                'string',
+                'max:70',
+                Rule::unique('organizational_units', 'code')
+                    ->where(
+                        'contracting_agency_id',
+                        $unit->contracting_agency_id
+                    )
+                    ->ignore($unit->id),
+            ],
+            'name' => ['required', 'string', 'max:220'],
+            'unit_type' => [
+                'required',
+                Rule::in([
+                    'DIRECTION',
+                    'AREA',
+                    'COORDINATION',
+                ]),
+            ],
+            'active' => ['nullable', 'boolean'],
+        ]);
+
+        // DIR_A y DIR_B son direcciones institucionales estructurales.
+        // Su código no puede cambiar porque identifica la dirección
+        // utilizada por cargas, requisitos, usuarios y repositorios.
+        if ($unit->code === 'DIR_A') {
+            $data['code'] = 'DIR_A';
+            $data['unit_type'] = 'DIRECTION';
+        } elseif ($unit->code === 'DIR_B') {
+            $data['code'] = 'DIR_B';
+            $data['unit_type'] = 'DIRECTION';
+        }
+
+        $unit->update([
+            'code' => $data['code'],
+            'name' => $data['name'],
+            'unit_type' => $data['unit_type'],
+            'active' => array_key_exists('active', $data)
+                ? (bool) $data['active']
+                : $unit->active,
+        ]);
+
+        return back()->with(
+            'success',
+            'Unidad organizacional actualizada.'
+        );
     }
 
     public function templates(Request $request)
