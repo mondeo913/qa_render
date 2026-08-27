@@ -2,32 +2,169 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\RoleCode;
 use App\Models\ReportExport;
 use App\Models\ScheduledLoad;
 use App\Services\AccessScopeService;
 use App\Services\DashboardAnalyticsService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ReportController extends Controller
 {
+    private function authorizeReports(Request $request, string $permission): void
+    {
+        abort_unless($request->user()->hasPermission($permission), 403);
+    }
+
+    private function filters(Request $request): array
+    {
+        return $request->validate([
+            'agency_id' => ['nullable', 'integer'],
+            'organizational_unit_id' => ['nullable', 'string', 'max:500'],
+            'status' => ['nullable', 'string', 'max:60'],
+            'from' => ['nullable', 'date'],
+            'to' => ['nullable', 'date', 'after_or_equal:from'],
+        ]);
+    }
+
+    private function applyFilters(
+        $query,
+        array $filters
+    ) {
+        if (!empty($filters['agency_id'])) {
+            $query->where(
+                'scheduled_loads.contracting_agency_id',
+                (int) $filters['agency_id']
+            );
+        }
+
+        if (!empty($filters['organizational_unit_id'])) {
+            $unitIds = collect(
+                explode(',', (string) $filters['organizational_unit_id'])
+            )
+                ->map(fn ($id) => (int) trim($id))
+                ->filter()
+                ->unique()
+                ->values()
+                ->all();
+
+            if ($unitIds) {
+                $query->whereHas(
+                    'deliverables',
+                    fn ($deliverables) => $deliverables->whereIn(
+                        'organizational_unit_id',
+                        $unitIds
+                    )
+                );
+            }
+        }
+
+        if (!empty($filters['status'])) {
+            $query->where(
+                'scheduled_loads.status',
+                $filters['status']
+            );
+        }
+
+        if (!empty($filters['from'])) {
+            $query->whereDate(
+                'scheduled_loads.effective_open_at',
+                '>=',
+                $filters['from']
+            );
+        }
+
+        if (!empty($filters['to'])) {
+            $query->whereDate(
+                'scheduled_loads.effective_open_at',
+                '<=',
+                $filters['to']
+            );
+        }
+
+        return $query;
+    }
+
+    private function reportLoads(
+        Request $request,
+        array $filters,
+        AccessScopeService $access
+    ) {
+        $query = $access->scopeLoads(
+            ScheduledLoad::query()->with([
+                'agency',
+                'deliverables.organizationalUnit',
+                'deliverables.responsibleUser',
+                'deliverables.templateRequirement',
+                'deliverables.evidences.files',
+            ]),
+            $request->user()
+        );
+
+        return $this->applyFilters($query, $filters)
+            ->orderBy('scheduled_loads.effective_open_at')
+            ->get();
+    }
+
     public function index(
         Request $request,
-        DashboardAnalyticsService $analytics
+        DashboardAnalyticsService $analytics,
+        AccessScopeService $access
     ) {
-        abort_unless($request->user()->hasPermission('reports.view'), 403);
+        $this->authorizeReports($request, 'reports.view');
 
-        $filters = $request->validate([
-            'agency_id' => ['nullable', 'integer'],
-            'status' => ['nullable', 'string'],
-            'from' => ['nullable', 'date'],
-            'to' => ['nullable', 'date'],
-        ]);
+        $filters = $this->filters($request);
+
+        $loads = $this->reportLoads(
+            $request,
+            $filters,
+            $access
+        );
+
+        $analyticsData = $analytics->forUser(
+            $request->user(),
+            $filters
+        );
+
+        $agencies = $loads
+            ->map(fn ($load) => $load->agency)
+            ->filter()
+            ->unique('id')
+            ->sortBy('name')
+            ->values();
+
+        $units = $loads
+            ->flatMap(fn ($load) => $load->deliverables)
+            ->map(fn ($deliverable) => $deliverable->organizationalUnit)
+            ->filter()
+            ->unique('id')
+            ->sortBy('name')
+            ->values();
+
+        $users = $loads
+            ->flatMap(fn ($load) => $load->deliverables)
+            ->map(fn ($deliverable) => $deliverable->responsibleUser)
+            ->filter()
+            ->unique('id')
+            ->sortBy('name')
+            ->values();
+
+        $role = $request->user()->role?->code;
 
         return view('reports.index', [
-            'analytics' => $analytics->forUser($request->user(), $filters),
+            'analytics' => $analyticsData,
             'filters' => $filters,
+            'loads' => $loads,
+            'agencies' => $agencies,
+            'units' => $units,
+            'users' => $users,
+            'role' => $role,
+            'canBuildReports' => $role === RoleCode::ADMINISTRADOR->value,
+            'canExport' => $request->user()->hasPermission('reports.export'),
         ]);
     }
 
@@ -35,38 +172,22 @@ class ReportController extends Controller
         Request $request,
         AccessScopeService $access
     ): StreamedResponse {
-        abort_unless($request->user()->hasPermission('reports.export'), 403);
+        $this->authorizeReports($request, 'reports.export');
 
-        $filters = $request->validate([
-            'agency_id' => ['nullable', 'integer'],
-            'status' => ['nullable', 'string'],
-            'from' => ['nullable', 'date'],
-            'to' => ['nullable', 'date'],
-        ]);
+        $filters = $this->filters($request);
 
         $query = $access->scopeLoads(
             ScheduledLoad::query()->with([
                 'agency',
-                'deliverables.templateRequirement',
+                'deliverables.organizationalUnit',
+                'deliverables.responsibleUser',
                 'deliverables.evidences.files',
             ]),
             $request->user()
         );
 
-        if (!empty($filters['agency_id'])) {
-            $query->where('contracting_agency_id', (int) $filters['agency_id']);
-        }
-        if (!empty($filters['status'])) {
-            $query->where('status', $filters['status']);
-        }
-        if (!empty($filters['from'])) {
-            $query->whereDate('effective_open_at', '>=', $filters['from']);
-        }
-        if (!empty($filters['to'])) {
-            $query->whereDate('effective_open_at', '<=', $filters['to']);
-        }
-
-        $query->orderBy('effective_open_at');
+        $query = $this->applyFilters($query, $filters)
+            ->orderBy('effective_open_at');
 
         ReportExport::query()->create([
             'requested_by' => $request->user()->id,
@@ -78,16 +199,18 @@ class ReportController extends Controller
 
         return response()->streamDownload(function () use ($query) {
             $handle = fopen('php://output', 'w');
+
             fputcsv($handle, [
                 'ID',
                 'Dependencia',
+                'Dirección/Unidad',
+                'Responsable',
                 'Título',
                 'Apertura',
                 'Cierre',
                 'Estado',
-                'Semáforo',
+                'Riesgo',
                 'Avance %',
-                'Servicios de pauta',
                 'Entregables',
                 'Evidencias',
                 'Evidencias validadas',
@@ -98,28 +221,45 @@ class ReportController extends Controller
                 foreach ($loads as $load) {
                     $deliverables = $load->deliverables;
                     $evidences = $deliverables->flatMap->evidences;
-                    $validated = $evidences->filter(function ($evidence) {
-                        $status = $evidence->status instanceof \BackedEnum
-                            ? $evidence->status->value
-                            : (string) $evidence->status;
-                        return $status === 'VALIDADO';
-                    })->count();
-                    $files = $evidences->sum(fn ($evidence) => $evidence->files->count());
+
+                    $validated = $evidences
+                        ->filter(function ($evidence) {
+                            $status = $evidence->status instanceof \BackedEnum
+                                ? $evidence->status->value
+                                : (string) $evidence->status;
+
+                            return $status === 'VALIDADO';
+                        })
+                        ->count();
+
+                    $files = $evidences
+                        ->sum(fn ($evidence) => $evidence->files->count());
+
+                    $units = $deliverables
+                        ->map(fn ($d) => $d->organizationalUnit?->name)
+                        ->filter()
+                        ->unique()
+                        ->implode(' / ');
+
+                    $users = $deliverables
+                        ->map(fn ($d) => $d->responsibleUser?->name)
+                        ->filter()
+                        ->unique()
+                        ->implode(' / ');
 
                     fputcsv($handle, [
                         $load->id,
                         $load->agency?->name,
+                        $units,
+                        $users,
                         $load->title,
                         $load->effective_open_at?->format('Y-m-d H:i'),
                         $load->effective_close_at?->format('Y-m-d H:i'),
                         $load->status instanceof \BackedEnum
                             ? $load->status->value
                             : $load->status,
-                        $load->traffic_light instanceof \BackedEnum
-                            ? $load->traffic_light->value
-                            : $load->traffic_light,
+                        $this->riskLevel($load),
                         $load->completion_percentage,
-                        data_get($load->metadata, 'service_count', 0),
                         $deliverables->count(),
                         $evidences->count(),
                         $validated,
@@ -134,25 +274,188 @@ class ReportController extends Controller
         ]);
     }
 
+    public function xlsx(
+        Request $request,
+        AccessScopeService $access
+    ) {
+        $this->authorizeReports($request, 'reports.export');
+
+        $filters = $this->filters($request);
+        $loads = $this->reportLoads($request, $filters, $access);
+
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle('Reporte SIGET');
+
+        $headers = [
+            'ID',
+            'Dependencia',
+            'Dirección/Unidad',
+            'Responsable',
+            'Título',
+            'Apertura',
+            'Cierre',
+            'Estado',
+            'Riesgo',
+            'Avance %',
+            'Entregables',
+            'Evidencias',
+            'Validadas',
+            'Archivos',
+        ];
+
+        foreach ($headers as $column => $header) {
+            $sheet
+                ->setCellValueByColumnAndRow(
+                    $column + 1,
+                    1,
+                    $header
+                );
+        }
+
+        $row = 2;
+
+        foreach ($loads as $load) {
+            $deliverables = $load->deliverables;
+            $evidences = $deliverables->flatMap->evidences;
+
+            $units = $deliverables
+                ->map(fn ($d) => $d->organizationalUnit?->name)
+                ->filter()
+                ->unique()
+                ->implode(' / ');
+
+            $users = $deliverables
+                ->map(fn ($d) => $d->responsibleUser?->name)
+                ->filter()
+                ->unique()
+                ->implode(' / ');
+
+            $validated = $evidences
+                ->filter(function ($evidence) {
+                    $status = $evidence->status instanceof \BackedEnum
+                        ? $evidence->status->value
+                        : (string) $evidence->status;
+
+                    return $status === 'VALIDADO';
+                })
+                ->count();
+
+            $files = $evidences
+                ->sum(fn ($evidence) => $evidence->files->count());
+
+            $values = [
+                $load->id,
+                $load->agency?->name,
+                $units,
+                $users,
+                $load->title,
+                $load->effective_open_at?->format('Y-m-d H:i'),
+                $load->effective_close_at?->format('Y-m-d H:i'),
+                $load->status instanceof \BackedEnum
+                    ? $load->status->value
+                    : $load->status,
+                $this->riskLevel($load),
+                $load->completion_percentage,
+                $deliverables->count(),
+                $evidences->count(),
+                $validated,
+                $files,
+            ];
+
+            foreach ($values as $column => $value) {
+                $sheet->setCellValueByColumnAndRow(
+                    $column + 1,
+                    $row,
+                    $value
+                );
+            }
+
+            $row++;
+        }
+
+        foreach (range(1, count($headers)) as $column) {
+            $sheet->getColumnDimensionByColumn($column)->setAutoSize(true);
+        }
+
+        ReportExport::query()->create([
+            'requested_by' => $request->user()->id,
+            'report_type' => 'LOADS',
+            'format' => 'XLSX',
+            'filters' => $filters,
+            'status' => 'GENERATED',
+        ]);
+
+        $writer = new Xlsx($spreadsheet);
+
+        return response()->streamDownload(
+            function () use ($writer) {
+                $writer->save('php://output');
+            },
+            'SIGET_reporte.xlsx',
+            [
+                'Content-Type' =>
+                    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            ]
+        );
+    }
+
     public function pdf(
         Request $request,
         DashboardAnalyticsService $analytics
     ) {
-        abort_unless($request->user()->hasPermission('reports.export'), 403);
+        $this->authorizeReports($request, 'reports.export');
 
-        $data = $analytics->forUser($request->user(), $request->query());
+        $filters = $this->filters($request);
+
+        $data = $analytics->forUser(
+            $request->user(),
+            $filters
+        );
 
         ReportExport::query()->create([
             'requested_by' => $request->user()->id,
             'report_type' => 'EXECUTIVE',
             'format' => 'PDF',
-            'filters' => $request->query(),
+            'filters' => $filters,
             'status' => 'GENERATED',
         ]);
 
-        return Pdf::loadView('reports.executive-pdf', [
-            'analytics' => $data,
-            'generatedBy' => $request->user(),
-        ])->download('SIGET_reporte_ejecutivo.pdf');
+        return Pdf::loadView(
+            'reports.executive-pdf',
+            [
+                'analytics' => $data,
+                'generatedBy' => $request->user(),
+            ]
+        )->download('SIGET_reporte_ejecutivo.pdf');
     }
+    private function riskLevel(ScheduledLoad $load): string
+    {
+        $status = $load->status instanceof \BackedEnum
+            ? $load->status->value
+            : (string) $load->status;
+
+        if ($status === 'VENCIDA') {
+            return 'ALTO';
+        }
+
+        if (in_array($status, ['OBSERVADA', 'REPROGRAMADA'], true)) {
+            return 'MEDIO';
+        }
+
+        if (
+            $load->effective_close_at &&
+            $load->effective_close_at->isFuture() &&
+            now()->diffInHours($load->effective_close_at, false) <= 72
+        ) {
+            return 'ATENCIÓN';
+        }
+
+        if ($status === 'PENDIENTE_DOCUMENTO_FIRMADO') {
+            return 'ATENCIÓN';
+        }
+
+        return 'NORMAL';
+    }
+
 }
