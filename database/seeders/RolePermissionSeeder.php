@@ -84,7 +84,7 @@ class RolePermissionSeeder extends Seeder
         ];
 
         $map = [
-            'DIRECTOR_GENERAL' => ['intelligence.view','indicators.view','reports.view','repository.view','scheduled_load.board'],
+            'DIRECTOR_GENERAL' => ['intelligence.view','indicators.view','reports.view','reports.export','repository.view','scheduled_load.board'],
             'DIRECTOR' => $directorPermissions,
             'DIRECTOR_TRANSMISION' => $directorPermissions,
             'DIRECTOR_PROGRAMACION_CONTINUIDAD' => $directorPermissions,
