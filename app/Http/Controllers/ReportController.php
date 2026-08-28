@@ -3,6 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Enums\RoleCode;
+use App\Enums\ScheduledLoadStatus;
+use App\Models\ContractingAgency;
+use App\Models\OrganizationalUnit;
 use App\Models\ReportExport;
 use App\Models\ScheduledLoad;
 use App\Services\AccessScopeService;
@@ -89,6 +92,31 @@ class ReportController extends Controller
         return $query;
     }
 
+    private function uniqueOrganizationalUnits($units)
+    {
+        return collect($units)
+            ->filter()
+            ->groupBy(function ($unit) {
+                return mb_strtolower(
+                    preg_replace('/\\s+/', ' ', trim($unit->name))
+                );
+            })
+            ->map(function ($group) {
+                $representative = clone $group->first();
+
+                $representative->id = $group
+                    ->pluck('id')
+                    ->map(fn ($id) => (int) $id)
+                    ->unique()
+                    ->sort()
+                    ->implode(',');
+
+                return $representative;
+            })
+            ->sortBy('name')
+            ->values();
+    }
+
     private function reportLoads(
         Request $request,
         array $filters,
@@ -130,20 +158,145 @@ class ReportController extends Controller
             $filters
         );
 
-        $agencies = $loads
-            ->map(fn ($load) => $load->agency)
-            ->filter()
-            ->unique('id')
-            ->sortBy('name')
-            ->values();
+        $role = $request->user()->role?->code;
 
-        $units = $loads
-            ->flatMap(fn ($load) => $load->deliverables)
-            ->map(fn ($deliverable) => $deliverable->organizationalUnit)
-            ->filter()
-            ->unique('id')
-            ->sortBy('name')
-            ->values();
+        /*
+         * Los filtros se construyen desde los catálogos institucionales
+         * y no desde las cargas ya filtradas. De esta forma permanecen
+         * disponibles aunque el universo actual de cargas sea 0.
+         */
+        $isGlobalRole = in_array($role, [
+            RoleCode::ADMINISTRADOR->value,
+            RoleCode::DIRECTOR_GENERAL->value,
+        ], true);
+
+        if ($isGlobalRole) {
+            $agencies = ContractingAgency::query()
+                ->where('active', true)
+                ->orderBy('name')
+                ->get();
+
+            $units = OrganizationalUnit::query()
+                ->with('agency')
+                ->where('active', true)
+                ->orderBy('name')
+                ->get();
+        } elseif ($role === RoleCode::ENLACE_INSTITUCIONAL->value) {
+            $agencyIds = $request->user()
+                ->scopes()
+                ->where('can_read', true)
+                ->whereNotNull('contracting_agency_id')
+                ->pluck('contracting_agency_id')
+                ->map(fn ($id) => (int) $id)
+                ->all();
+
+            if ($request->user()->contracting_agency_id) {
+                $agencyIds[] = (int) $request->user()->contracting_agency_id;
+            }
+
+            $agencyIds = array_values(array_unique($agencyIds));
+
+            $agencies = ContractingAgency::query()
+                ->where('active', true)
+                ->whereIn('id', $agencyIds)
+                ->orderBy('name')
+                ->get();
+
+            $units = OrganizationalUnit::query()
+                ->with('agency')
+                ->where('active', true)
+                ->whereIn('contracting_agency_id', $agencyIds)
+                ->orderBy('name')
+                ->get();
+        } elseif (
+            RoleCode::isDirectionDirector($role) ||
+            RoleCode::isOperator($role)
+        ) {
+            $agencyIds = $request->user()
+                ->scopes()
+                ->where('can_read', true)
+                ->whereNotNull('contracting_agency_id')
+                ->pluck('contracting_agency_id')
+                ->map(fn ($id) => (int) $id)
+                ->all();
+
+            if ($request->user()->contracting_agency_id) {
+                $agencyIds[] = (int) $request->user()->contracting_agency_id;
+            }
+
+            $agencyIds = array_values(array_unique($agencyIds));
+
+            $unitIds = $access->accessibleUnitIds($request->user());
+
+            $agencies = ContractingAgency::query()
+                ->where('active', true)
+                ->whereIn('id', $agencyIds)
+                ->orderBy('name')
+                ->get();
+
+            $units = OrganizationalUnit::query()
+                ->with('agency')
+                ->where('active', true)
+                ->whereIn('id', $unitIds)
+                ->whereIn('contracting_agency_id', $agencyIds)
+                ->orderBy('name')
+                ->get();
+        } else {
+            $agencies = $loads
+                ->map(fn ($load) => $load->agency)
+                ->filter()
+                ->unique('id')
+                ->sortBy('name')
+                ->values();
+
+            $units = $loads
+                ->flatMap(fn ($load) => $load->deliverables)
+                ->map(fn ($deliverable) => $deliverable->organizationalUnit)
+                ->filter()
+                ->unique('id')
+                ->sortBy('name')
+                ->values();
+        }
+
+        /*
+         * Normalización institucional:
+         *
+         * Una Dirección puede tener varios registros de
+         * organizational_units, uno por dependencia/agencia.
+         *
+         * En Reportes se muestra una sola vez y se conservan
+         * internamente todos sus IDs equivalentes.
+         */
+        $units = $this->uniqueOrganizationalUnits($units);
+
+        /*
+         * Los estados son un catálogo del dominio SIGET.
+         * No dependen de que actualmente existan cargas.
+         */
+        $statuses = collect(ScheduledLoadStatus::cases())
+            ->mapWithKeys(fn (ScheduledLoadStatus $status) => [
+                $status->value => $status->value,
+            ]);
+
+        /*
+         * Catálogo único de estados visibles en Reportes.
+         *
+         * La restricción aplica a TODOS los roles.
+         * El alcance de información de cada usuario continúa
+         * siendo responsabilidad de AccessScopeService.
+         *
+         * VALIDADA queda deliberadamente fuera.
+         */
+        $allowedStatuses = [
+            'PROGRAMADA',
+            'REPROGRAMADA',
+            'VALIDADO_Y_CERRADO',
+            'VENCIDA',
+        ];
+
+        $statuses = $statuses->filter(
+            fn ($label, $code) => in_array($code, $allowedStatuses, true)
+        );
 
         $users = $loads
             ->flatMap(fn ($load) => $load->deliverables)
@@ -153,14 +306,13 @@ class ReportController extends Controller
             ->sortBy('name')
             ->values();
 
-        $role = $request->user()->role?->code;
-
         return view('reports.index', [
             'analytics' => $analyticsData,
             'filters' => $filters,
             'loads' => $loads,
             'agencies' => $agencies,
             'units' => $units,
+            'statuses' => $statuses,
             'users' => $users,
             'role' => $role,
             'canBuildReports' => $role === RoleCode::ADMINISTRADOR->value,

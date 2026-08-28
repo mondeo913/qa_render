@@ -10,53 +10,25 @@
 <div class="col-xl-3 col-md-6"><label class="form-label">Dependencia</label><select name="agency_id" class="form-select"><option value="">Todas las dependencias</option>@foreach($filterAgencies as $agency)@php $agencyId=data_get($agency,'id'); $agencyName=data_get($agency,'name',''); @endphp<option value="{{ $agencyId }}" @selected((string)($filters['agency_id'] ?? '') === (string)$agencyId)>{{ $agencyName }}</option>@endforeach</select></div>
 <div class="col-xl-3 col-md-6"><label class="form-label">Dirección / unidad</label><select name="organizational_unit_id" class="form-select"><option value="">Todas las direcciones / unidades</option>@foreach($filterUnits as $unit)@php $unitId=data_get($unit,'id'); $unitName=data_get($unit,'name',''); $filterIds=data_get($unit,'filter_unit_ids'); $filterIds=is_array($filterIds) ? $filterIds : [$unitId]; $filterIds=implode(',',array_map('strval',$filterIds)); @endphp<option value="{{ $filterIds }}" @selected((string)($filters['organizational_unit_id'] ?? '') === $filterIds)>{{ $unitName }}</option>@endforeach</select></div>
 <div class="col-xl-2 col-md-4"><label class="form-label">Estado</label><select name="status" class="form-select"><option value="">Todos</option>
-@php
-    $isExecutiveDashboard = (($role ?? null) === 'DIRECTOR_GENERAL');
+    @php
+        $isExecutiveDashboard = (($role ?? null) === 'DIRECTOR_GENERAL');
 
-    $isDirectionDirector = in_array(($role ?? null), [
-        'DIRECTOR_TRANSMISION',
-        'DIRECTOR_PROGRAMACION_CONTINUIDAD',
-    ], true);
+        $isDirectionDirector = in_array(($role ?? null), [
+            'DIRECTOR_TRANSMISION',
+            'DIRECTOR_PROGRAMACION_CONTINUIDAD',
+        ], true);
+    @endphp
 
-    $dashboardStatuses = $isExecutiveDashboard
-        ? [
-            'REPROGRAMADA',
-            'VENCIDA',
-            'VALIDADO_Y_CERRADO',
-        ]
-        : ($isDirectionDirector
-            ? [
-                'PROGRAMADA',
-                'REPROGRAMADA',
-                'VALIDADO_Y_CERRADO',
-                'VENCIDA',
-            ]
-            : [
-                'PROGRAMADA',
-                'ABIERTA',
-                'EN_CAPTURA',
-                'PARCIALMENTE_ENTREGADA',
-                'ENTREGADA',
-                'EN_REVISION_INSTITUCIONAL',
-                'OBSERVADA',
-                'VALIDADA',
-                'VALIDADO_Y_CERRADO',
-                'VENCIDA',
-                'REPROGRAMADA',
-            ]);
-
-    $statusLabels = [
+    @foreach([
         'PROGRAMADA' => 'PROGRAMADO',
         'REPROGRAMADA' => 'REPROGRAMADO',
         'VALIDADO_Y_CERRADO' => 'VALIDADO Y CERRADO',
         'VENCIDA' => 'VENCIDO',
-    ];
-@endphp
-@foreach($dashboardStatuses as $status)
-    <option value="{{ $status }}" @selected(($filters['status'] ?? null) === $status)>
-        {{ $statusLabels[$status] ?? str_replace('_', ' ', $status) }}
-    </option>
-@endforeach
+    ] as $status => $label)
+        <option value="{{ $status }}" @selected(($filters['status'] ?? null) === $status)>
+            {{ $label }}
+        </option>
+    @endforeach
 </select></div>
 <div class="col-xl-2 col-md-4"><label class="form-label">Desde</label><input type="date" name="from" value="{{ $filters['from'] ?? '' }}" class="form-control"></div>
 <div class="col-xl-2 col-md-4"><label class="form-label">Hasta</label><input type="date" name="to" value="{{ $filters['to'] ?? '' }}" class="form-control"></div>

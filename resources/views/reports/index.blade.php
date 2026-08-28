@@ -244,7 +244,7 @@
                             value="{{ $agency->id }}"
                             {{ (string)($filters['agency_id'] ?? '') === (string)$agency->id ? 'selected' : '' }}
                         >
-                            {{ $agency->code }} · {{ $agency->name }}
+                            {{ $agency->name }}
                         </option>
                     @endforeach
                 </select>
@@ -275,7 +275,7 @@
                 <select name="status" class="form-select form-select-sm">
                     <option value="">Todos</option>
 
-                    @foreach($status as $statusCode => $statusTotal)
+                    @foreach(($statuses ?? $status) as $statusCode => $statusTotal)
                         <option
                             value="{{ $statusCode }}"
                             {{ ($filters['status'] ?? '') === $statusCode ? 'selected' : '' }}
