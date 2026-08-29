@@ -13,6 +13,7 @@ use App\Models\Role;
 use App\Models\SystemSetting;
 use App\Models\TemplateRequirement;
 use App\Models\User;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -61,6 +62,56 @@ class AdminController extends Controller
         ]);
 
         return back()->with('success', 'Usuario creado.');
+    }
+
+    public function updateUser(Request $request, User $user): RedirectResponse
+    {
+        $this->authorizeAdmin($request, 'users.manage');
+
+        $data = $request->validate([
+            'name' => ['required', 'string', 'max:200'],
+            'email' => [
+                'required',
+                'email',
+                'max:255',
+                Rule::unique('users', 'email')->ignore($user->id),
+            ],
+            'password' => ['nullable', 'string', 'min:10'],
+            'role_id' => ['required', 'exists:roles,id'],
+            'contracting_agency_id' => ['nullable', 'exists:contracting_agencies,id'],
+            'organizational_unit_id' => ['nullable', 'exists:organizational_units,id'],
+        ]);
+
+        if (blank($data['password'] ?? null)) {
+            unset($data['password']);
+        }
+
+        $user->update($data);
+
+        return back()->with('success', 'Usuario actualizado correctamente.');
+    }
+
+    public function destroyUser(Request $request, User $user): RedirectResponse
+    {
+        $this->authorizeAdmin($request, 'users.manage');
+
+        abort_if($user->is($request->user()), 422, 'No puede eliminar su propia cuenta.');
+
+        if (AuditLog::query()->where('user_id', $user->id)->exists()) {
+            return back()->withErrors([
+                'user' => 'No se puede eliminar este usuario porque tiene historial registrado. Use Desactivar para conservar la trazabilidad.',
+            ]);
+        }
+
+        try {
+            $user->delete();
+        } catch (QueryException) {
+            return back()->withErrors([
+                'user' => 'No se puede eliminar este usuario porque existen registros relacionados. Use Desactivar para conservar la trazabilidad.',
+            ]);
+        }
+
+        return back()->with('success', 'Usuario eliminado correctamente.');
     }
 
     public function toggleUser(Request $request, User $user): RedirectResponse
