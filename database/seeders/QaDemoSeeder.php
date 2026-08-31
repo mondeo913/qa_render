@@ -77,12 +77,14 @@ class QaDemoSeeder extends Seeder
             foreach ($definitions as [$roleCode, $email, $name, $unit]) {
                 $role = Role::query()->where('code', $roleCode)->firstOrFail();
 
+                // En QA ningún usuario lleva alcance directo de dependencia ni de Dirección.
+                // El alcance de lectura/escritura se gestiona exclusivamente por permisos/rol.
                 $user = User::query()->updateOrCreate(
                     ['email' => $email],
                     [
                         'role_id' => $role->id,
-                        'contracting_agency_id' => $agency->id,
-                        'organizational_unit_id' => $unit?->id,
+                        'contracting_agency_id' => null,
+                        'organizational_unit_id' => null,
                         'name' => $name,
                         'password' => $password,
                         'status' => 'ACTIVE',
@@ -91,32 +93,11 @@ class QaDemoSeeder extends Seeder
                     ]
                 );
 
-                $users[$email] = $user;
+                // Limpia cualquier alcance histórico que hubiera sido creado por versiones
+                // anteriores del seeder para este mismo usuario.
+                UserScope::query()->where('user_id', $user->id)->delete();
 
-                UserScope::query()->updateOrCreate(
-                    [
-                        'user_id' => $user->id,
-                        'contracting_agency_id' => $agency->id,
-                        'organizational_unit_id' => in_array($roleCode, [
-                            'DIRECTOR',
-                            'DIRECTOR_TRANSMISION',
-                            'DIRECTOR_PROGRAMACION_CONTINUIDAD',
-                            'OPERADOR',
-                            'OPERADOR_TRANSMISION',
-                            'OPERADOR_PROGRAMACION_CONTINUIDAD',
-                        ], true) ? $unit?->id : null,
-                    ],
-                    [
-                        'can_read' => true,
-                        'can_write' => in_array($roleCode, [
-                            'ADMINISTRADOR',
-                            'ENLACE_INSTITUCIONAL',
-                            'OPERADOR',
-                            'OPERADOR_TRANSMISION',
-                            'OPERADOR_PROGRAMACION_CONTINUIDAD',
-                        ], true),
-                    ]
-                );
+                $users[$email] = $user;
             }
 
             $template = EvidenceTemplate::query()
