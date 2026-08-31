@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\RoleCode;
 use App\Models\CalendarImport;
 use App\Models\CalendarImportRow;
 use App\Models\ContractingAgency;
@@ -193,10 +194,17 @@ final class CalendarImportService
                     }
 
                     $operatorId = User::query()
-                        ->where('contracting_agency_id', $agency->id)
+                        ->where(function ($query) use ($agency) {
+                            $query->where('contracting_agency_id', $agency->id)
+                                ->orWhereNull('contracting_agency_id');
+                        })
                         ->where('organizational_unit_id', $requirement->responsible_unit_id)
-                        ->whereHas('role', fn ($role) => $role->where('code', 'OPERADOR'))
+                        ->whereHas('role', fn ($role) => $role->whereIn(
+                            'code',
+                            RoleCode::operatorValues()
+                        ))
                         ->where('status', 'ACTIVE')
+                        ->orderByRaw('CASE WHEN contracting_agency_id = ? THEN 0 ELSE 1 END', [$agency->id])
                         ->value('id');
 
                     ScheduledLoadDeliverable::query()->create([
