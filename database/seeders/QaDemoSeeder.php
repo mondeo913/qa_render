@@ -129,11 +129,9 @@ class QaDemoSeeder extends Seeder
                 'VALIDADO_Y_CERRADO' => 'DARK_GREEN', 'VENCIDA' => 'RED', 'REPROGRAMADA' => 'ORANGE',
             ];
 
-            $baseDate = CarbonImmutable::now()->subMonths(8)->startOfMonth()->addDays(2);
-
-            for ($index = 0; $index < 48; $index++) {
+            for ($index = 0; $index < 24; $index++) {
                 $status = $statuses[$index % count($statuses)];
-                $open = $baseDate->addDays($index * 5)->setTime(8, 0);
+                $open = CarbonImmutable::now()->startOfMonth()->addDays($index * 3);
                 $close = $open->setTime(23, 59);
                 $row = CalendarImportRow::query()->updateOrCreate(
                     [
