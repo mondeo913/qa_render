@@ -131,14 +131,13 @@ class QaDemoSeeder extends Seeder
 
             for ($index = 0; $index < 24; $index++) {
                 $status = $statuses[$index % count($statuses)];
-                $open = CarbonImmutable::now()->startOfMonth()->addDays($index * 3);
+                $open = CarbonImmutable::now()->subMonths(8)->startOfMonth()->addDays($index * 3)->setTime(8, 0);
                 $close = $open->setTime(23, 59);
                 $row = CalendarImportRow::query()->updateOrCreate(
                     [
                         'calendar_import_id' => $import->id,
                         'sheet_name' => 'QA ABCD',
                         'row_number' => $index + 9,
-                        'source_column' => 'Q'.$index,
                     ],
                     [
                         'contracting_agency_code' => $agency->code,
@@ -146,6 +145,7 @@ class QaDemoSeeder extends Seeder
                         'template_code' => $template->code,
                         'original_open_at' => $open,
                         'original_close_at' => $close,
+                        'source_column' => 'Q'.$index,
                         'delivery_name' => "Pauta QA {$agency->code} #".($index + 1),
                         'payload' => [
                             'format' => 'HORIZONTAL_X',
@@ -228,9 +228,13 @@ class QaDemoSeeder extends Seeder
                         Evidence::query()->updateOrCreate(
                             ['deliverable_id' => $deliverable->id],
                             [
-                                'scheduled_load_id' => $load->id, 'folder_id' => $folder->id, 'submitted_by' => $operator->id,
-                                'title' => $requirement->name, 'description' => 'Evidencia QA para poblar gráficas y flujos.',
-                                'status' => $evidenceStatus, 'current_version' => $evidenceStatus === 'OBSERVADO' ? 2 : 1,
+                                'scheduled_load_id' => $load->id,
+                                'folder_id' => $folder->id,
+                                'submitted_by' => $operator->id,
+                                'title' => $requirement->name,
+                                'description' => 'Evidencia QA para poblar gráficas y flujos.',
+                                'status' => $evidenceStatus,
+                                'current_version' => $evidenceStatus === 'OBSERVADO' ? 2 : 1,
                                 'revision_number' => $evidenceStatus === 'OBSERVADO' ? 2 : 1,
                             ]
                         );
