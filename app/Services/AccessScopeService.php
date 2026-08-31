@@ -23,7 +23,6 @@ final class AccessScopeService
 
         if ($role === RoleCode::ENLACE_INSTITUCIONAL->value) {
             $agencyIds = $this->readableAgencyIds($user);
-
             return $agencyIds !== []
                 ? $query->whereIn('scheduled_loads.contracting_agency_id', $agencyIds)
                 : $query->whereRaw('1 = 0');
@@ -33,24 +32,28 @@ final class AccessScopeService
             $unitIds = $this->readableUnitIds($user);
             $agencyIds = $this->readableAgencyIds($user);
 
-            return $query->whereIn('scheduled_loads.contracting_agency_id', $agencyIds)
-                ->whereHas('deliverables', fn (Builder $deliverables) =>
-                    $deliverables->whereIn('organizational_unit_id', $unitIds)
-                );
+            return $agencyIds === [] || $unitIds === []
+                ? $query->whereRaw('1 = 0')
+                : $query->whereIn('scheduled_loads.contracting_agency_id', $agencyIds)
+                    ->whereHas('deliverables', fn (Builder $deliverables) =>
+                        $deliverables->whereIn('organizational_unit_id', $unitIds)
+                    );
         }
 
         if (RoleCode::isOperator($role)) {
             $unitIds = $this->readableUnitIds($user);
             $agencyIds = $this->readableAgencyIds($user);
 
-            return $query->whereIn('scheduled_loads.contracting_agency_id', $agencyIds)
-                ->whereHas('deliverables', function (Builder $deliverables) use ($user, $unitIds) {
-                    $deliverables->whereIn('organizational_unit_id', $unitIds)
-                        ->where(function (Builder $responsibility) use ($user) {
-                            $responsibility->whereNull('responsible_user_id')
-                                ->orWhere('responsible_user_id', $user->id);
-                        });
-                });
+            return $agencyIds === [] || $unitIds === []
+                ? $query->whereRaw('1 = 0')
+                : $query->whereIn('scheduled_loads.contracting_agency_id', $agencyIds)
+                    ->whereHas('deliverables', function (Builder $deliverables) use ($user, $unitIds) {
+                        $deliverables->whereIn('organizational_unit_id', $unitIds)
+                            ->where(function (Builder $responsibility) use ($user) {
+                                $responsibility->whereNull('responsible_user_id')
+                                    ->orWhere('responsible_user_id', $user->id);
+                            });
+                    });
         }
 
         if ($role === RoleCode::FISCALIZADOR->value) {
@@ -155,9 +158,8 @@ final class AccessScopeService
             $agencyIds[] = (int) $user->contracting_agency_id;
         }
 
-        // QA puede dejar contracting_agency_id NULL por diseño. En ese caso,
-        // la dependencia se determina por la Dirección funcional del usuario,
-        // sin convertirla en un alcance persistido.
+        // En QA los usuarios no guardan alcance de dependencia. Una Dirección
+        // sí identifica de forma estructural a qué dependencia pertenece.
         if ($user->organizational_unit_id) {
             $unitAgencyId = OrganizationalUnit::query()
                 ->whereKey($user->organizational_unit_id)
@@ -174,7 +176,6 @@ final class AccessScopeService
     /** @return list<int> */
     private function readableUnitIds(User $user): array
     {
-        // Cada Director/Operador de Dirección solo consulta la unidad que lidera/opera.
         if (
             (RoleCode::isDirectionDirector($user->role?->code)
                 || RoleCode::isOperator($user->role?->code))
