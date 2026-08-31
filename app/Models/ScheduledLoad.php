@@ -15,22 +15,6 @@ class ScheduledLoad extends Model {
         'delivered_at'=>'datetime','validated_at'=>'datetime','closed_at'=>'datetime','is_blocked'=>'boolean','retroactive'=>'boolean',
         'status'=>ScheduledLoadStatus::class,'traffic_light'=>TrafficLight::class,'metadata'=>'array','completion_percentage'=>'decimal:2','accounting_notified_at'=>'datetime'
     ];
-    public function setTrafficLightAttribute($value): void {
-        $raw = $value instanceof TrafficLight
-            ? $value->value
-            : (is_string($value) ? $value : null);
-
-        $normalized = match (strtoupper((string) $raw)) {
-            'AMARILLO' => TrafficLight::YELLOW->value,
-            'AZUL' => TrafficLight::BLUE->value,
-            'ROJO' => TrafficLight::RED->value,
-            'VERDE' => TrafficLight::GREEN->value,
-            'MORADO' => TrafficLight::ORANGE->value,
-            default => $raw,
-        };
-
-        $this->attributes['traffic_light'] = $normalized;
-    }
     public function agency(): BelongsTo { return $this->belongsTo(ContractingAgency::class,'contracting_agency_id'); }
     public function template(): BelongsTo { return $this->belongsTo(EvidenceTemplate::class,'template_id'); }
     public function deliverables(): HasMany { return $this->hasMany(ScheduledLoadDeliverable::class); }
