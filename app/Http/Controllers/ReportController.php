@@ -11,6 +11,7 @@ use App\Models\ScheduledLoad;
 use App\Services\AccessScopeService;
 use App\Services\DashboardAnalyticsService;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
@@ -25,13 +26,15 @@ class ReportController extends Controller
 
     private function filters(Request $request): array
     {
-        return $request->validate([
+        $filters = $request->validate([
             'agency_id' => ['nullable', 'integer'],
             'organizational_unit_id' => ['nullable', 'string', 'max:500'],
             'status' => ['nullable', 'string', 'max:60'],
-            'from' => ['nullable', 'date'],
-            'to' => ['nullable', 'date', 'after_or_equal:from'],
+            'from' => ['nullable', 'date_format:Y-m'],
+            'to' => ['nullable', 'date_format:Y-m', 'after_or_equal:from'],
         ]);
+
+        return $filters;
     }
 
     private function applyFilters(
@@ -73,19 +76,22 @@ class ReportController extends Controller
             );
         }
 
+        // Reportes trabaja con periodos mensuales completos, igual que el tablero.
         if (!empty($filters['from'])) {
-            $query->whereDate(
+            $from = CarbonImmutable::createFromFormat('!Y-m', $filters['from'])->startOfMonth();
+            $query->where(
                 'scheduled_loads.effective_open_at',
                 '>=',
-                $filters['from']
+                $from
             );
         }
 
         if (!empty($filters['to'])) {
-            $query->whereDate(
+            $to = CarbonImmutable::createFromFormat('!Y-m', $filters['to'])->endOfMonth();
+            $query->where(
                 'scheduled_loads.effective_open_at',
                 '<=',
-                $filters['to']
+                $to
             );
         }
 
@@ -98,7 +104,7 @@ class ReportController extends Controller
             ->filter()
             ->groupBy(function ($unit) {
                 return mb_strtolower(
-                    preg_replace('/\\s+/', ' ', trim($unit->name))
+                    preg_replace('/\s+/', ' ', trim($unit->name))
                 );
             })
             ->map(function ($group) {
@@ -160,11 +166,6 @@ class ReportController extends Controller
 
         $role = $request->user()->role?->code;
 
-        /*
-         * Los filtros se construyen desde los catálogos institucionales
-         * y no desde las cargas ya filtradas. De esta forma permanecen
-         * disponibles aunque el universo actual de cargas sea 0.
-         */
         $isGlobalRole = in_array($role, [
             RoleCode::ADMINISTRADOR->value,
             RoleCode::DIRECTOR_GENERAL->value,
@@ -225,7 +226,6 @@ class ReportController extends Controller
             }
 
             $agencyIds = array_values(array_unique($agencyIds));
-
             $unitIds = $access->accessibleUnitIds($request->user());
 
             $agencies = ContractingAgency::query()
@@ -258,35 +258,13 @@ class ReportController extends Controller
                 ->values();
         }
 
-        /*
-         * Normalización institucional:
-         *
-         * Una Dirección puede tener varios registros de
-         * organizational_units, uno por dependencia/agencia.
-         *
-         * En Reportes se muestra una sola vez y se conservan
-         * internamente todos sus IDs equivalentes.
-         */
         $units = $this->uniqueOrganizationalUnits($units);
 
-        /*
-         * Los estados son un catálogo del dominio SIGET.
-         * No dependen de que actualmente existan cargas.
-         */
         $statuses = collect(ScheduledLoadStatus::cases())
             ->mapWithKeys(fn (ScheduledLoadStatus $status) => [
                 $status->value => $status->value,
             ]);
 
-        /*
-         * Catálogo único de estados visibles en Reportes.
-         *
-         * La restricción aplica a TODOS los roles.
-         * El alcance de información de cada usuario continúa
-         * siendo responsabilidad de AccessScopeService.
-         *
-         * VALIDADA queda deliberadamente fuera.
-         */
         $allowedStatuses = [
             'PROGRAMADA',
             'REPROGRAMADA',
@@ -325,7 +303,6 @@ class ReportController extends Controller
         AccessScopeService $access
     ): StreamedResponse {
         $this->authorizeReports($request, 'reports.export');
-
         $filters = $this->filters($request);
 
         $query = $access->scopeLoads(
@@ -431,7 +408,6 @@ class ReportController extends Controller
         AccessScopeService $access
     ) {
         $this->authorizeReports($request, 'reports.export');
-
         $filters = $this->filters($request);
         $loads = $this->reportLoads($request, $filters, $access);
 
@@ -457,12 +433,7 @@ class ReportController extends Controller
         ];
 
         foreach ($headers as $column => $header) {
-            $sheet
-                ->setCellValueByColumnAndRow(
-                    $column + 1,
-                    1,
-                    $header
-                );
+            $sheet->setCellValueByColumnAndRow($column + 1, 1, $header);
         }
 
         $row = 2;
@@ -516,11 +487,7 @@ class ReportController extends Controller
             ];
 
             foreach ($values as $column => $value) {
-                $sheet->setCellValueByColumnAndRow(
-                    $column + 1,
-                    $row,
-                    $value
-                );
+                $sheet->setCellValueByColumnAndRow($column + 1, $row, $value);
             }
 
             $row++;
@@ -546,8 +513,7 @@ class ReportController extends Controller
             },
             'SIGET_reporte.xlsx',
             [
-                'Content-Type' =>
-                    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
             ]
         );
     }
@@ -557,7 +523,6 @@ class ReportController extends Controller
         DashboardAnalyticsService $analytics
     ) {
         $this->authorizeReports($request, 'reports.export');
-
         $filters = $this->filters($request);
 
         $data = $analytics->forUser(
@@ -581,6 +546,7 @@ class ReportController extends Controller
             ]
         )->download('SIGET_reporte_ejecutivo.pdf');
     }
+
     private function riskLevel(ScheduledLoad $load): string
     {
         $status = $load->status instanceof \BackedEnum
@@ -609,5 +575,4 @@ class ReportController extends Controller
 
         return 'NORMAL';
     }
-
 }
