@@ -13,7 +13,6 @@ class DatabaseSeeder extends Seeder
             AgencyTemplateSeeder::class,
             CalendarSuspensionSeeder::class,
             QaDemoSeeder::class,
-            QaCalendarCleanupSeeder::class,
             QaUserScopeCleanupSeeder::class,
         ]);
     }
