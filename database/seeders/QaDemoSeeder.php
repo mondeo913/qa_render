@@ -2,31 +2,20 @@
 
 namespace Database\Seeders;
 
-use App\Models\AlertRule;
-use App\Models\AuditLog;
-use App\Models\BackupExecution;
 use App\Models\CalendarImport;
 use App\Models\CalendarImportRow;
 use App\Models\ContractingAgency;
 use App\Models\Evidence;
-use App\Models\EvidenceReview;
 use App\Models\EvidenceTemplate;
-use App\Models\NotificationRecord;
-use App\Models\OperationalIncident;
-use App\Models\OperationalMetric;
 use App\Models\OrganizationalUnit;
 use App\Models\RepositoryFolder;
-use App\Models\ReviewAssignment;
 use App\Models\Role;
 use App\Models\ScheduledLoad;
 use App\Models\ScheduledLoadDeliverable;
-use App\Models\SystemSetting;
-use App\Models\TemplateRequirement;
 use App\Models\User;
 use App\Models\UserScope;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Str;
 
 class QaDemoSeeder extends Seeder
 {
@@ -35,15 +24,12 @@ class QaDemoSeeder extends Seeder
         $password = env('SIGET_QA_PASSWORD', 'SigetQA_2026_Cambiar!');
         $adminEmail = env('SIGET_ADMIN_EMAIL', 'admin@siget.local');
 
-        // El seeder debe ser autocontenido: si la base QA no tiene todavía
-        // agencias/plantillas, créalas antes de intentar generar cargas.
-        if (!ContractingAgency::query()->exists()
-            || !EvidenceTemplate::query()->where('code', 'PAUTA_MENSUAL')->exists()) {
-            $this->call(AgencyTemplateSeeder::class);
-        }
+        $this->call(AgencyTemplateSeeder::class);
 
         $agencies = ContractingAgency::query()
+            ->whereIn('code', ['IMSS', 'IPAB'])
             ->with(['units', 'templates.requirements'])
+            ->orderBy('id')
             ->get();
 
         $users = [];
@@ -59,32 +45,30 @@ class QaDemoSeeder extends Seeder
                 'director_production' => $agencyIndex === 0 ? 'director.produccion@siget.local' : "director.produccion.{$agency->code}@siget.local",
                 'enlace' => $agencyIndex === 0 ? 'enlace@siget.local' : "enlace.{$agency->code}@siget.local",
                 'operator_monitoring' => $agencyIndex === 0 ? 'operador.monitoreo@siget.local' : "operador.monitoreo.{$agency->code}@siget.local",
-                'operator_production' => $agencyIndex === 0 ? 'operador.produccion@siget.local' : "operador.produccion.{$agency->code}@siget.local",
+                'operator_production' => $agencyIndex === 0 ? 'operacion.programacion@siget.local' : "operacion.programacion.{$agency->code}@siget.local",
                 'fiscalizador' => $agencyIndex === 0 ? 'fiscalizador@siget.local' : "fiscalizador.{$agency->code}@siget.local",
             ];
 
             $definitions = [
-                ['ADMINISTRADOR', $emails['admin'], "Administrador {$agency->code}", $monitoring],
-                ['DIRECTOR_GENERAL', $emails['director_general'], "Director General {$agency->code}", $monitoring],
+                ['ADMINISTRADOR', $emails['admin'], "Administrador {$agency->code}", null],
+                ['DIRECTOR_GENERAL', $emails['director_general'], "Director General {$agency->code}", null],
                 ['DIRECTOR_TRANSMISION', $emails['director_monitoring'], "Director de Transmisión {$agency->code}", $monitoring],
                 ['DIRECTOR_PROGRAMACION_CONTINUIDAD', $emails['director_production'], "Director de Programación y Continuidad {$agency->code}", $production],
                 ['ENLACE_INSTITUCIONAL', $emails['enlace'], "Enlace {$agency->code}", $monitoring],
-                ['OPERADOR_TRANSMISION', $emails['operator_monitoring'], "Operativo de Transmisión {$agency->code}", $monitoring],
-                ['OPERADOR_PROGRAMACION_CONTINUIDAD', $emails['operator_production'], "Operativo de Programación y Continuidad {$agency->code}", $production],
+                ['OPERADOR_TRANSMISION', $emails['operator_monitoring'], "Operador de Transmisión {$agency->code}", $monitoring],
+                ['OPERADOR_PROGRAMACION_CONTINUIDAD', $emails['operator_production'], "Operador de Programación y Continuidad {$agency->code}", $production],
                 ['FISCALIZADOR', $emails['fiscalizador'], "Fiscalizador {$agency->code}", $monitoring],
             ];
 
             foreach ($definitions as [$roleCode, $email, $name, $unit]) {
                 $role = Role::query()->where('code', $roleCode)->firstOrFail();
 
-                // En QA ningún usuario lleva alcance directo de dependencia ni de Dirección.
-                // El alcance de lectura/escritura se gestiona exclusivamente por permisos/rol.
                 $user = User::query()->updateOrCreate(
                     ['email' => $email],
                     [
                         'role_id' => $role->id,
                         'contracting_agency_id' => null,
-                        'organizational_unit_id' => null,
+                        'organizational_unit_id' => $unit?->id,
                         'name' => $name,
                         'password' => $password,
                         'status' => 'ACTIVE',
@@ -93,28 +77,15 @@ class QaDemoSeeder extends Seeder
                     ]
                 );
 
-                // Limpia cualquier alcance histórico que hubiera sido creado por versiones
-                // anteriores del seeder para este mismo usuario.
                 UserScope::query()->where('user_id', $user->id)->delete();
-
                 $users[$email] = $user;
             }
 
-            $template = EvidenceTemplate::query()
-                ->where('contracting_agency_id', $agency->id)
-                ->where('code', 'PAUTA_MENSUAL')
-                ->with('requirements')
-                ->first();
-
+            $template = $agency->templates->firstWhere('code', 'PAUTA_MENSUAL');
             if (!$template) {
-                $this->call(AgencyTemplateSeeder::class);
-                $agency->load(['units', 'templates.requirements']);
-                $template = EvidenceTemplate::query()
-                    ->where('contracting_agency_id', $agency->id)
-                    ->where('code', 'PAUTA_MENSUAL')
-                    ->with('requirements')
-                    ->firstOrFail();
+                throw new \RuntimeException("No existe la plantilla PAUTA_MENSUAL para la dependencia QA {$agency->code}.");
             }
+            $template->load('requirements');
 
             $importer = $users[$emails['admin']];
 
@@ -151,16 +122,18 @@ class QaDemoSeeder extends Seeder
             ];
 
             $traffic = [
-                'PROGRAMADA' => 'AMARILLO', 'ABIERTA' => 'AMARILLO', 'EN_CAPTURA' => 'AMARILLO',
-                'PARCIALMENTE_ENTREGADA' => 'AMARILLO', 'ENTREGADA' => 'AZUL',
-                'EN_REVISION_INSTITUCIONAL' => 'AZUL', 'OBSERVADA' => 'ROJO',
-                'LISTA_PARA_FIRMA' => 'AZUL', 'VALIDADA' => 'VERDE',
-                'VALIDADO_Y_CERRADO' => 'VERDE', 'VENCIDA' => 'ROJO', 'REPROGRAMADA' => 'MORADO',
+                'PROGRAMADA' => 'GRAY', 'ABIERTA' => 'BLUE', 'EN_CAPTURA' => 'YELLOW',
+                'PARCIALMENTE_ENTREGADA' => 'YELLOW', 'ENTREGADA' => 'PURPLE',
+                'EN_REVISION_INSTITUCIONAL' => 'PURPLE', 'OBSERVADA' => 'ORANGE',
+                'LISTA_PARA_FIRMA' => 'GREEN', 'VALIDADA' => 'GREEN',
+                'VALIDADO_Y_CERRADO' => 'DARK_GREEN', 'VENCIDA' => 'RED', 'REPROGRAMADA' => 'ORANGE',
             ];
 
-            for ($index = 0; $index < 24; $index++) {
+            $baseDate = CarbonImmutable::now()->subMonths(8)->startOfMonth()->addDays(2);
+
+            for ($index = 0; $index < 48; $index++) {
                 $status = $statuses[$index % count($statuses)];
-                $open = CarbonImmutable::now()->startOfMonth()->addDays($index * 3);
+                $open = $baseDate->addDays($index * 5)->setTime(8, 0);
                 $close = $open->setTime(23, 59);
                 $row = CalendarImportRow::query()->updateOrCreate(
                     [
@@ -248,7 +221,7 @@ class QaDemoSeeder extends Seeder
                         ]
                     );
 
-                    if (!in_array($deliverableStatus[$status], ['PENDIENTE'], true)) {
+                    if ($deliverableStatus[$status] !== 'PENDIENTE') {
                         $evidenceStatus = match ($deliverableStatus[$status]) {
                             'EN_CAPTURA' => 'EN_CAPTURA', 'ENVIADO' => 'ENVIADO', 'OBSERVADO' => 'OBSERVADO',
                             'VALIDADO', 'CERRADO' => 'VALIDADO', default => 'EN_CAPTURA',
