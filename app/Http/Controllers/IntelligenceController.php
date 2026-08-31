@@ -20,8 +20,8 @@ class IntelligenceController extends Controller
             // Puede contener varios IDs equivalentes cuando el catálogo tiene registros duplicados por nombre.
             'organizational_unit_id' => ['nullable', 'string', 'max:500'],
             'status' => ['nullable', 'string', 'max:60'],
-            'from' => ['nullable', 'date'],
-            'to' => ['nullable', 'date'],
+            'from' => ['nullable', 'date_format:Y-m'],
+            'to' => ['nullable', 'date_format:Y-m', 'after_or_equal:from'],
         ]);
 
         $agencies = ContractingAgency::query()
