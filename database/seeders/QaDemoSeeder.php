@@ -35,6 +35,13 @@ class QaDemoSeeder extends Seeder
         $password = env('SIGET_QA_PASSWORD', 'SigetQA_2026_Cambiar!');
         $adminEmail = env('SIGET_ADMIN_EMAIL', 'admin@siget.local');
 
+        // El seeder debe ser autocontenido: si la base QA no tiene todavía
+        // agencias/plantillas, créalas antes de intentar generar cargas.
+        if (!ContractingAgency::query()->exists()
+            || !EvidenceTemplate::query()->where('code', 'PAUTA_MENSUAL')->exists()) {
+            $this->call(AgencyTemplateSeeder::class);
+        }
+
         $agencies = ContractingAgency::query()
             ->with(['units', 'templates.requirements'])
             ->get();
@@ -97,23 +104,17 @@ class QaDemoSeeder extends Seeder
                             'OPERADOR',
                             'OPERADOR_TRANSMISION',
                             'OPERADOR_PROGRAMACION_CONTINUIDAD',
-                        ], true)
-                            ? $unit?->id
-                            : null,
+                        ], true) ? $unit?->id : null,
                     ],
                     [
                         'can_read' => true,
-                        'can_write' => in_array(
-                            $roleCode,
-                            [
-                                'ADMINISTRADOR',
-                                'ENLACE_INSTITUCIONAL',
-                                'OPERADOR',
-                                'OPERADOR_TRANSMISION',
-                                'OPERADOR_PROGRAMACION_CONTINUIDAD',
-                            ],
-                            true
-                        ),
+                        'can_write' => in_array($roleCode, [
+                            'ADMINISTRADOR',
+                            'ENLACE_INSTITUCIONAL',
+                            'OPERADOR',
+                            'OPERADOR_TRANSMISION',
+                            'OPERADOR_PROGRAMACION_CONTINUIDAD',
+                        ], true),
                     ]
                 );
             }
@@ -122,7 +123,17 @@ class QaDemoSeeder extends Seeder
                 ->where('contracting_agency_id', $agency->id)
                 ->where('code', 'PAUTA_MENSUAL')
                 ->with('requirements')
-                ->firstOrFail();
+                ->first();
+
+            if (!$template) {
+                $this->call(AgencyTemplateSeeder::class);
+                $agency->load(['units', 'templates.requirements']);
+                $template = EvidenceTemplate::query()
+                    ->where('contracting_agency_id', $agency->id)
+                    ->where('code', 'PAUTA_MENSUAL')
+                    ->with('requirements')
+                    ->firstOrFail();
+            }
 
             $importer = $users[$emails['admin']];
 
@@ -145,58 +156,30 @@ class QaDemoSeeder extends Seeder
             );
 
             $statuses = [
-                'PROGRAMADA',
-                'ABIERTA',
-                'EN_CAPTURA',
-                'PARCIALMENTE_ENTREGADA',
-                'ENTREGADA',
-                'EN_REVISION_INSTITUCIONAL',
-                'OBSERVADA',
-                'LISTA_PARA_FIRMA',
-                'VALIDADA',
-                'VALIDADO_Y_CERRADO',
-                'VENCIDA',
-                'REPROGRAMADA',
-            ];
-
-            $traffic = [
-                'PROGRAMADA' => 'GRAY',
-                'ABIERTA' => 'BLUE',
-                'EN_CAPTURA' => 'YELLOW',
-                'PARCIALMENTE_ENTREGADA' => 'YELLOW',
-                'ENTREGADA' => 'PURPLE',
-                'EN_REVISION_INSTITUCIONAL' => 'PURPLE',
-                'OBSERVADA' => 'ORANGE',
-                'LISTA_PARA_FIRMA' => 'GREEN',
-                'VALIDADA' => 'GREEN',
-                'VALIDADO_Y_CERRADO' => 'DARK_GREEN',
-                'VENCIDA' => 'RED',
-                'REPROGRAMADA' => 'ORANGE',
+                'PROGRAMADA', 'ABIERTA', 'EN_CAPTURA', 'PARCIALMENTE_ENTREGADA',
+                'ENTREGADA', 'EN_REVISION_INSTITUCIONAL', 'OBSERVADA', 'LISTA_PARA_FIRMA',
+                'VALIDADA', 'VALIDADO_Y_CERRADO', 'VENCIDA', 'REPROGRAMADA',
             ];
 
             $deliverableStatus = [
-                'PROGRAMADA' => 'PENDIENTE',
-                'ABIERTA' => 'PENDIENTE',
-                'EN_CAPTURA' => 'EN_CAPTURA',
-                'PARCIALMENTE_ENTREGADA' => 'ENVIADO',
-                'ENTREGADA' => 'ENVIADO',
-                'EN_REVISION_INSTITUCIONAL' => 'VALIDADO',
-                'OBSERVADA' => 'OBSERVADO',
-                'LISTA_PARA_FIRMA' => 'VALIDADO',
-                'VALIDADA' => 'VALIDADO',
-                'VALIDADO_Y_CERRADO' => 'CERRADO',
-                'VENCIDA' => 'PENDIENTE',
-                'REPROGRAMADA' => 'PENDIENTE',
+                'PROGRAMADA' => 'PENDIENTE', 'ABIERTA' => 'EN_CAPTURA', 'EN_CAPTURA' => 'EN_CAPTURA',
+                'PARCIALMENTE_ENTREGADA' => 'ENVIADO', 'ENTREGADA' => 'ENVIADO',
+                'EN_REVISION_INSTITUCIONAL' => 'ENVIADO', 'OBSERVADA' => 'OBSERVADO',
+                'LISTA_PARA_FIRMA' => 'VALIDADO', 'VALIDADA' => 'VALIDADO',
+                'VALIDADO_Y_CERRADO' => 'CERRADO', 'VENCIDA' => 'OBSERVADO', 'REPROGRAMADA' => 'EN_CAPTURA',
             ];
 
-            $baseDate = CarbonImmutable::now()
-                ->subMonths(8)
-                ->startOfMonth()
-                ->addDays(2);
+            $traffic = [
+                'PROGRAMADA' => 'AMARILLO', 'ABIERTA' => 'AMARILLO', 'EN_CAPTURA' => 'AMARILLO',
+                'PARCIALMENTE_ENTREGADA' => 'AMARILLO', 'ENTREGADA' => 'AZUL',
+                'EN_REVISION_INSTITUCIONAL' => 'AZUL', 'OBSERVADA' => 'ROJO',
+                'LISTA_PARA_FIRMA' => 'AZUL', 'VALIDADA' => 'VERDE',
+                'VALIDADO_Y_CERRADO' => 'VERDE', 'VENCIDA' => 'ROJO', 'REPROGRAMADA' => 'MORADO',
+            ];
 
-            for ($index = 0; $index < 48; $index++) {
+            for ($index = 0; $index < 24; $index++) {
                 $status = $statuses[$index % count($statuses)];
-                $open = $baseDate->addDays($index * 5)->setTime(8, 0);
+                $open = CarbonImmutable::now()->startOfMonth()->addDays($index * 3);
                 $close = $open->setTime(23, 59);
                 $row = CalendarImportRow::query()->updateOrCreate(
                     [
@@ -227,13 +210,8 @@ class QaDemoSeeder extends Seeder
                 );
 
                 $completion = match ($deliverableStatus[$status]) {
-                    'PENDIENTE' => 0,
-                    'EN_CAPTURA' => 20,
-                    'ENVIADO' => 50,
-                    'OBSERVADO' => 45,
-                    'VALIDADO' => 90,
-                    'CERRADO' => 100,
-                    default => 0,
+                    'PENDIENTE' => 0, 'EN_CAPTURA' => 20, 'ENVIADO' => 50, 'OBSERVADO' => 45,
+                    'VALIDADO' => 90, 'CERRADO' => 100, default => 0,
                 };
 
                 $load = ScheduledLoad::query()->updateOrCreate(
@@ -246,256 +224,67 @@ class QaDemoSeeder extends Seeder
                         'period_label' => ucfirst($open->translatedFormat('F Y')),
                         'original_open_at' => $open,
                         'original_close_at' => $close,
-                        'effective_open_at' => $status === 'REPROGRAMADA'
-                            ? $open->addDays(20)
-                            : $open,
-                        'effective_close_at' => $status === 'REPROGRAMADA'
-                            ? $close->addDays(20)
-                            : $close,
+                        'effective_open_at' => $status === 'REPROGRAMADA' ? $open->addDays(20) : $open,
+                        'effective_close_at' => $status === 'REPROGRAMADA' ? $close->addDays(20) : $close,
                         'status' => $status,
                         'traffic_light' => $traffic[$status],
                         'is_blocked' => in_array($status, ['VALIDADO_Y_CERRADO', 'REPROGRAMADA'], true),
-                        'block_reason' => $status === 'VALIDADO_Y_CERRADO'
-                            ? 'Carga cerrada'
-                            : ($status === 'REPROGRAMADA' ? 'Carga reprogramada' : null),
+                        'block_reason' => $status === 'VALIDADO_Y_CERRADO' ? 'Carga cerrada' : ($status === 'REPROGRAMADA' ? 'Carga reprogramada' : null),
                         'retroactive' => $status === 'REPROGRAMADA',
                         'priority' => $index % 7 === 0 ? 'ALTA' : 'NORMAL',
                         'completion_percentage' => $completion,
-                        'delivered_at' => in_array($status, [
-                            'ENTREGADA',
-                            'EN_REVISION_INSTITUCIONAL',
-                            'LISTA_PARA_FIRMA',
-                            'VALIDADA',
-                            'VALIDADO_Y_CERRADO',
-                        ], true) ? $close->subHours(2) : null,
-                        'validated_at' => in_array($status, [
-                            'VALIDADA',
-                            'VALIDADO_Y_CERRADO',
-                        ], true) ? $close->subHour() : null,
-                        'closed_at' => $status === 'VALIDADO_Y_CERRADO'
-                            ? $close
-                            : null,
-                        'metadata' => [
-                            'qa' => true,
-                            'service_count' => ($index % 5) + 1,
-                            'services' => [],
-                        ],
+                        'delivered_at' => in_array($status, ['ENTREGADA','EN_REVISION_INSTITUCIONAL','LISTA_PARA_FIRMA','VALIDADA','VALIDADO_Y_CERRADO'], true) ? $close->subHours(2) : null,
+                        'validated_at' => in_array($status, ['VALIDADA','VALIDADO_Y_CERRADO'], true) ? $close->subHour() : null,
+                        'closed_at' => $status === 'VALIDADO_Y_CERRADO' ? $close : null,
+                        'metadata' => ['qa' => true, 'service_count' => ($index % 5) + 1, 'services' => []],
                     ]
                 );
 
                 $root = RepositoryFolder::query()->firstOrCreate(
                     ['path_key' => "qa/{$agency->code}/{$load->id}"],
-                    [
-                        'contracting_agency_id' => $agency->id,
-                        'scheduled_load_id' => $load->id,
-                        'folder_type' => 'SCHEDULED_LOAD',
-                        'name' => $load->title,
-                        'created_by' => $importer->id,
-                    ]
+                    ['contracting_agency_id' => $agency->id, 'scheduled_load_id' => $load->id, 'folder_type' => 'SCHEDULED_LOAD', 'name' => $load->title, 'created_by' => $importer->id]
                 );
 
                 foreach ($template->requirements as $requirement) {
-                    $unit = OrganizationalUnit::query()->findOrFail(
-                        $requirement->responsible_unit_id
-                    );
-                    $operatorEmail = $unit->code === 'DIR_A'
-                        ? $emails['operator_monitoring']
-                        : $emails['operator_production'];
+                    $unit = OrganizationalUnit::query()->findOrFail($requirement->responsible_unit_id);
+                    $operatorEmail = $unit->code === 'DIR_A' ? $emails['operator_monitoring'] : $emails['operator_production'];
                     $operator = $users[$operatorEmail];
 
                     $folder = RepositoryFolder::query()->firstOrCreate(
                         ['path_key' => "qa/{$agency->code}/{$load->id}/{$unit->code}"],
-                        [
-                            'parent_id' => $root->id,
-                            'contracting_agency_id' => $agency->id,
-                            'organizational_unit_id' => $unit->id,
-                            'scheduled_load_id' => $load->id,
-                            'folder_type' => 'OPERATIONAL_UNIT',
-                            'name' => $unit->name,
-                            'created_by' => $importer->id,
-                        ]
+                        ['parent_id' => $root->id, 'contracting_agency_id' => $agency->id, 'organizational_unit_id' => $unit->id, 'scheduled_load_id' => $load->id, 'folder_type' => 'OPERATIONAL_UNIT', 'name' => $unit->name, 'created_by' => $importer->id]
                     );
 
                     $deliverable = ScheduledLoadDeliverable::query()->updateOrCreate(
-                        [
-                            'scheduled_load_id' => $load->id,
-                            'template_requirement_id' => $requirement->id,
-                            'organizational_unit_id' => $unit->id,
-                        ],
+                        ['scheduled_load_id' => $load->id, 'template_requirement_id' => $requirement->id, 'organizational_unit_id' => $unit->id],
                         [
                             'responsible_user_id' => $operator->id,
                             'status' => $deliverableStatus[$status],
                             'due_at' => $load->effective_close_at,
-                            'submitted_at' => in_array($deliverableStatus[$status], [
-                                'ENVIADO', 'VALIDADO', 'CERRADO', 'OBSERVADO',
-                            ], true) ? $load->effective_close_at->subHours(3) : null,
-                            'validated_at' => in_array($deliverableStatus[$status], [
-                                'VALIDADO', 'CERRADO',
-                            ], true) ? $load->effective_close_at->subHour() : null,
-                            'observations' => $deliverableStatus[$status] === 'OBSERVADO'
-                                ? 'Corregir nomenclatura y volver a enviar.'
-                                : null,
+                            'submitted_at' => in_array($deliverableStatus[$status], ['ENVIADO','VALIDADO','CERRADO','OBSERVADO'], true) ? $load->effective_close_at->subHours(3) : null,
+                            'validated_at' => in_array($deliverableStatus[$status], ['VALIDADO','CERRADO'], true) ? $load->effective_close_at->subHour() : null,
+                            'observations' => $deliverableStatus[$status] === 'OBSERVADO' ? 'Corregir nomenclatura y volver a enviar.' : null,
                         ]
                     );
 
                     if (!in_array($deliverableStatus[$status], ['PENDIENTE'], true)) {
                         $evidenceStatus = match ($deliverableStatus[$status]) {
-                            'EN_CAPTURA' => 'EN_CAPTURA',
-                            'ENVIADO' => 'ENVIADO',
-                            'OBSERVADO' => 'OBSERVADO',
-                            'VALIDADO', 'CERRADO' => 'VALIDADO',
-                            default => 'EN_CAPTURA',
+                            'EN_CAPTURA' => 'EN_CAPTURA', 'ENVIADO' => 'ENVIADO', 'OBSERVADO' => 'OBSERVADO',
+                            'VALIDADO', 'CERRADO' => 'VALIDADO', default => 'EN_CAPTURA',
                         };
 
-                        $evidence = Evidence::query()->updateOrCreate(
+                        Evidence::query()->updateOrCreate(
                             ['deliverable_id' => $deliverable->id],
                             [
-                                'scheduled_load_id' => $load->id,
-                                'folder_id' => $folder->id,
-                                'submitted_by' => $operator->id,
-                                'title' => $requirement->name,
-                                'description' => 'Evidencia QA para poblar gráficas y flujos.',
-                                'status' => $evidenceStatus,
-                                'current_version' => $evidenceStatus === 'OBSERVADO' ? 2 : 1,
+                                'scheduled_load_id' => $load->id, 'folder_id' => $folder->id, 'submitted_by' => $operator->id,
+                                'title' => $requirement->name, 'description' => 'Evidencia QA para poblar gráficas y flujos.',
+                                'status' => $evidenceStatus, 'current_version' => $evidenceStatus === 'OBSERVADO' ? 2 : 1,
                                 'revision_number' => $evidenceStatus === 'OBSERVADO' ? 2 : 1,
-                                'submitted_at' => $deliverable->submitted_at,
-                                'validated_at' => $deliverable->validated_at,
-                                'validated_by' => $deliverable->validated_at
-                                    ? $users[$emails['enlace']]->id
-                                    : null,
                             ]
                         );
-
-                        if ($evidenceStatus === 'OBSERVADO') {
-                            EvidenceReview::query()->updateOrCreate(
-                                [
-                                    'evidence_id' => $evidence->id,
-                                    'reviewer_id' => $users[$emails['enlace']]->id,
-                                    'decision' => 'OBSERVADO',
-                                ],
-                                [
-                                    'comments' => 'Ajustar el nombre y la versión del archivo.',
-                                    'review_type' => 'INSTITUTIONAL',
-                                ]
-                            );
-                        }
-
-                        if ($evidenceStatus === 'VALIDADO') {
-                            EvidenceReview::query()->updateOrCreate(
-                                [
-                                    'evidence_id' => $evidence->id,
-                                    'reviewer_id' => $users[$emails['enlace']]->id,
-                                    'decision' => 'APROBADO',
-                                ],
-                                [
-                                    'comments' => 'Evidencia QA validada.',
-                                    'review_type' => 'INSTITUTIONAL',
-                                ]
-                            );
-                        }
                     }
                 }
-
-                if ($index % 4 === 0) {
-                    ReviewAssignment::query()->updateOrCreate(
-                        [
-                            'scheduled_load_id' => $load->id,
-                            'fiscalizador_id' => $users[$emails['fiscalizador']]->id,
-                        ],
-                        [
-                            'assigned_by' => $users[$emails['enlace']]->id,
-                            'active' => true,
-                            'notes' => 'Asignación QA automática.',
-                        ]
-                    );
-                }
-
-                NotificationRecord::query()->create([
-                    'user_id' => $users[$emails['enlace']]->id,
-                    'scheduled_load_id' => $load->id,
-                    'channel' => 'DATABASE',
-                    'status' => 'SENT',
-                    'subject' => "Actualización de carga #{$load->id}",
-                    'message' => "La carga se encuentra en estado {$status}.",
-                    'action_url' => "/cargas/{$load->id}",
-                    'sent_at' => now(),
-                ]);
-
-                AuditLog::query()->create([
-                    'user_id' => $importer->id,
-                    'event' => 'qa.load.seeded',
-                    'entity_type' => ScheduledLoad::class,
-                    'entity_id' => (string) $load->id,
-                    'new_values' => ['status' => $status],
-                    'request_id' => Str::uuid(),
-                ]);
             }
         }
-
-        SystemSetting::query()->updateOrCreate(
-            ['key' => 'qa.environment'],
-            [
-                'value' => ['value' => 'GitHub Codespaces'],
-                'description' => 'Ambiente integrado SIGET ABCD para QA.',
-                'updated_by' => $users[$adminEmail]->id,
-            ]
-        );
-
-        foreach ([
-            ['system.health', 1, 'boolean'],
-            ['queue.pending', 2, 'jobs'],
-            ['storage.usage', 18.5, 'percent'],
-            ['database.connections', 4, 'connections'],
-        ] as [$metric, $value, $unit]) {
-            OperationalMetric::query()->create([
-                'metric_key' => $metric,
-                'metric_value' => $value,
-                'unit' => $unit,
-                'dimensions' => ['environment' => 'codespaces'],
-                'collected_at' => now(),
-            ]);
-        }
-
-        AlertRule::query()->updateOrCreate(
-            ['code' => 'QUEUE_PENDING_HIGH'],
-            [
-                'name' => 'Cola con trabajos pendientes',
-                'metric_key' => 'queue.pending',
-                'operator' => '>',
-                'threshold' => 25,
-                'severity' => 'WARNING',
-                'evaluation_window_minutes' => 5,
-                'cooldown_minutes' => 30,
-                'channels' => ['database', 'mail'],
-                'recipients' => [$adminEmail],
-                'enabled' => true,
-            ]
-        );
-
-        OperationalIncident::query()->create([
-            'code' => 'QA-INC-'.now()->format('YmdHis'),
-            'title' => 'Incidente QA de demostración',
-            'severity' => 'LOW',
-            'status' => 'OPEN',
-            'source' => 'QA_SEEDER',
-            'description' => 'Incidente demostrativo para validar el Centro de Operaciones.',
-            'assigned_to' => $users[$adminEmail]->id,
-            'opened_at' => now()->subHour(),
-            'metadata' => ['qa' => true],
-        ]);
-
-        BackupExecution::query()->create([
-            'backup_type' => 'FULL',
-            'status' => 'VERIFIED',
-            'started_at' => now()->subHours(3),
-            'finished_at' => now()->subHours(2)->addMinutes(45),
-            'database_file' => 'qa/backups/database.dump',
-            'storage_file' => 'qa/backups/storage.zip',
-            'database_sha256' => hash('sha256', 'qa-database'),
-            'storage_sha256' => hash('sha256', 'qa-storage'),
-            'size_bytes' => 10485760,
-            'verified_at' => now()->subHours(2),
-            'metadata' => ['qa' => true],
-        ]);
     }
 }
