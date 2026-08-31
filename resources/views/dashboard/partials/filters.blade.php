@@ -7,6 +7,36 @@
     $periodMax = $periodMax ?? null;
     $selectedFrom = $filters['from'] ?? '';
     $selectedTo = $filters['to'] ?? '';
+    $roleCode = auth()->user()?->role?->code;
+    $operatorRoles = ['OPERADOR','OPERADOR_TRANSMISION','OPERADOR_PROGRAMACION_CONTINUIDAD'];
+    $isOperatorDashboard = in_array($roleCode, $operatorRoles, true);
+    $nonOperatorStatuses = [
+        'PROGRAMADA' => 'PROGRAMADO',
+        'REPROGRAMADA' => 'REPROGRAMADO',
+        'VALIDADO_Y_CERRADO' => 'VALIDADO Y CERRADO',
+        'VENCIDA' => 'VENCIDO',
+    ];
+    $operatorStatuses = [
+        'PROGRAMADA' => 'PROGRAMADO',
+        'ABIERTA' => 'VENTANA ABIERTA',
+        'EN_CAPTURA' => 'EN CAPTURA',
+        'PARCIALMENTE_ENTREGADA' => 'ENTREGA PARCIAL',
+        'ENTREGADA' => 'ENTREGADA',
+        'EN_REVISION_INSTITUCIONAL' => 'EN REVISIÓN INSTITUCIONAL',
+        'OBSERVADA' => 'CON OBSERVACIONES',
+        'LISTA_PARA_FIRMA' => 'LISTA PARA FIRMA',
+        'PENDIENTE_DOCUMENTO_FIRMADO' => 'PENDIENTE DOCUMENTO FIRMADO',
+        'VALIDADA' => 'VALIDADA',
+        'VALIDADO_Y_CERRADO' => 'VALIDADO Y CERRADO',
+        'SUSPENDIDA' => 'SUSPENDIDA',
+        'REPROGRAMADA' => 'REPROGRAMADA',
+        'REPROGRAMADA_ABIERTA' => 'REPROGRAMADA ABIERTA',
+        'REPROGRAMADA_ENTREGADA' => 'REPROGRAMADA ENTREGADA',
+        'VENCIDA' => 'VENCIDA',
+        'CANCELADA' => 'CANCELADA',
+        'REABIERTA' => 'REABIERTA',
+    ];
+    $availableStatuses = $isOperatorDashboard ? $operatorStatuses : $nonOperatorStatuses;
 @endphp
 <div class="card-body row g-3 align-items-end">
 <div class="col-xl-3 col-md-6">
@@ -39,7 +69,7 @@ $filterIds=implode(',',array_map('strval',$filterIds));
 <label class="form-label">Estado</label>
 <select name="status" class="form-select">
 <option value="">Todos</option>
-@foreach(['PROGRAMADA'=>'PROGRAMADO','REPROGRAMADA'=>'REPROGRAMADO','VALIDADO_Y_CERRADO'=>'VALIDADO Y CERRADO','VENCIDA'=>'VENCIDO'] as $status => $label)
+@foreach($availableStatuses as $status => $label)
 <option value="{{ $status }}" @selected(($filters['status'] ?? null) === $status)>{{ $label }}</option>
 @endforeach
 </select>
