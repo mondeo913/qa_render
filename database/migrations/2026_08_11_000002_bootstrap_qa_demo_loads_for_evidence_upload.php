@@ -13,10 +13,8 @@ return new class extends Migration {
             return;
         }
 
-        // The QA seeder may run before later repair migrations on a pending DB.
-        // Keep this bootstrap self-contained so it can safely initialize a
-        // schema that predates the fields/tables used by the current seeders.
-        if (! Schema::hasColumn('calendar_import_rows', 'source_column')) {
+        // Repair fields required by the current QA universe.
+        if (!Schema::hasColumn('calendar_import_rows', 'source_column')) {
             Schema::table('calendar_import_rows', function (Blueprint $table): void {
                 $table->string('source_column', 50)->nullable()->after('row_number');
             });
@@ -26,20 +24,18 @@ return new class extends Migration {
             return;
         }
 
-        if (! Schema::hasColumn('scheduled_loads', 'priority')) {
+        if (!Schema::hasColumn('scheduled_loads', 'priority')) {
             Schema::table('scheduled_loads', function (Blueprint $table): void {
                 $table->string('priority', 20)->default('NORMAL')->after('retroactive');
             });
         }
-        if (! Schema::hasColumn('scheduled_loads', 'completion_percentage')) {
+        if (!Schema::hasColumn('scheduled_loads', 'completion_percentage')) {
             Schema::table('scheduled_loads', function (Blueprint $table): void {
                 $table->decimal('completion_percentage', 5, 2)->default(0)->after('priority');
             });
         }
 
-        // ReviewAssignment is used by QaDemoSeeder but the base migrations did
-        // not create its table. Create it here before invoking the seeder.
-        if (! Schema::hasTable('review_assignments')) {
+        if (!Schema::hasTable('review_assignments')) {
             Schema::create('review_assignments', function (Blueprint $table): void {
                 $table->id();
                 $table->foreignId('scheduled_load_id')->constrained('scheduled_loads')->cascadeOnDelete();
@@ -52,43 +48,24 @@ return new class extends Migration {
             });
         }
 
-        // Fields used by QaDemoSeeder but missing from the original evidence
-        // repository migration.
-        if (Schema::hasTable('evidences') && ! Schema::hasColumn('evidences', 'revision_number')) {
+        if (Schema::hasTable('evidences') && !Schema::hasColumn('evidences', 'revision_number')) {
             Schema::table('evidences', function (Blueprint $table): void {
                 $table->unsignedInteger('revision_number')->default(1)->after('current_version');
             });
         }
 
-        if (Schema::hasTable('evidence_reviews') && ! Schema::hasColumn('evidence_reviews', 'review_type')) {
+        if (Schema::hasTable('evidence_reviews') && !Schema::hasColumn('evidence_reviews', 'review_type')) {
             Schema::table('evidence_reviews', function (Blueprint $table): void {
                 $table->string('review_type', 40)->default('INSTITUTIONAL')->after('comments');
             });
         }
 
-        // The bootstrap must only seed once, but schema repair above must run
-        // even when demo data already exists.
-        if (DB::table('scheduled_loads')->exists()) {
-            return;
-        }
-
-        foreach (['RolePermissionSeeder', 'AgencyTemplateSeeder', 'QaDemoSeeder'] as $seeder) {
-            if (Artisan::call('db:seed', [
-                '--class' => $seeder,
-                '--force' => true,
-            ]) !== 0) {
-                throw new \RuntimeException("No se pudo ejecutar {$seeder} durante el bootstrap QA.");
-            }
-        }
-
-        if (! DB::table('scheduled_loads')->exists()) {
-            throw new \RuntimeException('El bootstrap QA terminó sin crear cargas programadas.');
-        }
+        // On an existing QA database, the operator can explicitly run
+        // QaUniverseSeeder. Do not invoke demo seeders from a migration.
     }
 
     public function down(): void
     {
-        // QA demo data is intentionally preserved; this migration only repairs
-        // the missing bootstrap path and does not own the demo records.
+        // Schema repair fields are intentionally retained.
     }
 };
