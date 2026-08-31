@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\RoleCode;
+use App\Enums\ScheduledLoadStatus;
 use App\Models\ContractingAgency;
 use App\Models\OrganizationalUnit;
 use App\Services\DashboardAnalyticsService;
@@ -51,6 +53,26 @@ class IntelligenceController extends Controller
             ->sortBy(fn ($unit) => mb_strtolower(trim((string) $unit->name)))
             ->values();
 
+        $role = $request->user()->role?->code;
+        $directorStatuses = [
+            ScheduledLoadStatus::PROGRAMADA->value,
+            ScheduledLoadStatus::REPROGRAMADA->value,
+            ScheduledLoadStatus::VALIDADO_Y_CERRADO->value,
+            ScheduledLoadStatus::VENCIDA->value,
+        ];
+
+        $statuses = collect(ScheduledLoadStatus::cases())
+            ->map(fn (ScheduledLoadStatus $status) => [
+                'code' => $status->value,
+                'label' => $this->statusLabel($status->value),
+            ]);
+
+        if (RoleCode::isDirectionDirector($role)) {
+            $statuses = $statuses->filter(
+                fn (array $status) => in_array($status['code'], $directorStatuses, true)
+            )->values();
+        }
+
         return view('intelligence.index', [
             'analytics' => $analytics->forUser($request->user(), $filters),
             'agencies' => $agencies,
@@ -58,6 +80,32 @@ class IntelligenceController extends Controller
             'filterAgencies' => $agencies,
             'filterUnits' => $units,
             'filters' => $filters,
+            'statuses' => $statuses,
         ]);
+    }
+
+    private function statusLabel(string $status): string
+    {
+        return match ($status) {
+            'PROGRAMADA' => 'Programada',
+            'ABIERTA' => 'Ventana abierta',
+            'EN_CAPTURA' => 'En captura',
+            'PARCIALMENTE_ENTREGADA' => 'Entrega parcial',
+            'ENTREGADA' => 'Entregada',
+            'EN_REVISION_INSTITUCIONAL' => 'En revisión institucional',
+            'OBSERVADA' => 'Con observaciones',
+            'LISTA_PARA_FIRMA' => 'Lista para firma',
+            'PENDIENTE_DOCUMENTO_FIRMADO' => 'Pendiente de documento firmado',
+            'VALIDADA' => 'Validada',
+            'VALIDADO_Y_CERRADO' => 'Validado y cerrado',
+            'SUSPENDIDA' => 'Suspendida',
+            'REPROGRAMADA' => 'Reprogramada',
+            'REPROGRAMADA_ABIERTA' => 'Reprogramada abierta',
+            'REPROGRAMADA_ENTREGADA' => 'Reprogramada entregada',
+            'VENCIDA' => 'Vencida',
+            'CANCELADA' => 'Cancelada',
+            'REABIERTA' => 'Reabierta',
+            default => str($status)->replace('_', ' ')->lower()->ucfirst()->toString(),
+        };
     }
 }
