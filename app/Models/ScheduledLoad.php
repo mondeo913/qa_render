@@ -16,15 +16,20 @@ class ScheduledLoad extends Model {
         'status'=>ScheduledLoadStatus::class,'traffic_light'=>TrafficLight::class,'metadata'=>'array','completion_percentage'=>'decimal:2','accounting_notified_at'=>'datetime'
     ];
     public function setTrafficLightAttribute($value): void {
-        $normalized = match (strtoupper((string) $value)) {
+        $raw = $value instanceof TrafficLight
+            ? $value->value
+            : (is_string($value) ? $value : null);
+
+        $normalized = match (strtoupper((string) $raw)) {
             'AMARILLO' => TrafficLight::YELLOW->value,
             'AZUL' => TrafficLight::BLUE->value,
             'ROJO' => TrafficLight::RED->value,
             'VERDE' => TrafficLight::GREEN->value,
             'MORADO' => TrafficLight::ORANGE->value,
-            default => $value,
+            default => $raw,
         };
-        $this->attributes['traffic_light'] = $normalized instanceof TrafficLight ? $normalized->value : $normalized;
+
+        $this->attributes['traffic_light'] = $normalized;
     }
     public function agency(): BelongsTo { return $this->belongsTo(ContractingAgency::class,'contracting_agency_id'); }
     public function template(): BelongsTo { return $this->belongsTo(EvidenceTemplate::class,'template_id'); }
