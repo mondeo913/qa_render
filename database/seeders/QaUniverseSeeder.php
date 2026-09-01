@@ -45,17 +45,25 @@ class QaUniverseSeeder extends Seeder
 
     private function cleanQaOperationalData(): void
     {
-        $qaLoads = ScheduledLoad::query()
-            ->whereRaw("COALESCE(metadata->>'qa','false') = 'true'")
+        // Primero identificamos las importaciones QA y sus cargas asociadas.
+        // Así se limpian también universos QA antiguos que no tengan metadata.qa.
+        $qaImportIds = CalendarImport::query()
+            ->where('original_filename', 'like', 'Pauta_QA_%')
             ->pluck('id');
 
-        if ($qaLoads->isNotEmpty()) {
-            ScheduledLoad::query()->whereIn('id', $qaLoads)->delete();
+        if ($qaImportIds->isNotEmpty()) {
+            ScheduledLoad::query()
+                ->whereIn('calendar_import_id', $qaImportIds)
+                ->delete();
         }
 
-        CalendarImport::query()
-            ->where('original_filename', 'like', 'Pauta_QA_%')
+        ScheduledLoad::query()
+            ->whereRaw("COALESCE(metadata->>'qa','false') = 'true'")
             ->delete();
+
+        if ($qaImportIds->isNotEmpty()) {
+            CalendarImport::query()->whereIn('id', $qaImportIds)->delete();
+        }
 
         UserScope::query()
             ->whereHas('user', fn ($query) =>
@@ -109,7 +117,7 @@ class QaUniverseSeeder extends Seeder
                 WHERE tc.constraint_type = 'FOREIGN KEY'
                   AND ccu.table_name = 'users'
                   AND ccu.column_name = 'id'
-                  AND tc.table_name NOT IN ('users', 'user_scopes')
+                  AND tc.table_name NOT IN ('users','user_scopes')
             SQL);
 
             foreach ($references as $reference) {
@@ -225,7 +233,7 @@ class QaUniverseSeeder extends Seeder
             8 => 'AGOSTO',
         ];
 
-        // Cinco fechas por dependencia = 10 cargas QA totales.
+        // Cinco fechas por dependencia; dos dependencias = 10 cargas totales.
         $targetDates = [
             [1, 15],
             [2, 19],
@@ -298,8 +306,7 @@ class QaUniverseSeeder extends Seeder
             $letter = Coordinate::stringFromColumnIndex($targetColumn);
             $sheet->setCellValue($letter.'3', 'X');
 
-            // Solo tres de las cinco fechas llevan una segunda marca; esto permite
-            // probar que el importador agrupa las marcas de la misma fecha en una carga.
+            // Tres fechas tienen una segunda marca para probar la agrupación del importador.
             if (in_array($position, [1, 3, 4], true)) {
                 $sheet->setCellValue($letter.'4', 'X');
             }
