@@ -153,7 +153,7 @@ $roleLabel = match($role) {
      Estos bloques JSON se procesan DESPUÉS de que el módulo Chart.js está disponible,
      evitando que las gráficas se queden vacías por una carrera de carga. --}}
 <script type="application/json" data-siget-chart="sigetStatusChart">
-@json([
+{!! json_encode([
     'type' => 'doughnut',
     'labels' => ['Validadas y cerradas','Realizadas sin cierre','Reprogramadas','Faltantes'],
     'datasets' => [[
@@ -166,11 +166,11 @@ $roleLabel = match($role) {
         'cutout' => '62%',
         'plugins' => ['legend' => ['position' => 'bottom']],
     ],
-])
+]) !!}
 </script>
 
 <script type="application/json" data-siget-chart="sigetAgencyChart">
-@json([
+{!! json_encode([
     'type' => 'bar',
     'labels' => $agencyRows->pluck('agency')->values()->all(),
     'datasets' => [
@@ -187,11 +187,11 @@ $roleLabel = match($role) {
             'y' => ['grid'=>['display'=>false]],
         ],
     ],
-])
+]) !!}
 </script>
 
 <script type="application/json" data-siget-chart="sigetTrendChart">
-@json([
+{!! json_encode([
     'type' => 'bar',
     'labels' => $monthly->pluck('period')->values()->all(),
     'datasets' => [
@@ -207,6 +207,6 @@ $roleLabel = match($role) {
             'y1' => ['position'=>'right','beginAtZero'=>true,'max'=>100,'grid'=>['drawOnChartArea'=>false]],
         ],
     ],
-])
+]) !!}
 </script>
 @endsection
