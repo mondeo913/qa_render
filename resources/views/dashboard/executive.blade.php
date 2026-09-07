@@ -149,41 +149,64 @@ $roleLabel = match($role) {
     </div>
 </div>
 
-<script>
-(function(){
-    const statusLabels=['Validadas y cerradas','Realizadas sin cierre','Reprogramadas','Faltantes'];
-    const statusValues=[{{ $closed }},{{ $realizedOpen }},{{ $reprogrammed }},{{ $missing }}];
-    const agencies=@json($agencyRows->values());
-    const monthly=@json($monthly->values());
+{{-- IMPORTANTE: app.js ya importa Chart.js y llama renderCharts() en DOMContentLoaded.
+     Estos bloques JSON se procesan DESPUÉS de que el módulo Chart.js está disponible,
+     evitando que las gráficas se queden vacías por una carrera de carga. --}}
+<script type="application/json" data-siget-chart="sigetStatusChart">
+@json([
+    'type' => 'doughnut',
+    'labels' => ['Validadas y cerradas','Realizadas sin cierre','Reprogramadas','Faltantes'],
+    'datasets' => [[
+        'data' => [$closed,$realizedOpen,$reprogrammed,$missing],
+        'backgroundColor' => ['#4f7cff','#21c6d8','#e9b949','#ef4655'],
+        'borderColor' => '#121b24',
+        'borderWidth' => 3,
+    ]],
+    'options' => [
+        'cutout' => '62%',
+        'plugins' => ['legend' => ['position' => 'bottom']],
+    ],
+])
+</script>
 
-    const baseOpts={responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#c7d4de',font:{size:11},usePointStyle:true,padding:12}},tooltip:{titleColor:'#fff',bodyColor:'#d8e2e9',backgroundColor:'#0b1118',borderColor:'rgba(255,255,255,.12)',borderWidth:1}}};
+<script type="application/json" data-siget-chart="sigetAgencyChart">
+@json([
+    'type' => 'bar',
+    'labels' => $agencyRows->pluck('agency')->values()->all(),
+    'datasets' => [
+        ['label'=>'Programadas','data'=>$agencyRows->pluck('programmed')->values()->all(),'backgroundColor'=>'#334454','borderRadius'=>5],
+        ['label'=>'Realizadas','data'=>$agencyRows->pluck('realized')->values()->all(),'backgroundColor'=>'#21c6d8','borderRadius'=>5],
+        ['label'=>'Validadas y cerradas','data'=>$agencyRows->pluck('closed')->values()->all(),'backgroundColor'=>'#4f7cff','borderRadius'=>5],
+        ['label'=>'Reprogramadas','data'=>$agencyRows->pluck('reprogrammed')->values()->all(),'backgroundColor'=>'#e9b949','borderRadius'=>5],
+        ['label'=>'Faltantes','data'=>$agencyRows->pluck('missing')->values()->all(),'backgroundColor'=>'#ef4655','borderRadius'=>5],
+    ],
+    'options' => [
+        'indexAxis' => 'y',
+        'scales' => [
+            'x' => ['beginAtZero'=>true],
+            'y' => ['grid'=>['display'=>false]],
+        ],
+    ],
+])
+</script>
 
-    const statusCanvas=document.getElementById('sigetStatusChart');
-    if(statusCanvas && typeof Chart!=='undefined'){
-        new Chart(statusCanvas,{type:'doughnut',data:{labels:statusLabels,datasets:[{data:statusValues,backgroundColor:['#4f7cff','#21c6d8','#e9b949','#ef4655'],borderColor:'#121b24',borderWidth:3}]},options:{...baseOpts,cutout:'62%',plugins:{...baseOpts.plugins,legend:{position:'bottom',labels:{color:'#c7d4de',font:{size:10},usePointStyle:true,padding:10}}}}});
-    }
-
-    const agencyCanvas=document.getElementById('sigetAgencyChart');
-    if(agencyCanvas && typeof Chart!=='undefined'){
-        const rows=agencies.slice(0,12);
-        new Chart(agencyCanvas,{type:'bar',data:{labels:rows.map(r=>r.agency),datasets:[
-            {label:'Programadas',data:rows.map(r=>r.programmed),backgroundColor:'#334454',borderRadius:5},
-            {label:'Realizadas',data:rows.map(r=>r.realized),backgroundColor:'#21c6d8',borderRadius:5},
-            {label:'Validadas y cerradas',data:rows.map(r=>r.closed),backgroundColor:'#4f7cff',borderRadius:5},
-            {label:'Reprogramadas',data:rows.map(r=>r.reprogrammed),backgroundColor:'#e9b949',borderRadius:5},
-            {label:'Faltantes',data:rows.map(r=>r.missing),backgroundColor:'#ef4655',borderRadius:5}
-        ]},options:{...baseOpts,indexAxis:'y',scales:{x:{stacked:false,ticks:{color:'#8ea2b4',font:{size:10}},grid:{color:'rgba(255,255,255,.05)'}},y:{ticks:{color:'#a9bac7',font:{size:10}},grid:{display:false}}}}});
-    }
-
-    const trendCanvas=document.getElementById('sigetTrendChart');
-    if(trendCanvas && typeof Chart!=='undefined'){
-        new Chart(trendCanvas,{type:'bar',data:{labels:monthly.map(m=>m.period),datasets:[
-            {label:'Programadas',data:monthly.map(m=>m.total),backgroundColor:'#334454',borderRadius:5},
-            {label:'Realizadas',data:monthly.map(m=>m.realized),backgroundColor:'#21c6d8',borderRadius:5},
-            {label:'Validadas y cerradas',data:monthly.map(m=>m.closed),backgroundColor:'#4f7cff',borderRadius:5},
-            {label:'Cumplimiento %',type:'line',data:monthly.map(m=>m.compliance),borderColor:'#35c77a',backgroundColor:'#35c77a',yAxisID:'y1',tension:.25,pointRadius:3,pointHoverRadius:5}
-        ]},options:{...baseOpts,scales:{x:{ticks:{color:'#8ea2b4',font:{size:10}},grid:{display:false}},y:{beginAtZero:true,ticks:{color:'#8ea2b4',font:{size:10}},grid:{color:'rgba(255,255,255,.05)'}},y1:{position:'right',beginAtZero:true,max:100,ticks:{color:'#7fd89d',font:{size:10},callback:v=>v+'%'},grid:{drawOnChartArea:false}}}}});
-    }
-})();
+<script type="application/json" data-siget-chart="sigetTrendChart">
+@json([
+    'type' => 'bar',
+    'labels' => $monthly->pluck('period')->values()->all(),
+    'datasets' => [
+        ['label'=>'Programadas','data'=>$monthly->pluck('total')->values()->all(),'backgroundColor'=>'#334454','borderRadius'=>5],
+        ['label'=>'Realizadas','data'=>$monthly->pluck('realized')->values()->all(),'backgroundColor'=>'#21c6d8','borderRadius'=>5],
+        ['label'=>'Validadas y cerradas','data'=>$monthly->pluck('closed')->values()->all(),'backgroundColor'=>'#4f7cff','borderRadius'=>5],
+        ['label'=>'Cumplimiento %','type'=>'line','data'=>$monthly->pluck('compliance')->values()->all(),'borderColor'=>'#35c77a','backgroundColor'=>'#35c77a','yAxisID'=>'y1','tension'=>.25,'pointRadius'=>3,'pointHoverRadius'=>5],
+    ],
+    'options' => [
+        'scales' => [
+            'x' => ['grid'=>['display'=>false]],
+            'y' => ['beginAtZero'=>true],
+            'y1' => ['position'=>'right','beginAtZero'=>true,'max'=>100,'grid'=>['drawOnChartArea'=>false]],
+        ],
+    ],
+])
 </script>
 @endsection
