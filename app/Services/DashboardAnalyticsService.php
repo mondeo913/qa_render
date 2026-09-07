@@ -43,11 +43,12 @@ final class DashboardAnalyticsService
         'REABIERTA',
     ];
 
+    // Solo las cargas aún abiertas como reprogramación cuentan como "a reprogramar".
+    // REPROGRAMADA_ENTREGADA ya fue realizada y por ello no debe duplicar el avance.
     private const REPROGRAMMED_STATUSES = [
         'SUSPENDIDA',
         'REPROGRAMADA',
         'REPROGRAMADA_ABIERTA',
-        'REPROGRAMADA_ENTREGADA',
     ];
 
     public function __construct(private readonly AccessScopeService $access) {}
@@ -125,7 +126,7 @@ final class DashboardAnalyticsService
             ->selectRaw("SUM(CASE WHEN scheduled_loads.status IN ('ENTREGADA','EN_REVISION_INSTITUCIONAL','OBSERVADA','LISTA_PARA_FIRMA','PENDIENTE_DOCUMENTO_FIRMADO','VALIDADA','VALIDADO_Y_CERRADO','REPROGRAMADA_ENTREGADA','REABIERTA') THEN 1 ELSE 0 END) AS realized")
             ->selectRaw("SUM(CASE WHEN scheduled_loads.status='VALIDADO_Y_CERRADO' THEN 1 ELSE 0 END) AS closed")
             ->selectRaw("SUM(CASE WHEN scheduled_loads.status='VALIDADA' THEN 1 ELSE 0 END) AS validated")
-            ->selectRaw("SUM(CASE WHEN scheduled_loads.status IN ('SUSPENDIDA','REPROGRAMADA','REPROGRAMADA_ABIERTA','REPROGRAMADA_ENTREGADA') THEN 1 ELSE 0 END) AS reprogrammed")
+            ->selectRaw("SUM(CASE WHEN scheduled_loads.status IN ('SUSPENDIDA','REPROGRAMADA','REPROGRAMADA_ABIERTA') THEN 1 ELSE 0 END) AS reprogrammed")
             ->selectRaw("SUM(CASE WHEN scheduled_loads.status IN ('PROGRAMADA','ABIERTA','EN_CAPTURA','PARCIALMENTE_ENTREGADA','VENCIDA') THEN 1 ELSE 0 END) AS missing")
             ->selectRaw("SUM(CASE WHEN scheduled_loads.status='VENCIDA' THEN 1 ELSE 0 END) AS overdue")
             ->groupBy('contracting_agencies.id', 'contracting_agencies.name')
@@ -163,7 +164,7 @@ final class DashboardAnalyticsService
             ->selectRaw("COUNT(DISTINCT CASE WHEN scheduled_loads.status IN ('ENTREGADA','EN_REVISION_INSTITUCIONAL','OBSERVADA','LISTA_PARA_FIRMA','PENDIENTE_DOCUMENTO_FIRMADO','VALIDADA','VALIDADO_Y_CERRADO','REPROGRAMADA_ENTREGADA','REABIERTA') THEN scheduled_loads.id END) AS realized")
             ->selectRaw("COUNT(DISTINCT CASE WHEN scheduled_loads.status='VALIDADO_Y_CERRADO' THEN scheduled_loads.id END) AS closed")
             ->selectRaw("COUNT(DISTINCT CASE WHEN scheduled_loads.status='VALIDADA' THEN scheduled_loads.id END) AS validated")
-            ->selectRaw("COUNT(DISTINCT CASE WHEN scheduled_loads.status IN ('SUSPENDIDA','REPROGRAMADA','REPROGRAMADA_ABIERTA','REPROGRAMADA_ENTREGADA') THEN scheduled_loads.id END) AS reprogrammed")
+            ->selectRaw("COUNT(DISTINCT CASE WHEN scheduled_loads.status IN ('SUSPENDIDA','REPROGRAMADA','REPROGRAMADA_ABIERTA') THEN scheduled_loads.id END) AS reprogrammed")
             ->selectRaw("COUNT(DISTINCT CASE WHEN scheduled_loads.status IN ('PROGRAMADA','ABIERTA','EN_CAPTURA','PARCIALMENTE_ENTREGADA','VENCIDA') THEN scheduled_loads.id END) AS missing")
             ->selectRaw("COUNT(DISTINCT CASE WHEN scheduled_loads.status='VENCIDA' THEN scheduled_loads.id END) AS overdue")
             ->groupByRaw('LOWER(TRIM(organizational_units.name))')
@@ -244,8 +245,6 @@ final class DashboardAnalyticsService
         $roleCode = $user->role?->code;
         if (in_array($roleCode, ['DIRECTOR_GENERAL', 'ADMINISTRADOR', 'ENLACE_INSTITUCIONAL'], true)) {
             $query->whereIn('scheduled_loads.status', self::NON_OPERATOR_STATUSES);
-        } elseif ($this->isOperator($user)) {
-            // Los operadores mantienen el universo completo para el flujo operativo.
         }
 
         if (!empty($filters['agency_id'])) {
