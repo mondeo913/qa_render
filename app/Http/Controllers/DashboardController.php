@@ -25,9 +25,6 @@ class DashboardController extends Controller
 
         $user = $request->user();
 
-        // Los catálogos se construyen sobre el mismo universo de cargas al que
-        // tiene acceso el usuario. Así se evita mostrar dependencias o direcciones
-        // que no corresponden a su alcance y se evita duplicar direcciones homónimas.
         $accessibleLoads = $access->scopeLoads(ScheduledLoad::query(), $user);
 
         $agencies = ContractingAgency::query()
@@ -66,9 +63,6 @@ class DashboardController extends Controller
             ->sortBy(fn ($unit) => mb_strtolower(trim((string) $unit->name)))
             ->values();
 
-        // El periodo disponible se deriva de las fechas efectivas de apertura/cierre
-        // de las pautas/cargas realmente accesibles. Al seleccionar dependencia se
-        // ajusta el universo para que el rango mensual corresponda a sus contratos.
         $periodLoads = clone $accessibleLoads;
         if (!empty($filters['agency_id'])) {
             $periodLoads->where('scheduled_loads.contracting_agency_id', (int) $filters['agency_id']);
@@ -93,7 +87,7 @@ class DashboardController extends Controller
         $periodMin = $periodBounds?->min_open_at ? date('Y-m', strtotime($periodBounds->min_open_at)) : null;
         $periodMax = $periodBounds?->max_close_at ? date('Y-m', strtotime($periodBounds->max_close_at)) : null;
 
-        return view('dashboard.index', [
+        $viewData = [
             'analytics' => $analytics->forUser($user, $filters),
             'filters' => $filters,
             'agencies' => $agencies,
@@ -103,6 +97,13 @@ class DashboardController extends Controller
             'periodMin' => $periodMin,
             'periodMax' => $periodMax,
             'presentation' => RolePresentation::for($user->role?->code),
-        ]);
+        ];
+
+        $dashboardRoles = ['ADMINISTRADOR', 'DIRECTOR_GENERAL', 'ENLACE_INSTITUCIONAL'];
+        if (in_array($user->role?->code, $dashboardRoles, true)) {
+            return view('dashboard.executive', $viewData);
+        }
+
+        return view('dashboard.index', $viewData);
     }
 }
