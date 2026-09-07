@@ -10,33 +10,27 @@
     $roleCode = auth()->user()?->role?->code;
     $operatorRoles = ['OPERADOR','OPERADOR_TRANSMISION','OPERADOR_PROGRAMACION_CONTINUIDAD'];
     $isOperatorDashboard = in_array($roleCode, $operatorRoles, true);
-    $nonOperatorStatuses = [
-        'PROGRAMADA' => 'PROGRAMADO',
-        'REPROGRAMADA' => 'REPROGRAMADO',
-        'VALIDADO_Y_CERRADO' => 'VALIDADO Y CERRADO',
-        'VENCIDA' => 'VENCIDO',
-    ];
-    $operatorStatuses = [
-        'PROGRAMADA' => 'PROGRAMADO',
+    $allStatuses = [
+        'PROGRAMADA' => 'PROGRAMADA',
         'ABIERTA' => 'VENTANA ABIERTA',
         'EN_CAPTURA' => 'EN CAPTURA',
         'PARCIALMENTE_ENTREGADA' => 'ENTREGA PARCIAL',
-        'ENTREGADA' => 'ENTREGADA',
+        'ENTREGADA' => 'REALIZADA / ENTREGADA',
         'EN_REVISION_INSTITUCIONAL' => 'EN REVISIÓN INSTITUCIONAL',
-        'OBSERVADA' => 'CON OBSERVACIONES',
+        'OBSERVADA' => 'OBSERVADA',
         'LISTA_PARA_FIRMA' => 'LISTA PARA FIRMA',
         'PENDIENTE_DOCUMENTO_FIRMADO' => 'PENDIENTE DOCUMENTO FIRMADO',
         'VALIDADA' => 'VALIDADA',
-        'VALIDADO_Y_CERRADO' => 'VALIDADO Y CERRADO',
-        'SUSPENDIDA' => 'SUSPENDIDA',
+        'VALIDADO_Y_CERRADO' => 'VALIDADA Y CERRADA',
+        'SUSPENDIDA' => 'SUSPENDIDA / REPROGRAMACIÓN',
         'REPROGRAMADA' => 'REPROGRAMADA',
         'REPROGRAMADA_ABIERTA' => 'REPROGRAMADA ABIERTA',
         'REPROGRAMADA_ENTREGADA' => 'REPROGRAMADA ENTREGADA',
         'VENCIDA' => 'VENCIDA',
-        'CANCELADA' => 'CANCELADA',
         'REABIERTA' => 'REABIERTA',
+        'CANCELADA' => 'CANCELADA',
     ];
-    $availableStatuses = $isOperatorDashboard ? $operatorStatuses : $nonOperatorStatuses;
+    $availableStatuses = $allStatuses;
 @endphp
 <div class="card-body row g-3 align-items-end">
 <div class="col-xl-3 col-md-6">
@@ -66,26 +60,26 @@ $filterIds=implode(',',array_map('strval',$filterIds));
 </select>
 </div>
 <div class="col-xl-2 col-md-4">
-<label class="form-label">Estado</label>
+<label class="form-label">Estado de carga</label>
 <select name="status" class="form-select">
-<option value="">Todos</option>
+<option value="">Todos los estados</option>
 @foreach($availableStatuses as $status => $label)
 <option value="{{ $status }}" @selected(($filters['status'] ?? null) === $status)>{{ $label }}</option>
 @endforeach
 </select>
 </div>
 <div class="col-xl-2 col-md-4">
-<label class="form-label">Mes inicial</label>
+<label class="form-label">Fecha contratada desde</label>
 <input type="month" name="from" id="siget-period-from" value="{{ $selectedFrom }}" min="{{ $periodMin ?? '' }}" max="{{ $periodMax ?? '' }}" class="form-control">
 </div>
 <div class="col-xl-2 col-md-4">
-<label class="form-label">Mes final</label>
+<label class="form-label">Fecha contratada hasta</label>
 <input type="month" name="to" id="siget-period-to" value="{{ $selectedTo }}" min="{{ $periodMin ?? '' }}" max="{{ $periodMax ?? '' }}" class="form-control">
 </div>
 <div class="col-12">
 <div class="siget-period-segmenter border rounded-3 p-3">
 <div class="d-flex justify-content-between align-items-center gap-2 flex-wrap">
-<div><strong>Segmentador de periodo contratado</strong><div class="small text-muted">Selecciona un rango de meses. Los límites disponibles se calculan a partir de las pautas/cargas accesibles.</div></div>
+<div><strong>Rango de fechas contratado según pauta</strong><div class="small text-muted">El rango se aplica a la fecha efectiva de apertura de cada carga y se acota al universo accesible del usuario.</div></div>
 <span class="badge text-bg-light" id="siget-period-summary">{{ $selectedFrom && $selectedTo ? $selectedFrom.' → '.$selectedTo : ($periodMin && $periodMax ? $periodMin.' → '.$periodMax : 'Sin periodo disponible') }}</span>
 </div>
 </div>
@@ -121,7 +115,7 @@ $filterIds=implode(',',array_map('strval',$filterIds));
     from?.addEventListener('change',updateRange);
     to?.addEventListener('change',updateRange);
     document.getElementById('siget-dashboard-filters')?.addEventListener('submit',function(event){
-        if(from?.value && to?.value && from.value>to.value){event.preventDefault();to.setCustomValidity('El mes final debe ser igual o posterior al mes inicial.');to.reportValidity();to.setCustomValidity('');}
+        if(from?.value && to?.value && from.value>to.value){event.preventDefault();to.setCustomValidity('La fecha contratada final debe ser igual o posterior a la fecha inicial.');to.reportValidity();to.setCustomValidity('');}
     });
     updateRange();
     const applyTrendFontScale=()=>{
