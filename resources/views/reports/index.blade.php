@@ -9,24 +9,29 @@
     $monthlyTrend = collect($analytics['monthly_trend'] ?? []);
     $unitsPerformance = collect($analytics['unit_performance'] ?? []);
     $agenciesPerformance = collect($analytics['agency_performance'] ?? []);
+
     $total = (int) ($k['total'] ?? 0);
     $active = (int) ($k['active'] ?? 0);
     $closed = (int) ($k['closed'] ?? 0);
     $overdue = (int) ($k['overdue'] ?? 0);
     $reprogrammed = (int) ($k['reprogrammed'] ?? 0);
     $compliance = (float) ($k['compliance'] ?? 0);
+
     $statuses = [
         'PROGRAMADA' => 'PROGRAMADO',
         'REPROGRAMADA' => 'REPROGRAMADO',
         'VALIDADO_Y_CERRADO' => 'VALIDADO Y CERRADO',
         'VENCIDA' => 'VENCIDO',
     ];
+
     $groupedLoads = $loads->groupBy(function ($load) {
         return $load->agency?->name ?: 'Sin dependencia';
     });
+
     $loadStatus = function ($load) {
         return $load->status instanceof \BackedEnum ? $load->status->value : (string) $load->status;
     };
+
     $statusMeta = function ($code) {
         if ($code === 'VALIDADO_Y_CERRADO') {
             return ['class' => 'ok', 'label' => 'VALIDADO Y CERRADO'];
@@ -40,65 +45,80 @@
         return ['class' => 'info', 'label' => 'PROGRAMADO'];
     };
 
+    $statusChartData = [];
+    foreach (array_keys($statuses) as $statusCode) {
+        $statusChartData[] = (int) ($statusDistribution[$statusCode] ?? 0);
+    }
+
+    $agencyChartLabels = [];
+    $agencyChartData = [];
+    foreach ($agenciesPerformance as $row) {
+        $agencyChartLabels[] = $row['agency'] ?? 'Sin dependencia';
+        $agencyChartData[] = (float) ($row['percentage'] ?? 0);
+    }
+
+    $monthlyChartLabels = [];
+    $monthlyCompliance = [];
+    $monthlyClosed = [];
+    foreach ($monthlyTrend as $row) {
+        $monthlyChartLabels[] = $row['period'] ?? '';
+        $monthlyCompliance[] = (float) ($row['compliance'] ?? 0);
+        $monthlyClosed[] = (int) ($row['closed'] ?? 0);
+    }
+
+    $unitChartLabels = [];
+    $unitChartData = [];
+    foreach ($unitsPerformance as $row) {
+        $unitChartLabels[] = $row['unit'] ?? 'Sin unidad';
+        $unitChartData[] = (float) ($row['percentage'] ?? 0);
+    }
+
     $reportStatusChart = [
         'type' => 'doughnut',
         'data' => [
             'labels' => array_values($statuses),
             'datasets' => [[
                 'label' => 'Cargas',
-                'data' => array_map(function ($code) use ($statusDistribution) {
-                    return (int) ($statusDistribution[$code] ?? 0);
-                }, array_keys($statuses)),
+                'data' => $statusChartData,
             ]],
         ],
     ];
+
     $reportAgencyChart = [
         'type' => 'bar',
         'data' => [
-            'labels' => $agenciesPerformance->map(function ($row) {
-                return $row['agency'] ?? 'Sin dependencia';
-            })->values()->all(),
+            'labels' => $agencyChartLabels,
             'datasets' => [[
                 'label' => 'Cumplimiento %',
-                'data' => $agenciesPerformance->map(function ($row) {
-                    return (float) ($row['percentage'] ?? 0);
-                })->values()->all(),
+                'data' => $agencyChartData,
             ]],
         ],
     ];
+
     $reportMonthlyChart = [
         'type' => 'line',
         'data' => [
-            'labels' => $monthlyTrend->map(function ($row) {
-                return $row['period'] ?? '';
-            })->values()->all(),
+            'labels' => $monthlyChartLabels,
             'datasets' => [
                 [
                     'label' => 'Cumplimiento %',
-                    'data' => $monthlyTrend->map(function ($row) {
-                        return (float) ($row['compliance'] ?? 0);
-                    })->values()->all(),
+                    'data' => $monthlyCompliance,
                 ],
                 [
                     'label' => 'Cierres',
-                    'data' => $monthlyTrend->map(function ($row) {
-                        return (int) ($row['closed'] ?? 0);
-                    })->values()->all(),
+                    'data' => $monthlyClosed,
                 ],
             ],
         ],
     ];
+
     $reportUnitsChart = [
         'type' => 'bar',
         'data' => [
-            'labels' => $unitsPerformance->map(function ($row) {
-                return $row['unit'] ?? 'Sin unidad';
-            })->values()->all(),
+            'labels' => $unitChartLabels,
             'datasets' => [[
                 'label' => 'Cumplimiento %',
-                'data' => $unitsPerformance->map(function ($row) {
-                    return (float) ($row['percentage'] ?? 0);
-                })->values()->all(),
+                'data' => $unitChartData,
             ]],
         ],
     ];
@@ -107,8 +127,7 @@
 <style>
 :root{--cr-navy:#10213b;--cr-line:#d9e0ea;--cr-text:#1b2638;--cr-muted:#657287;--cr-ok:#20a865;--cr-warn:#db9b17;--cr-danger:#d94a4a;--cr-info:#2e79b9}
 .siget-report-shell{color:var(--cr-text)}
-.siget-report-top{background:linear-gradient(135deg,var(--cr-navy),#203c63);color:#fff;border-radius:14px;padding:20px 22px;margin-bottom:16px}
-.siget-report-top h2{margin:.15rem 0 .3rem;font-weight:800}.siget-report-top p{margin:0;color:#d4dfec;font-size:.75rem}
+.siget-report-top{background:linear-gradient(135deg,var(--cr-navy),#203c63);color:#fff;border-radius:14px;padding:20px 22px;margin-bottom:16px}.siget-report-top h2{margin:.15rem 0 .3rem;font-weight:800}.siget-report-top p{margin:0;color:#d4dfec;font-size:.75rem}
 .cr-toolbar,.cr-paper{background:#fff;border:1px solid var(--cr-line);border-radius:12px}.cr-toolbar{padding:14px;margin-bottom:16px}.cr-toolbar .label{font-size:.64rem;text-transform:uppercase;color:var(--cr-muted);font-weight:700;margin-bottom:5px}
 .cr-tabs{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:16px}.cr-tab{border:1px solid #cdd6e2;background:#fff;color:var(--cr-navy);border-radius:9px;padding:9px 12px;font-size:.7rem;font-weight:700;cursor:pointer}.cr-tab.active{background:var(--cr-navy);color:#fff}
 .cr-panel{display:none}.cr-panel.active{display:block}.cr-paper{overflow:hidden;margin-bottom:16px}.cr-paper-head{padding:14px 16px;border-bottom:1px solid var(--cr-line);background:#f8fafc}.cr-paper-head h3{font-size:.96rem;margin:0;color:var(--cr-navy);font-weight:800}.cr-paper-head p{font-size:.68rem;margin:4px 0 0;color:var(--cr-muted)}
@@ -158,7 +177,10 @@
             <div class="cr-kpi"><small>Cumplimiento</small><strong>{{ number_format($compliance,1) }}%</strong></div>
         </div>
         <div class="cr-grid-2">
-            <div class="cr-paper"><div class="cr-paper-head"><h3>Distribución por estado</h3><p>Los cuatro estados oficiales de lectura ejecutiva.</p></div><div class="cr-grid-2" style="grid-template-columns:1fr 1fr;gap:0"><div class="cr-chart"><canvas id="sigetReportStatus"></canvas></div><div>@foreach($statuses as $code => $label) @php($qty = (int)($statusDistribution[$code] ?? 0)) @endphp @php($m=$statusMeta($code)) @endphp<div class="status-card {{ $m['class'] }}"><strong>{{ $label }}</strong><span style="float:right;font-size:1.1rem">{{ $qty }}</span></div>@endforeach</div></div></div>
+            <div class="cr-paper"><div class="cr-paper-head"><h3>Distribución por estado</h3><p>Los cuatro estados oficiales de lectura ejecutiva.</p></div><div class="cr-grid-2" style="grid-template-columns:1fr 1fr;gap:0"><div class="cr-chart"><canvas id="sigetReportStatus"></canvas></div><div>@foreach($statuses as $code => $label) @php
+                $qty = (int) ($statusDistribution[$code] ?? 0);
+                $m = $statusMeta($code);
+            @endphp<div class="status-card {{ $m['class'] }}"><strong>{{ $label }}</strong><span style="float:right;font-size:1.1rem">{{ $qty }}</span></div>@endforeach</div></div></div>
             <div class="cr-paper"><div class="cr-paper-head"><h3>Cumplimiento por dependencia</h3><p>Comparación institucional.</p></div><div class="cr-chart"><canvas id="sigetReportAgency"></canvas></div></div>
         </div>
         <div class="cr-paper"><div class="cr-paper-head"><h3>Resumen por dependencia</h3><p>Subtotal institucional y semáforo.</p></div>
@@ -167,7 +189,9 @@
                 <div class="cr-band">{{ $agency }} · {{ $agencyLoads->count() }} cargas</div>
                 <div class="cr-detail"><table class="cr-table"><thead><tr><th>Orden / referencia</th><th>Pauta / periodo</th><th>Estado</th><th>Avance</th></tr></thead><tbody>
                 @foreach($agencyLoads as $load)
-                    @php($m = $statusMeta($loadStatus($load)))
+                    @php
+                        $m = $statusMeta($loadStatus($load));
+                    @endphp
                     <tr><td><strong>{{ $load->title }}</strong></td><td>{{ $load->period_label ?: '—' }}</td><td><span class="semaforo {{ $m['class'] }}">{{ $m['label'] }}</span></td><td>{{ number_format((float)$load->completion_percentage,0) }}%</td></tr>
                 @endforeach
                 </tbody></table></div>
@@ -178,13 +202,17 @@
     <section class="cr-panel" data-cr-panel="compliance">
         <div class="cr-paper"><div class="cr-paper-head"><h3>Cumplimiento y Desempeño</h3><p>Programado → Reprogramado → Validado y cerrado → Vencido.</p></div><div class="table-responsive"><table class="cr-table"><thead><tr><th>Dependencia</th><th>Programado</th><th>Reprogramado</th><th>Validado y cerrado</th><th>Vencido</th><th>Cumplimiento</th></tr></thead><tbody>
         @foreach($agencies as $agency)
-            @php($agencyLoads=$loads->filter(function($load) use ($agency){ return $load->agency?->id === $agency->id; }))
-            @php($count=$agencyLoads->count())
-            @php($ac=$agencyLoads->where('status','VALIDADO_Y_CERRADO')->count())
-            @php($ap=$agencyLoads->where('status','PROGRAMADA')->count())
-            @php($ar=$agencyLoads->where('status','REPROGRAMADA')->count())
-            @php($av=$agencyLoads->where('status','VENCIDA')->count())
-            @php($apct=$count ? round(100*$ac/$count,1) : 0)
+            @php
+                $agencyLoads = $loads->filter(function ($load) use ($agency) {
+                    return $load->agency?->id === $agency->id;
+                });
+                $count = $agencyLoads->count();
+                $ac = $agencyLoads->where('status', 'VALIDADO_Y_CERRADO')->count();
+                $ap = $agencyLoads->where('status', 'PROGRAMADA')->count();
+                $ar = $agencyLoads->where('status', 'REPROGRAMADA')->count();
+                $av = $agencyLoads->where('status', 'VENCIDA')->count();
+                $apct = $count ? round(100 * $ac / $count, 1) : 0;
+            @endphp
             <tr><td><strong>{{ $agency->name }}</strong></td><td>{{ $ap }}</td><td>{{ $ar }}</td><td>{{ $ac }}</td><td>{{ $av }}</td><td>{{ $apct }}%</td></tr>
         @endforeach
         @if($agencies->isEmpty())<tr><td colspan="6" class="text-center p-4 text-muted">Sin dependencias para los filtros actuales.</td></tr>@endif
@@ -208,9 +236,12 @@
     <section class="cr-panel" data-cr-panel="tracking">
         <div class="cr-paper"><div class="cr-paper-head"><h3>Seguimiento de cargas</h3><p>Focos de atención para seguimiento ejecutivo.</p></div><div class="table-responsive"><table class="cr-table"><thead><tr><th>Dependencia</th><th>Orden / referencia</th><th>Pauta</th><th>Estado</th><th>Avance</th></tr></thead><tbody>
         @foreach($loads as $load)
-            @php($statusCode=$loadStatus($load))
-            @if(in_array($statusCode,['REPROGRAMADA','VENCIDA','PROGRAMADA'],true))
-                @php($m=$statusMeta($statusCode))
+            @php
+                $statusCode = $loadStatus($load);
+                $showTracking = in_array($statusCode, ['REPROGRAMADA', 'VENCIDA', 'PROGRAMADA'], true);
+                $m = $statusMeta($statusCode);
+            @endphp
+            @if($showTracking)
                 <tr><td>{{ $load->agency?->name ?: 'Sin dependencia' }}</td><td>{{ $load->title }}</td><td>{{ $load->period_label ?: '—' }}</td><td>{{ $m['label'] }}</td><td>{{ number_format((float)$load->completion_percentage,0) }}%</td></tr>
             @endif
         @endforeach
@@ -226,7 +257,9 @@
             <div class="cr-band">Dependencia · {{ $agency }}</div>
             <div class="cr-detail"><table class="cr-table"><thead><tr><th>Orden / referencia</th><th>Pauta / periodo</th><th>Fecha apertura</th><th>Fecha entrega</th><th>Estado</th></tr></thead><tbody>
             @foreach($agencyLoads as $load)
-                @php($m=$statusMeta($loadStatus($load)))
+                @php
+                    $m = $statusMeta($loadStatus($load));
+                @endphp
                 <tr><td>{{ $load->title }}</td><td>{{ $load->period_label ?: '—' }}</td><td>{{ $load->effective_open_at?->format('d/m/Y H:i') ?: '—' }}</td><td>{{ $load->delivered_at?->format('d/m/Y H:i') ?: '—' }}</td><td><span class="semaforo {{ $m['class'] }}">{{ $m['label'] }}</span></td></tr>
             @endforeach
             </tbody></table></div>
@@ -235,19 +268,21 @@
     </section>
 
     @if($canBuildReports)
-    <section class="cr-panel" data-cr-panel="builder"><div class="cr-paper"><div class="cr-paper-head"><h3>Constructor de Reportes</h3><p>Generación formal del reporte ejecutivo con filtros actuales.</p></div><div class="p-3"><div class="cr-grid-3"><div class="status-card info"><strong>1 · Dependencia</strong><br><small>Agrupar y subtotalizar por dependencia.</small></div><div class="status-card info"><strong>2 · Dirección / Unidad</strong><br><small>Separar cada dirección dentro de su dependencia.</small></div><div class="status-card info"><strong>3 · Orden / Pauta</strong><br><small>Detalle documental de cada carga.</small></div></div></div></div></section>
+    <section class="cr-panel" data-cr-panel="builder">
+        <div class="cr-paper"><div class="cr-paper-head"><h3>Constructor de Reportes</h3><p>Generación formal del reporte ejecutivo con filtros actuales.</p></div><div class="p-3"><div class="cr-grid-3"><div class="status-card info"><strong>1 · Dependencia</strong><br><small>Agrupar y subtotalizar por dependencia.</small></div><div class="status-card info"><strong>2 · Dirección / Unidad</strong><br><small>Separar cada dirección dentro de su dependencia.</small></div><div class="status-card info"><strong>3 · Orden / Pauta</strong><br><small>Detalle documental de cada carga.</small></div></div></div></div>
+    </section>
     @endif
 </div>
 
 <script>
 (function(){
-    var tabs=document.querySelectorAll('[data-cr-tab]');
-    var panels=document.querySelectorAll('[data-cr-panel]');
+    var tabs = document.querySelectorAll('[data-cr-tab]');
+    var panels = document.querySelectorAll('[data-cr-panel]');
     tabs.forEach(function(tab){
-        tab.addEventListener('click',function(){
-            var key=tab.getAttribute('data-cr-tab');
-            tabs.forEach(function(item){item.classList.toggle('active',item===tab);});
-            panels.forEach(function(panel){panel.classList.toggle('active',panel.getAttribute('data-cr-panel')===key);});
+        tab.addEventListener('click', function(){
+            var key = tab.getAttribute('data-cr-tab');
+            tabs.forEach(function(item){ item.classList.toggle('active', item === tab); });
+            panels.forEach(function(panel){ panel.classList.toggle('active', panel.getAttribute('data-cr-panel') === key); });
             window.dispatchEvent(new Event('resize'));
         });
     });
