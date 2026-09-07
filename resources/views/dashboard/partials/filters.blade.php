@@ -11,14 +11,12 @@
     $operatorRoles = ['OPERADOR','OPERADOR_TRANSMISION','OPERADOR_PROGRAMACION_CONTINUIDAD'];
     $isOperatorDashboard = in_array($roleCode, $operatorRoles, true);
     $executiveRoles = ['ADMINISTRADOR','DIRECTOR_GENERAL','ENLACE_INSTITUCIONAL'];
+    // Mantener exactamente los estados ejecutivos expuestos por el menú Reportes > Indicadores.
     $executiveStatuses = [
-        'PROGRAMADA' => 'PROGRAMADA',
-        'ENTREGADA' => 'REALIZADA / ENTREGADA',
-        'VALIDADA' => 'VALIDADA',
-        'VALIDADO_Y_CERRADO' => 'VALIDADA Y CERRADA',
-        'REPROGRAMADA' => 'REPROGRAMADA',
-        'REPROGRAMADA_ENTREGADA' => 'REPROGRAMADA ENTREGADA',
-        'VENCIDA' => 'VENCIDA / FALTANTE',
+        'PROGRAMADA' => 'PROGRAMADO',
+        'REPROGRAMADA' => 'REPROGRAMADO',
+        'VALIDADO_Y_CERRADO' => 'VALIDADO Y CERRADO',
+        'VENCIDA' => 'VENCIDO',
     ];
     $operationalStatuses = [
         'PROGRAMADA' => 'PROGRAMADA',
