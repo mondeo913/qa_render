@@ -39,6 +39,69 @@
         }
         return ['class' => 'info', 'label' => 'PROGRAMADO'];
     };
+
+    $reportStatusChart = [
+        'type' => 'doughnut',
+        'data' => [
+            'labels' => array_values($statuses),
+            'datasets' => [[
+                'label' => 'Cargas',
+                'data' => array_map(function ($code) use ($statusDistribution) {
+                    return (int) ($statusDistribution[$code] ?? 0);
+                }, array_keys($statuses)),
+            ]],
+        ],
+    ];
+    $reportAgencyChart = [
+        'type' => 'bar',
+        'data' => [
+            'labels' => $agenciesPerformance->map(function ($row) {
+                return $row['agency'] ?? 'Sin dependencia';
+            })->values()->all(),
+            'datasets' => [[
+                'label' => 'Cumplimiento %',
+                'data' => $agenciesPerformance->map(function ($row) {
+                    return (float) ($row['percentage'] ?? 0);
+                })->values()->all(),
+            ]],
+        ],
+    ];
+    $reportMonthlyChart = [
+        'type' => 'line',
+        'data' => [
+            'labels' => $monthlyTrend->map(function ($row) {
+                return $row['period'] ?? '';
+            })->values()->all(),
+            'datasets' => [
+                [
+                    'label' => 'Cumplimiento %',
+                    'data' => $monthlyTrend->map(function ($row) {
+                        return (float) ($row['compliance'] ?? 0);
+                    })->values()->all(),
+                ],
+                [
+                    'label' => 'Cierres',
+                    'data' => $monthlyTrend->map(function ($row) {
+                        return (int) ($row['closed'] ?? 0);
+                    })->values()->all(),
+                ],
+            ],
+        ],
+    ];
+    $reportUnitsChart = [
+        'type' => 'bar',
+        'data' => [
+            'labels' => $unitsPerformance->map(function ($row) {
+                return $row['unit'] ?? 'Sin unidad';
+            })->values()->all(),
+            'datasets' => [[
+                'label' => 'Cumplimiento %',
+                'data' => $unitsPerformance->map(function ($row) {
+                    return (float) ($row['percentage'] ?? 0);
+                })->values()->all(),
+            ]],
+        ],
+    ];
 @endphp
 
 <style>
@@ -191,8 +254,8 @@
 })();
 </script>
 
-<script type="application/json" data-siget-chart="sigetReportStatus">{!! json_encode(['type'=>'doughnut','data'=>['labels'=>array_values($statuses),'datasets'=>[['label'=>'Cargas','data'=>array_map(function($code) use ($statusDistribution){return (int)($statusDistribution[$code] ?? 0);},array_keys($statuses))]]]) !!}</script>
-<script type="application/json" data-siget-chart="sigetReportAgency">{!! json_encode(['type'=>'bar','data'=>['labels'=>$agenciesPerformance->map(function($row){return $row['agency'] ?? 'Sin dependencia';})->values()->all(),'datasets'=>[['label'=>'Cumplimiento %','data'=>$agenciesPerformance->map(function($row){return (float)($row['percentage'] ?? 0);})->values()->all()]]]) !!}</script>
-<script type="application/json" data-siget-chart="sigetReportMonthly">{!! json_encode(['type'=>'line','data'=>['labels'=>$monthlyTrend->map(function($row){return $row['period'] ?? ''; })->values()->all(),'datasets'=>[['label'=>'Cumplimiento %','data'=>$monthlyTrend->map(function($row){return (float)($row['compliance'] ?? 0);})->values()->all()],['label'=>'Cierres','data'=>$monthlyTrend->map(function($row){return (int)($row['closed'] ?? 0);})->values()->all()]]]) !!}</script>
-<script type="application/json" data-siget-chart="sigetReportUnits">{!! json_encode(['type'=>'bar','data'=>['labels'=>$unitsPerformance->map(function($row){return $row['unit'] ?? 'Sin unidad';})->values()->all(),'datasets'=>[['label'=>'Cumplimiento %','data'=>$unitsPerformance->map(function($row){return (float)($row['percentage'] ?? 0);})->values()->all()]]]) !!}</script>
+<script type="application/json" data-siget-chart="sigetReportStatus">{!! json_encode($reportStatusChart) !!}</script>
+<script type="application/json" data-siget-chart="sigetReportAgency">{!! json_encode($reportAgencyChart) !!}</script>
+<script type="application/json" data-siget-chart="sigetReportMonthly">{!! json_encode($reportMonthlyChart) !!}</script>
+<script type="application/json" data-siget-chart="sigetReportUnits">{!! json_encode($reportUnitsChart) !!}</script>
 @endsection
