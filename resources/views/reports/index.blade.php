@@ -1,632 +1,217 @@
 @extends('layouts.app')
 
-@section('title', 'Reportes SIGET')
-@section('page-title', 'Reportes SIGET')
-@section('page-subtitle', 'Información operativa, institucional y de cumplimiento')
+@section('title', 'Centro de Reportes SIGET')
+@section('page-title', 'Centro de Reportes SIGET')
+@section('page-subtitle', 'Reportes ejecutivos, seguimiento y auditoría')
 
 @section('content')
-
 @php
     $k = $analytics['kpis'] ?? [];
-    $status = collect($analytics['status_distribution'] ?? []);
-    $monthly = collect($analytics['monthly_trend'] ?? []);
+    $statusDistribution = collect($analytics['status_distribution'] ?? []);
+    $monthlyTrend = collect($analytics['monthly_trend'] ?? []);
     $unitsPerformance = collect($analytics['unit_performance'] ?? []);
     $agenciesPerformance = collect($analytics['agency_performance'] ?? []);
-
     $total = (int) ($k['total'] ?? 0);
     $active = (int) ($k['active'] ?? 0);
     $closed = (int) ($k['closed'] ?? 0);
     $overdue = (int) ($k['overdue'] ?? 0);
     $reprogrammed = (int) ($k['reprogrammed'] ?? 0);
-    $completion = (float) ($k['completion_average'] ?? 0);
     $compliance = (float) ($k['compliance'] ?? 0);
+    $statuses = [
+        'PROGRAMADA' => 'PROGRAMADO',
+        'REPROGRAMADA' => 'REPROGRAMADO',
+        'VALIDADO_Y_CERRADO' => 'VALIDADO Y CERRADO',
+        'VENCIDA' => 'VENCIDO',
+    ];
+    $statusValues = collect($statuses)->mapWithKeys(fn ($label, $code) => [$label => (int) ($statusDistribution[$code] ?? 0)]);
 
-    $executiveRows = $agenciesPerformance;
-    $riskLoads = $loads->filter(function ($load) {
-        $status = $load->status instanceof \BackedEnum
-            ? $load->status->value
-            : (string) $load->status;
+    $statusMeta = function (string $status): array {
+        return match ($status) {
+            'VALIDADO_Y_CERRADO' => ['class' => 'ok', 'icon' => '●', 'label' => 'VALIDADO Y CERRADO', 'note' => 'Cumplimiento confirmado'],
+            'REPROGRAMADA' => ['class' => 'warn', 'icon' => '●', 'label' => 'REPROGRAMADO', 'note' => 'Requiere seguimiento'],
+            'VENCIDA' => ['class' => 'danger', 'icon' => '●', 'label' => 'VENCIDO', 'note' => 'Incumplimiento'],
+            default => ['class' => 'info', 'icon' => '●', 'label' => 'PROGRAMADO', 'note' => 'En seguimiento'],
+        };
+    };
 
-        return in_array($status, [
-            'VENCIDA',
-            'OBSERVADA',
-            'REPROGRAMADA',
-            'PENDIENTE_DOCUMENTO_FIRMADO',
-        ], true);
-    });
+    $loadStatus = fn ($load) => $load->status instanceof \BackedEnum ? $load->status->value : (string) $load->status;
+    $agencyName = fn ($load) => $load->agency?->name ?: 'Sin dependencia';
+    $unitNames = fn ($load) => $load->deliverables
+        ->map(fn ($deliverable) => $deliverable->organizationalUnit?->name)
+        ->filter()
+        ->unique()
+        ->sort()
+        ->values();
 
-    $evidenceRows = $loads->flatMap(function ($load) {
-        return $load->deliverables->map(function ($deliverable) use ($load) {
-            return [
-                'load' => $load,
-                'deliverable' => $deliverable,
-                'unit' => $deliverable->organizationalUnit,
-                'user' => $deliverable->responsibleUser,
-                'evidences' => $deliverable->evidences,
-            ];
-        });
-    });
+    $groupedLoads = $loads->groupBy(fn ($load) => $agencyName($load));
+    $riskLoads = $loads->filter(fn ($load) => in_array($loadStatus($load), ['VENCIDA', 'REPROGRAMADA'], true));
+
+    $statusLabels = array_values($statuses);
+    $statusChartData = array_values(array_map(fn ($code) => (int) ($statusDistribution[$code] ?? 0), array_keys($statuses)));
+    $agencyLabels = $agenciesPerformance->map(fn ($row) => $row['agency'] ?? 'Sin dependencia')->values()->all();
+    $agencyPct = $agenciesPerformance->map(fn ($row) => (float) ($row['percentage'] ?? 0))->values()->all();
+    $agencyTotal = $agenciesPerformance->map(fn ($row) => (int) ($row['total'] ?? 0))->values()->all();
+    $unitLabels = $unitsPerformance->map(fn ($row) => $row['unit'] ?? 'Sin unidad')->values()->all();
+    $unitPct = $unitsPerformance->map(fn ($row) => (float) ($row['percentage'] ?? 0))->values()->all();
+    $trendLabels = $monthlyTrend->map(fn ($row) => $row['period'] ?? '')->values()->all();
+    $trendCompliance = $monthlyTrend->map(fn ($row) => (float) ($row['compliance'] ?? 0))->values()->all();
+    $trendClosed = $monthlyTrend->map(fn ($row) => (int) ($row['closed'] ?? 0))->values()->all();
+    $trendTotal = $monthlyTrend->map(fn ($row) => (int) ($row['total'] ?? 0))->values()->all();
 @endphp
 
 <style>
-.siget-reports{
-    background:linear-gradient(180deg,#09131f 0%,#0b1119 100%);
-    border:1px solid rgba(255,255,255,.08);
-    border-radius:18px;
-    padding:18px;
-    color:#eef5fa;
-}
-.siget-reports .hero{
-    background:linear-gradient(100deg,#0e2533,#10283b 55%,#0d1a27);
-    border:1px solid rgba(33,198,216,.22);
-    border-radius:16px;
-    padding:20px;
-    margin-bottom:16px;
-}
-.siget-reports .hero h2{color:#fff;font-weight:700}
-.siget-reports .muted{color:#93a7b9;font-size:.76rem}
-.siget-reports .filters{
-    background:#0f1c29;
-    border:1px solid rgba(255,255,255,.08);
-    border-radius:14px;
-    padding:15px;
-    margin-bottom:16px;
-}
-.siget-reports .filter-label{
-    color:#8499aa;
-    font-size:.68rem;
-    text-transform:uppercase;
-    letter-spacing:.05em;
-    margin-bottom:5px;
-}
-.siget-reports .nav-reportes{
-    display:flex;
-    flex-wrap:wrap;
-    gap:8px;
-    margin-bottom:16px;
-}
-.siget-reports .report-tab{
-    border:1px solid rgba(255,255,255,.1);
-    background:#101c28;
-    color:#aebdca;
-    border-radius:10px;
-    padding:10px 13px;
-    font-size:.72rem;
-    cursor:pointer;
-}
-.siget-reports .report-tab.active{
-    background:#17465a;
-    color:#fff;
-    border-color:#2db8d2;
-}
-.siget-reports .report-panel{display:none}
-.siget-reports .report-panel.active{display:block}
-.siget-reports .report-card{
-    background:#101d2a;
-    border:1px solid rgba(255,255,255,.08);
-    border-radius:14px;
-    overflow:hidden;
-}
-.siget-reports .report-head{
-    padding:15px 17px;
-    border-bottom:1px solid rgba(255,255,255,.08);
-    display:flex;
-    justify-content:space-between;
-    align-items:flex-start;
-    gap:12px;
-}
-.siget-reports .report-head h3{
-    font-size:.98rem;
-    margin:0;
-    color:#fff;
-}
-.siget-reports .report-head p{
-    margin:4px 0 0;
-    color:#8ea4b7;
-    font-size:.68rem;
-}
-.siget-reports .kpis{
-    display:grid;
-    grid-template-columns:repeat(6,minmax(0,1fr));
-    gap:10px;
-    margin-bottom:16px;
-}
-.siget-reports .kpi{
-    background:#111f2d;
-    border:1px solid rgba(255,255,255,.08);
-    border-radius:12px;
-    padding:13px;
-}
-.siget-reports .kpi small{color:#8fa5b7;font-size:.64rem}
-.siget-reports .kpi strong{
-    display:block;
-    color:#fff;
-    font-size:1.45rem;
-    margin-top:4px;
-}
-.siget-reports table{
-    --bs-table-bg:transparent;
-    --bs-table-color:#edf5f9;
-    --bs-table-border-color:rgba(255,255,255,.07);
-    font-size:.72rem;
-    margin-bottom:0;
-}
-.siget-reports th{
-    color:#8297aa!important;
-    font-size:.6rem;
-    text-transform:uppercase;
-}
-.siget-reports .empty{
-    padding:45px 20px;
-    text-align:center;
-    color:#8fa5b7;
-}
-.siget-reports .builder-grid{
-    display:grid;
-    grid-template-columns:repeat(3,minmax(0,1fr));
-    gap:12px;
-}
-.siget-reports .builder-box{
-    background:#0d1925;
-    border:1px solid rgba(255,255,255,.08);
-    border-radius:12px;
-    padding:13px;
-}
-.siget-reports .builder-box h4{
-    color:#fff;
-    font-size:.74rem;
-    margin-bottom:10px;
-}
-.siget-reports .builder-options{
-    display:grid;
-    gap:7px;
-}
-.siget-reports .builder-options label{
-    color:#b7c5d0;
-    font-size:.68rem;
-}
-.siget-reports .builder-preview{
-    min-height:220px;
-    margin-top:15px;
-    background:#0d1722;
-    border:1px dashed rgba(255,255,255,.12);
-    border-radius:12px;
-    padding:15px;
-}
-@media(max-width:1100px){
-    .siget-reports .kpis{grid-template-columns:repeat(3,minmax(0,1fr))}
-    .siget-reports .builder-grid{grid-template-columns:1fr 1fr}
-}
-@media(max-width:700px){
-    .siget-reports .kpis{grid-template-columns:1fr 1fr}
-    .siget-reports .builder-grid{grid-template-columns:1fr}
-}
+:root{--cr-navy:#10213b;--cr-navy-2:#172c4b;--cr-line:#d9e0ea;--cr-soft:#f5f7fa;--cr-text:#1b2638;--cr-muted:#657287;--cr-ok:#20a865;--cr-warn:#db9b17;--cr-danger:#d94a4a;--cr-info:#2e79b9}
+.siget-report-shell{color:var(--cr-text)}
+.siget-report-top{background:linear-gradient(135deg,var(--cr-navy),#203c63);color:#fff;border-radius:14px;padding:20px 22px;margin-bottom:16px;box-shadow:0 8px 22px rgba(16,33,59,.13)}
+.siget-report-top .eyebrow{text-transform:uppercase;letter-spacing:.08em;font-size:.64rem;opacity:.72;font-weight:700}.siget-report-top h2{margin:.15rem 0 .3rem;font-weight:800}.siget-report-top p{margin:0;color:#d4dfec;font-size:.75rem}
+.cr-toolbar{background:#fff;border:1px solid var(--cr-line);border-radius:12px;padding:14px;margin-bottom:16px}.cr-toolbar .label{font-size:.64rem;text-transform:uppercase;letter-spacing:.05em;color:var(--cr-muted);font-weight:700;margin-bottom:5px}
+.cr-toolbar .form-select,.cr-toolbar .form-control{border-color:#cfd7e2}.cr-tabs{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:16px}.cr-tab{border:1px solid #cdd6e2;background:#fff;color:var(--cr-navy);border-radius:9px;padding:9px 12px;font-size:.7rem;font-weight:700;cursor:pointer}.cr-tab.active{background:var(--cr-navy);color:#fff;border-color:var(--cr-navy)}
+.cr-panel{display:none}.cr-panel.active{display:block}
+.cr-paper{background:#fff;border:1px solid var(--cr-line);border-radius:12px;overflow:hidden;margin-bottom:16px;box-shadow:0 2px 8px rgba(16,33,59,.04)}
+.cr-paper-head{background:var(--cr-navy);color:#fff;padding:14px 17px;display:flex;justify-content:space-between;align-items:flex-start;gap:12px}.cr-paper-head h3{font-size:.95rem;margin:0;font-weight:800}.cr-paper-head p{margin:3px 0 0;color:#d6dfeb;font-size:.68rem}.cr-band{padding:9px 13px;background:#eef2f7;border-top:1px solid var(--cr-line);border-bottom:1px solid var(--cr-line);font-size:.68rem;font-weight:800;color:var(--cr-navy);text-transform:uppercase;letter-spacing:.04em}
+.cr-kpis{display:grid;grid-template-columns:repeat(6,1fr);gap:9px;margin-bottom:16px}.cr-kpi{background:#fff;border:1px solid var(--cr-line);border-left:4px solid var(--cr-navy);border-radius:10px;padding:12px 13px}.cr-kpi small{display:block;color:var(--cr-muted);font-size:.62rem;text-transform:uppercase;letter-spacing:.04em}.cr-kpi strong{display:block;font-size:1.45rem;line-height:1.1;margin-top:4px;color:var(--cr-navy)}.cr-kpi.ok{border-left-color:var(--cr-ok)}.cr-kpi.warn{border-left-color:var(--cr-warn)}.cr-kpi.danger{border-left-color:var(--cr-danger)}
+.cr-grid-2{display:grid;grid-template-columns:1.05fr 1fr;gap:14px}.cr-grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}.cr-chart{height:260px;padding:13px}.cr-chart.tall{height:300px}
+.cr-table{width:100%;border-collapse:collapse;font-size:.69rem}.cr-table th{background:#15263f;color:#fff;padding:8px 10px;text-align:left;text-transform:uppercase;font-size:.59rem;letter-spacing:.03em}.cr-table td{padding:8px 10px;border-bottom:1px solid #e3e7ed;vertical-align:middle}.cr-table tr:last-child td{border-bottom:0}.cr-table .subtotal td{background:#f1f4f8;font-weight:800;border-top:1px solid #cfd7e2}
+.semaforo{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:4px 8px;font-size:.6rem;font-weight:800;border:1px solid transparent}.semaforo .dot{font-size:.56rem}.semaforo.ok{color:#0f7b49;background:#e8f7ef;border-color:#bce8d0}.semaforo.warn{color:#996a00;background:#fff5d9;border-color:#f0d993}.semaforo.danger{color:#a72b2b;background:#ffeded;border-color:#efc2c2}.semaforo.info{color:#1f649c;background:#eaf4fc;border-color:#c2def3}
+.status-card{border:1px solid var(--cr-line);border-radius:10px;padding:11px;background:#fff}.status-card .status-top{display:flex;justify-content:space-between;gap:8px}.status-card strong{font-size:.74rem}.status-card .n{font-size:1.25rem;font-weight:800;color:var(--cr-navy)}.status-card small{display:block;color:var(--cr-muted);font-size:.61rem;margin-top:2px}.status-legend{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;padding:13px}.status-card.ok{border-left:4px solid var(--cr-ok)}.status-card.warn{border-left:4px solid var(--cr-warn)}.status-card.danger{border-left:4px solid var(--cr-danger)}.status-card.info{border-left:4px solid var(--cr-info)}
+.cr-agency{border:1px solid var(--cr-line);border-radius:11px;margin-bottom:12px;overflow:hidden}.cr-agency-head{background:#eaf0f6;padding:10px 12px;display:flex;justify-content:space-between;align-items:center}.cr-agency-head strong{color:var(--cr-navy);font-size:.75rem}.cr-agency-head span{font-size:.62rem;color:var(--cr-muted)}.cr-unit-head{background:#f7f9fb;padding:8px 12px;border-top:1px solid var(--cr-line);border-bottom:1px solid var(--cr-line);font-size:.66rem;font-weight:800;color:#33435b}.cr-detail{padding:9px 12px}
+.cr-risk-list{display:grid;gap:8px;padding:12px}.risk-item{display:grid;grid-template-columns:1.5fr .7fr .9fr 1fr;gap:8px;align-items:center;border:1px solid #e0e5ec;border-radius:9px;padding:9px;font-size:.66rem}.risk-item strong{font-size:.8rem}.cr-actions{display:flex;justify-content:flex-end;gap:7px;padding:12px;border-top:1px solid var(--cr-line)}.cr-note{padding:10px 12px;background:#fff8e7;border-left:3px solid var(--cr-warn);margin:12px;font-size:.66rem;color:#6f5521}
+@media(max-width:1100px){.cr-kpis{grid-template-columns:repeat(3,1fr)}.cr-grid-2,.cr-grid-3{grid-template-columns:1fr}.risk-item{grid-template-columns:1fr 1fr}}
+@media(max-width:650px){.cr-kpis{grid-template-columns:repeat(2,1fr)}.status-legend{grid-template-columns:1fr}}
 </style>
 
-<div class="siget-reports">
-
-    <div class="hero d-flex justify-content-between align-items-start gap-3">
-        <div>
-            <div class="text-uppercase small text-info fw-bold">
-                Módulo de información y decisión
-            </div>
-
-            <h2 class="mb-1">Reportes SIGET</h2>
-
-            <div class="muted">
-                Reportes construidos sobre el mismo universo de datos y reglas
-                de acceso del SIGET.
-            </div>
-        </div>
-
-        <div class="text-end">
-            <div class="muted">UNIVERSO ACTUAL</div>
-            <strong class="fs-3">{{ number_format($total) }}</strong>
-            <div class="muted">cargas</div>
-        </div>
+<div class="siget-report-shell">
+    <div class="siget-report-top">
+        <div class="eyebrow">SIGET · Centro de Reportes</div>
+        <h2>Información para decisión y seguimiento</h2>
+        <p>Formato Crystal institucional · agrupación por Dependencia → Dirección / Unidad → Orden / referencia → Pauta / periodo.</p>
     </div>
 
-    {{-- FILTROS --}}
-    <form method="GET" action="{{ route('reports.index') }}" class="filters">
-        <div class="row g-3">
-
-            <div class="col-xl-2 col-md-4">
-                <div class="filter-label">Dependencia</div>
-                <select name="agency_id" class="form-select form-select-sm">
-                    <option value="">Todas</option>
-                    @foreach($agencies as $agency)
-                        <option value="{{ $agency->id }}"
-                            {{ (string)($filters['agency_id'] ?? '') === (string)$agency->id ? 'selected' : '' }}>
-                            {{ $agency->name }}
-                        </option>
-                    @endforeach
-                </select>
-            </div>
-
-            <div class="col-xl-2 col-md-4">
-                <div class="filter-label">Dirección / Unidad</div>
-                <select name="organizational_unit_id" class="form-select form-select-sm">
-                    <option value="">Todas</option>
-                    @foreach($units as $unit)
-                        <option value="{{ $unit->id }}"
-                            {{ (string)($filters['organizational_unit_id'] ?? '') === (string)$unit->id ? 'selected' : '' }}>
-                            {{ $unit->name }}
-                        </option>
-                    @endforeach
-                </select>
-            </div>
-
-            <div class="col-xl-2 col-md-4">
-                <div class="filter-label">Estado</div>
-                <select name="status" class="form-select form-select-sm">
-                    <option value="">Todos</option>
-                    @foreach(($statuses ?? $status) as $statusCode => $statusTotal)
-                        <option value="{{ $statusCode }}"
-                            {{ ($filters['status'] ?? '') === $statusCode ? 'selected' : '' }}>
-                            {{ $statusCode }}
-                        </option>
-                    @endforeach
-                </select>
-            </div>
-
-            <div class="col-xl-2 col-md-4">
-                <div class="filter-label">Periodo desde</div>
-                <input
-                    type="month"
-                    name="from"
-                    value="{{ $filters['from'] ?? '' }}"
-                    class="form-control form-control-sm"
-                    aria-label="Mes inicial del periodo"
-                >
-            </div>
-
-            <div class="col-xl-2 col-md-4">
-                <div class="filter-label">Periodo hasta</div>
-                <input
-                    type="month"
-                    name="to"
-                    value="{{ $filters['to'] ?? '' }}"
-                    class="form-control form-control-sm"
-                    aria-label="Mes final del periodo"
-                >
-            </div>
-
-            <div class="col-xl-2 col-md-4 d-flex align-items-end gap-2">
-                <button class="btn btn-primary btn-sm flex-fill">Aplicar</button>
-                <a href="{{ route('reports.index') }}" class="btn btn-outline-secondary btn-sm">Limpiar</a>
-            </div>
-
-        </div>
-
-        <div class="mt-2 muted">
-            El rango se interpreta por meses completos: desde el primer día del mes inicial
-            hasta el último día del mes final.
+    <form method="GET" action="{{ route('reports.index') }}" class="cr-toolbar">
+        <div class="row g-2 align-items-end">
+            <div class="col-xl-2 col-md-4"><div class="label">Dependencia</div><select name="agency_id" class="form-select form-select-sm"><option value="">Todas las dependencias</option>@foreach($agencies as $agency)<option value="{{ $agency->id }}" @selected((string)($filters['agency_id'] ?? '') === (string)$agency->id)>{{ $agency->name }}</option>@endforeach</select></div>
+            <div class="col-xl-3 col-md-4"><div class="label">Dirección / unidad</div><select name="organizational_unit_id" class="form-select form-select-sm"><option value="">Todas las direcciones</option>@foreach($units as $unit)<option value="{{ $unit->id }}" @selected((string)($filters['organizational_unit_id'] ?? '') === (string)$unit->id)>{{ $unit->name }}</option>@endforeach</select></div>
+            <div class="col-xl-2 col-md-4"><div class="label">Estado</div><select name="status" class="form-select form-select-sm"><option value="">Todos los estados</option>@foreach($statuses as $code=>$label)<option value="{{ $code }}" @selected(($filters['status'] ?? '') === $code)>{{ $label }}</option>@endforeach</select></div>
+            <div class="col-xl-2 col-md-4"><div class="label">Desde</div><input type="month" name="from" value="{{ $filters['from'] ?? '' }}" class="form-control form-control-sm"></div>
+            <div class="col-xl-2 col-md-4"><div class="label">Hasta</div><input type="month" name="to" value="{{ $filters['to'] ?? '' }}" class="form-control form-control-sm"></div>
+            <div class="col-xl-1 col-md-4"><button class="btn btn-primary btn-sm w-100">Aplicar</button></div>
         </div>
     </form>
 
-    {{-- NAVEGACIÓN --}}
-    <div class="nav-reportes">
-        <button class="report-tab active" type="button" data-report-tab="executive">1 · Ejecutivo Institucional</button>
-        <button class="report-tab" type="button" data-report-tab="compliance">2 · Cumplimiento y Desempeño</button>
-        <button class="report-tab" type="button" data-report-tab="evidence">3 · Cargas y Evidencias</button>
-        <button class="report-tab" type="button" data-report-tab="risk">4 · Riesgo y Vencimientos</button>
-
-        @if($canBuildReports)
-            <button class="report-tab" type="button" data-report-tab="builder">5 · Constructor de Reportes</button>
-        @endif
-
+    <div class="cr-tabs">
+        <button class="cr-tab active" type="button" data-cr-tab="executive">1 · Ejecutivo</button>
+        <button class="cr-tab" type="button" data-cr-tab="compliance">2 · Cumplimiento</button>
+        <button class="cr-tab" type="button" data-cr-tab="dependencies">3 · Dependencias y Direcciones</button>
+        <button class="cr-tab" type="button" data-cr-tab="tracking">4 · Seguimiento</button>
+        <button class="cr-tab" type="button" data-cr-tab="audit">5 · Auditoría</button>
+        @if($canBuildReports)<button class="cr-tab" type="button" data-cr-tab="builder">6 · Constructor</button>@endif
         @if($canExport)
-            <a href="{{ route('reports.xlsx', request()->query()) }}" class="btn btn-outline-success btn-sm ms-auto">Excel</a>
-            <a href="{{ route('reports.csv', request()->query()) }}" class="btn btn-outline-info btn-sm">CSV</a>
-            <a href="{{ route('reports.pdf', request()->query()) }}" class="btn btn-outline-danger btn-sm">PDF</a>
+            <a href="{{ route('reports.pdf', request()->query()) }}" class="btn btn-outline-danger btn-sm ms-auto">PDF</a>
+            <a href="{{ route('reports.xlsx', request()->query()) }}" class="btn btn-outline-success btn-sm">Excel</a>
+            <a href="{{ route('reports.csv', request()->query()) }}" class="btn btn-outline-secondary btn-sm">CSV</a>
         @endif
     </div>
 
-    <section class="report-panel active" data-report-panel="executive">
-        <div class="kpis">
-            @foreach([
-                ['Total', $total],
-                ['Activas', $active],
-                ['Cerradas', $closed],
-                ['Vencidas', $overdue],
-                ['Reprogramadas', $reprogrammed],
-                ['Cumplimiento', $compliance.'%']
-            ] as [$label,$value])
-                <div class="kpi">
-                    <small>{{ $label }}</small>
-                    <strong>{{ $value }}</strong>
+    <section class="cr-panel active" data-cr-panel="executive">
+        <div class="cr-kpis">
+            <div class="cr-kpi"><small>Total de cargas</small><strong>{{ number_format($total) }}</strong></div>
+            <div class="cr-kpi"><small>Activas</small><strong>{{ number_format($active) }}</strong></div>
+            <div class="cr-kpi ok"><small>Validadas y cerradas</small><strong>{{ number_format($closed) }}</strong></div>
+            <div class="cr-kpi danger"><small>Vencidas / faltantes</small><strong>{{ number_format($overdue) }}</strong></div>
+            <div class="cr-kpi warn"><small>Reprogramadas</small><strong>{{ number_format($reprogrammed) }}</strong></div>
+            <div class="cr-kpi"><small>Cumplimiento</small><strong>{{ number_format($compliance,1) }}%</strong></div>
+        </div>
+
+        <div class="cr-grid-2">
+            <div class="cr-paper"><div class="cr-paper-head"><div><h3>Distribución por estado</h3><p>Lectura ejecutiva de los cuatro estados oficiales.</p></div></div><div class="cr-grid-2" style="grid-template-columns:1fr 1fr;gap:0"><div class="cr-chart"><canvas id="sigetReportStatus"></canvas></div><div class="status-legend">@foreach($statuses as $code=>$label) @php($m=$statusMeta($code))<div class="status-card {{ $m['class'] }}"><div class="status-top"><strong>{{ $label }}</strong><span class="n">{{ (int)($statusDistribution[$code] ?? 0) }}</span></div><small>{{ $m['note'] }}</small></div>@endforeach</div></div></div>
+            <div class="cr-paper"><div class="cr-paper-head"><div><h3>Cumplimiento por dependencia</h3><p>Comparación de desempeño y presión de riesgo.</p></div></div><div class="cr-chart tall"><canvas id="sigetReportAgency"></canvas></div></div>
+        </div>
+
+        <div class="cr-paper">
+            <div class="cr-paper-head"><div><h3>Resumen por dependencia</h3><p>Cada dependencia inicia una sección formal con subtotal y semáforo.</p></div><span class="badge text-bg-light">{{ $groupedLoads->count() }} dependencias</span></div>
+            @forelse($groupedLoads as $agency=>$agencyLoads)
+                @php $agencyKpi=$agenciesPerformance->first(fn($r)=>($r['agency']??'')===$agency); $pct=(float)($agencyKpi['percentage']??0); $late=(int)($agencyKpi['overdue']??0); @endphp
+                <div class="cr-agency">
+                    <div class="cr-agency-head"><strong>{{ $agency }}</strong><span>{{ $agencyLoads->count() }} cargas · {{ number_format($pct,1) }}% cumplimiento</span></div>
+                    @php($byUnit=$agencyLoads->flatMap(fn($load)=>$unitNames($load)->map(fn($unit)=>['unit'=>$unit,'load'=>$load]))->groupBy('unit'))
+                    @foreach($byUnit as $unit=>$entries)
+                        <div class="cr-unit-head">Dirección / Unidad: {{ $unit }} · {{ $entries->count() }} cargas</div>
+                        <div class="cr-detail"><table class="cr-table"><thead><tr><th>Orden / referencia</th><th>Pauta / periodo</th><th>Apertura</th><th>Estado</th><th>Avance</th><th>Semáforo</th></tr></thead><tbody>
+                        @foreach($entries as $entry) @php($load=$entry['load']) @php($statusCode=$loadStatus($load)) @php($m=$statusMeta($statusCode))<tr><td><strong>{{ $load->title }}</strong></td><td>{{ $load->period_label ?: '—' }}</td><td>{{ $load->effective_open_at?->format('d/m/Y') ?: '—' }}</td><td>{{ $m['label'] }}</td><td>{{ number_format((float)$load->completion_percentage,0) }}%</td><td><span class="semaforo {{ $m['class'] }}"><span class="dot">{{ $m['icon'] }}</span>{{ $m['class']==='ok'?'EN CUMPLIMIENTO':($m['class']==='warn'?'ATENCIÓN':($m['class']==='danger'?'INCUMPLIMIENTO':'SEGUIMIENTO')) }}</span></td></tr>@endforeach
+                        </tbody></table></div>
+                    @endforeach
+                    <div class="cr-band">Subtotal {{ $agency }} · {{ $agencyLoads->count() }} cargas · {{ $agencyLoads->where('status','VALIDADO_Y_CERRADO')->count() }} cerradas · {{ $agencyLoads->where('status','REPROGRAMADA')->count() }} reprogramadas · {{ $agencyLoads->where('status','VENCIDA')->count() }} vencidas</div>
                 </div>
+            @empty
+                <div class="p-4 text-muted">No existen datos para el universo seleccionado.</div>
+            @endforelse
+        </div>
+    </section>
+
+    <section class="cr-panel" data-cr-panel="compliance">
+        <div class="cr-paper"><div class="cr-paper-head"><div><h3>Cumplimiento y Desempeño</h3><p>Programado → Reprogramado → Validado y cerrado → Vencido.</p></div></div>
+            <table class="cr-table"><thead><tr><th>Dependencia</th><th>Programado</th><th>Reprogramado</th><th>Validado y cerrado</th><th>Vencido</th><th>Cumplimiento</th><th>Semáforo</th></tr></thead><tbody>
+            @foreach($agencies as $agency)
+                @php($agencyLoads=$loads->filter(fn($load)=>$load->agency?->id===$agency->id)) @php($ac=$agencyLoads->where('status','VALIDADO_Y_CERRADO')->count()) @endphp @php($ap=$agencyLoads->where('status','PROGRAMADA')->count()) @endphp @php($ar=$agencyLoads->where('status','REPROGRAMADA')->count()) @endphp @php($av=$agencyLoads->where('status','VENCIDA')->count()) @php($apct=$agencyLoads->count()?round(100*$ac/$agencyLoads->count(),1):0) @php($cls=$av>0?'danger':($apct>=90?'ok':'warn'))
+                <tr><td><strong>{{ $agency->name }}</strong></td><td>{{ $ap }}</td><td>{{ $ar }}</td><td>{{ $ac }}</td><td>{{ $av }}</td><td>{{ $apct }}%</td><td><span class="semaforo {{ $cls }}"><span class="dot">●</span>{{ $cls==='ok'?'EN CUMPLIMIENTO':($cls==='warn'?'ATENCIÓN':'INCUMPLIMIENTO') }}</span></td></tr>
             @endforeach
+            </tbody></table>
         </div>
-
-        <div class="report-card mb-3">
-            <div class="report-head">
-                <div>
-                    <h3>Reporte Ejecutivo Institucional</h3>
-                    <p>Vista global para Dirección General y Administrador.</p>
-                </div>
-                <span class="badge text-bg-primary">{{ $total }} cargas</span>
-            </div>
-
-            <div class="table-responsive">
-                <table class="table table-hover align-middle">
-                    <thead>
-                        <tr>
-                            <th>Dependencia</th>
-                            <th>Cargas</th>
-                            <th>Cerradas</th>
-                            <th>Vencidas</th>
-                            <th>Cumplimiento</th>
-                            <th>Lectura</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse($executiveRows as $row)
-                            @php
-                                $pct = (float)($row['percentage'] ?? 0);
-                                $late = (int)($row['overdue'] ?? 0);
-                            @endphp
-                            <tr>
-                                <td><strong>{{ $row['agency'] ?? 'Sin dependencia' }}</strong></td>
-                                <td>{{ $row['total'] ?? 0 }}</td>
-                                <td>{{ $row['closed'] ?? 0 }}</td>
-                                <td>{{ $late }}</td>
-                                <td>{{ $pct }}%</td>
-                                <td>
-                                    <span class="badge {{ $late > 0 ? 'text-bg-danger' : ($pct >= 90 ? 'text-bg-success' : 'text-bg-warning') }}">
-                                        {{ $late > 0 ? 'ATENCIÓN' : ($pct >= 90 ? 'FAVORABLE' : 'SEGUIMIENTO') }}
-                                    </span>
-                                </td>
-                            </tr>
-                        @empty
-                            <tr><td colspan="6" class="empty">No existen datos para los filtros seleccionados.</td></tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <div class="report-card">
-            <div class="report-head">
-                <div>
-                    <h3>Tendencia mensual</h3>
-                    <p>Entradas y cierres del periodo seleccionado.</p>
-                </div>
-            </div>
-            <div class="p-3"><canvas id="sigetExecutiveTrend" height="120"></canvas></div>
-        </div>
+        <div class="cr-paper"><div class="cr-paper-head"><div><h3>Evolución mensual del cumplimiento</h3><p>Comportamiento del universo contratado por pauta.</p></div></div><div class="cr-chart tall"><canvas id="sigetReportMonthly"></canvas></div></div>
     </section>
 
-    <section class="report-panel" data-report-panel="compliance">
-        <div class="report-card">
-            <div class="report-head">
-                <div>
-                    <h3>Reporte de Cumplimiento y Desempeño</h3>
-                    <p>Comparativo por dependencia, dirección y unidad.</p>
-                </div>
-            </div>
-            <div class="table-responsive">
-                <table class="table table-hover align-middle">
-                    <thead><tr><th>Dirección / Unidad</th><th>Total</th><th>Validados</th><th>Cumplimiento</th></tr></thead>
-                    <tbody>
-                        @forelse($unitsPerformance as $row)
-                            <tr>
-                                <td><strong>{{ $row['unit'] ?? 'Sin unidad' }}</strong></td>
-                                <td>{{ $row['total'] ?? 0 }}</td>
-                                <td>{{ $row['validated'] ?? 0 }}</td>
-                                <td><span class="badge text-bg-success">{{ $row['percentage'] ?? 0 }}%</span></td>
-                            </tr>
-                        @empty
-                            <tr><td colspan="4" class="empty">Sin información de desempeño.</td></tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
-        </div>
+    <section class="cr-panel" data-cr-panel="dependencies">
+        <div class="cr-paper"><div class="cr-paper-head"><div><h3>Dependencias</h3><p>Agrupación institucional con subtotal por dirección.</p></div></div><table class="cr-table"><thead><tr><th>Dependencia</th><th>Cargas</th><th>Cerradas</th><th>Vencidas</th><th>Reprogramadas</th><th>Cumplimiento</th><th>Semáforo</th></tr></thead><tbody>
+        @foreach($agenciesPerformance as $row) @php($pct=(float)($row['percentage']??0)) @php($late=(int)($row['overdue']??0)) @php($cls=$late>0?'danger':($pct>=90?'ok':'warn'))<tr><td><strong>{{ $row['agency']??'Sin dependencia' }}</strong></td><td>{{ $row['total']??0 }}</td><td>{{ $row['closed']??0 }}</td><td>{{ $late }}</td><td>{{ $row['reprogrammed']??0 }}</td><td>{{ $pct }}%</td><td><span class="semaforo {{ $cls }}"><span class="dot">●</span>{{ $cls==='ok'?'EN CUMPLIMIENTO':($cls==='warn'?'ATENCIÓN':'INCUMPLIMIENTO') }}</span></td></tr>@endforeach
+        </tbody></table></div>
+        <div class="cr-paper"><div class="cr-paper-head"><div><h3>Direcciones / Unidades</h3><p>Desempeño comparativo dentro del universo seleccionado.</p></div></div><div class="cr-chart tall"><canvas id="sigetReportUnits"></canvas></div><table class="cr-table"><thead><tr><th>Dirección / Unidad</th><th>Entregables</th><th>Validados</th><th>Cumplimiento</th></tr></thead><tbody>@foreach($unitsPerformance as $row)<tr><td>{{ $row['unit']??'Sin unidad' }}</td><td>{{ $row['total']??0 }}</td><td>{{ $row['validated']??0 }}</td><td>{{ $row['percentage']??0 }}%</td></tr>@endforeach</tbody></table></div>
     </section>
 
-    <section class="report-panel" data-report-panel="evidence">
-        <div class="report-card">
-            <div class="report-head">
-                <div>
-                    <h3>Reporte de Cargas y Evidencias</h3>
-                    <p>Seguimiento de entrega, responsables, revisión y validación.</p>
-                </div>
-            </div>
-            <div class="table-responsive">
-                <table class="table table-hover align-middle">
-                    <thead><tr><th>Carga</th><th>Dependencia</th><th>Dirección / Unidad</th><th>Responsable</th><th>Evidencias</th><th>Validadas</th><th>Estado</th></tr></thead>
-                    <tbody>
-                        @forelse($evidenceRows as $row)
-                            @php
-                                $evidences = $row['evidences'];
-                                $validated = $evidences->filter(function ($evidence) {
-                                    $state = $evidence->status instanceof \BackedEnum ? $evidence->status->value : (string) $evidence->status;
-                                    return $state === 'VALIDADO';
-                                })->count();
-                                $loadStatus = $row['load']->status instanceof \BackedEnum ? $row['load']->status->value : (string) $row['load']->status;
-                            @endphp
-                            <tr>
-                                <td><a href="{{ route('loads.show', $row['load']) }}" class="text-decoration-none">#{{ $row['load']->id }}</a></td>
-                                <td>{{ $row['load']->agency?->name }}</td>
-                                <td>{{ $row['unit']?->name ?? 'Sin unidad' }}</td>
-                                <td>{{ $row['user']?->name ?? 'Sin responsable' }}</td>
-                                <td>{{ $evidences->count() }}</td>
-                                <td>{{ $validated }}</td>
-                                <td><span class="badge text-bg-light">{{ $loadStatus }}</span></td>
-                            </tr>
-                        @empty
-                            <tr><td colspan="7" class="empty">No existen cargas o evidencias para los filtros seleccionados.</td></tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
-        </div>
+    <section class="cr-panel" data-cr-panel="tracking">
+        <div class="cr-paper"><div class="cr-paper-head"><div><h3>Seguimiento de cargas</h3><p>Identificación rápida de pendientes, reprogramaciones y vencimientos.</p></div></div><table class="cr-table"><thead><tr><th>Dependencia</th><th>Dirección / unidad</th><th>Orden / referencia</th><th>Pauta</th><th>Estado</th><th>Avance</th><th>Semáforo</th></tr></thead><tbody>
+        @forelse($loads as $load) @php($statusCode=$loadStatus($load)) @php($m=$statusMeta($statusCode)) @php($unit=$unitNames($load)->implode(' / ')) @if(in_array($statusCode,['REPROGRAMADA','VENCIDA','PROGRAMADA'],true))<tr><td>{{ $agencyName($load) }}</td><td>{{ $unit ?: '—' }}</td><td>{{ $load->title }}</td><td>{{ $load->period_label ?: '—' }}</td><td>{{ $m['label'] }}</td><td>{{ number_format((float)$load->completion_percentage,0) }}%</td><td><span class="semaforo {{ $m['class'] }}"><span class="dot">●</span>{{ $m['class']==='danger'?'INCUMPLIMIENTO':($m['class']==='warn'?'ATENCIÓN':($m['class']==='info'?'SEGUIMIENTO':'EN CUMPLIMIENTO')) }}</span></td></tr>@endif @empty<tr><td colspan="7" class="text-center text-muted p-4">Sin cargas.</td></tr>@endforelse
+        </tbody></table></div>
+        <div class="cr-note">La lectura ejecutiva prioriza <strong>VENCIDO</strong> y <strong>REPROGRAMADO</strong> como focos de atención; las cargas PROGRAMADAS permanecen en seguimiento hasta completar su ciclo.</div>
     </section>
 
-    <section class="report-panel" data-report-panel="risk">
-        <div class="report-card">
-            <div class="report-head">
-                <div>
-                    <h3>Reporte de Riesgo, Vencimientos y Reprogramaciones</h3>
-                    <p>Identificación de cargas que requieren atención.</p>
-                </div>
-                <span class="badge text-bg-danger">{{ $riskLoads->count() }} en seguimiento</span>
-            </div>
-            <div class="table-responsive">
-                <table class="table table-hover align-middle">
-                    <thead><tr><th>Carga</th><th>Dependencia</th><th>Fecha límite</th><th>Estado</th><th>Riesgo</th><th>Avance</th><th>Riesgo</th></tr></thead>
-                    <tbody>
-                        @forelse($riskLoads as $load)
-                            @php
-                                $status = $load->status instanceof \BackedEnum ? $load->status->value : (string) $load->status;
-                                $risk = match($status) {
-                                    'VENCIDA' => 'ALTO',
-                                    'OBSERVADA', 'REPROGRAMADA' => 'MEDIO',
-                                    default => ($load->effective_close_at && $load->effective_close_at->isFuture() && now()->diffInHours($load->effective_close_at, false) <= 72 ? 'ATENCIÓN' : 'NORMAL'),
-                                };
-                            @endphp
-                            <tr>
-                                <td><a href="{{ route('loads.show', $load) }}">#{{ $load->id }}</a></td>
-                                <td>{{ $load->agency?->name }}</td>
-                                <td>{{ $load->effective_close_at?->format('d/m/Y H:i') }}</td>
-                                <td>{{ $status }}</td>
-                                <td><span class="badge {{ $risk === 'ALTO' ? 'text-bg-danger' : ($risk === 'MEDIO' ? 'text-bg-warning' : ($risk === 'ATENCIÓN' ? 'text-bg-info' : 'text-bg-success')) }}">{{ $risk }}</span></td>
-                                <td>{{ $load->completion_percentage }}%</td>
-                                <td><span class="badge {{ $risk === 'ALTO' ? 'text-bg-danger' : ($risk === 'MEDIO' ? 'text-bg-warning' : 'text-bg-secondary') }}">{{ $risk }}</span></td>
-                            </tr>
-                        @empty
-                            <tr><td colspan="7" class="empty">No hay cargas en situación de riesgo.</td></tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
+    <section class="cr-panel" data-cr-panel="audit">
+        <div class="cr-paper"><div class="cr-paper-head"><div><h3>Auditoría / Detalle</h3><p>Jerarquía documental para revisión y archivo.</p></div></div>
+        @forelse($groupedLoads as $agency=>$agencyLoads)
+            <div class="cr-band">Dependencia · {{ $agency }}</div>
+            @foreach($agencyLoads->groupBy(fn($load)=>$unitNames($load)->first() ?: 'Sin dirección / unidad') as $unit=>$unitLoads)
+                <div class="cr-unit-head">Dirección / Unidad · {{ $unit }}</div>
+                <table class="cr-table"><thead><tr><th>Orden / referencia</th><th>Pauta / periodo</th><th>Fecha apertura</th><th>Fecha entrega</th><th>Fecha validación</th><th>Fecha cierre</th><th>Estado</th></tr></thead><tbody>
+                @foreach($unitLoads as $load) @php($statusCode=$loadStatus($load)) @php($m=$statusMeta($statusCode))<tr><td>{{ $load->title }}</td><td>{{ $load->period_label ?: '—' }}</td><td>{{ $load->effective_open_at?->format('d/m/Y H:i') ?: '—' }}</td><td>{{ $load->delivered_at?->format('d/m/Y H:i') ?: '—' }}</td><td>{{ $load->validated_at?->format('d/m/Y H:i') ?: '—' }}</td><td>{{ $load->closed_at?->format('d/m/Y H:i') ?: '—' }}</td><td><span class="semaforo {{ $m['class'] }}"><span class="dot">●</span>{{ $m['label'] }}</span></td></tr>@endforeach
+                </tbody></table>
+            @endforeach
+        @empty
+            <div class="p-4 text-muted">No hay registros para los filtros seleccionados.</div>
+        @endforelse
         </div>
     </section>
 
     @if($canBuildReports)
-        <section class="report-panel" data-report-panel="builder">
-            <div class="report-card">
-                <div class="report-head">
-                    <div>
-                        <h3>Constructor de Reportes SIGET</h3>
-                        <p>Herramienta exclusiva del Administrador para construir reportes especiales.</p>
-                    </div>
-                    <span class="badge text-bg-primary">ADMINISTRADOR</span>
-                </div>
-                <div class="p-3">
-                    <div class="builder-grid">
-                        <div class="builder-box">
-                            <h4>Dimensiones</h4>
-                            <div class="builder-options">
-                                <label><input type="checkbox" data-builder-field="agency" checked> Dependencia</label>
-                                <label><input type="checkbox" data-builder-field="unit" checked> Dirección / Unidad</label>
-                                <label><input type="checkbox" data-builder-field="responsible" checked> Responsable</label>
-                                <label><input type="checkbox" data-builder-field="period"> Periodo</label>
-                                <label><input type="checkbox" data-builder-field="status" checked> Estado</label>
-                            </div>
-                        </div>
-                        <div class="builder-box">
-                            <h4>Métricas</h4>
-                            <div class="builder-options">
-                                <label><input type="checkbox" data-builder-metric="total" checked> Total de cargas</label>
-                                <label><input type="checkbox" data-builder-metric="closed" checked> Cargas cerradas</label>
-                                <label><input type="checkbox" data-builder-metric="overdue"> Cargas vencidas</label>
-                                <label><input type="checkbox" data-builder-metric="evidence"> Evidencias</label>
-                                <label><input type="checkbox" data-builder-metric="compliance"> Cumplimiento</label>
-                            </div>
-                        </div>
-                        <div class="builder-box">
-                            <h4>Visualización</h4>
-                            <div class="builder-options">
-                                <label><input type="radio" name="builder-view" value="table" checked> Tabla</label>
-                                <label><input type="radio" name="builder-view" value="summary"> Resumen</label>
-                                <label><input type="radio" name="builder-view" value="ranking"> Ranking</label>
-                            </div>
-                            <button id="buildCustomReport" type="button" class="btn btn-primary btn-sm w-100 mt-3">Generar reporte</button>
-                        </div>
-                    </div>
-                    <div id="builderPreview" class="builder-preview">
-                        <div class="empty">Selecciona dimensiones, métricas y visualización; después presiona <strong>Generar reporte</strong>.</div>
-                    </div>
-                </div>
-            </div>
-        </section>
+    <section class="cr-panel" data-cr-panel="builder">
+        <div class="cr-paper"><div class="cr-paper-head"><div><h3>Constructor de Reportes</h3><p>Selecciona el nivel de agrupación antes de exportar.</p></div></div><div class="p-3"><div class="cr-grid-3"><div class="status-card info"><strong>1 · Dependencia</strong><small>Agrupar y subtotalizar por dependencia.</small></div><div class="status-card info"><strong>2 · Dirección / Unidad</strong><small>Separar cada dirección dentro de su dependencia.</small></div><div class="status-card info"><strong>3 · Orden / Pauta</strong><small>Detalle documental de cada carga.</small></div></div><div class="cr-actions"><a href="{{ route('reports.pdf', request()->query()) }}" class="btn btn-danger btn-sm">Generar PDF Crystal</a><a href="{{ route('reports.xlsx', request()->query()) }}" class="btn btn-success btn-sm">Generar Excel</a></div></div></div>
+    </section>
     @endif
 </div>
 
 <script>
-document.addEventListener('DOMContentLoaded', function () {
-    document.querySelectorAll('[data-report-tab]').forEach(function (button) {
-        button.addEventListener('click', function () {
-            const key = button.dataset.reportTab;
-            document.querySelectorAll('[data-report-tab]').forEach(function (item) {
-                item.classList.toggle('active', item === button);
-            });
-            document.querySelectorAll('[data-report-panel]').forEach(function (panel) {
-                panel.classList.toggle('active', panel.dataset.reportPanel === key);
-            });
-        });
-    });
-
-    const builder = document.getElementById('buildCustomReport');
-    const preview = document.getElementById('builderPreview');
-
-    if (builder && preview) {
-        builder.addEventListener('click', function () {
-            const dimensions = Array.from(document.querySelectorAll('[data-builder-field]:checked')).map(input => input.parentElement.textContent.trim());
-            const metrics = Array.from(document.querySelectorAll('[data-builder-metric]:checked')).map(input => input.parentElement.textContent.trim());
-            const view = document.querySelector('input[name="builder-view"]:checked')?.value || 'table';
-
-            preview.innerHTML = `
-                <div class="mb-3">
-                    <strong style="color:#fff">Reporte personalizado generado</strong>
-                    <div class="muted mt-1">Visualización: ${view}</div>
-                </div>
-                <div class="row g-3">
-                    <div class="col-md-6">
-                        <div class="builder-box">
-                            <h4>Dimensiones seleccionadas</h4>
-                            ${dimensions.length ? dimensions.map(item => `<div class="small text-light mb-1">• ${item}</div>`).join('') : '<div class="muted">Sin dimensiones.</div>'}
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="builder-box">
-                            <h4>Métricas seleccionadas</h4>
-                            ${metrics.length ? metrics.map(item => `<div class="small text-light mb-1">• ${item}</div>`).join('') : '<div class="muted">Sin métricas.</div>'}
-                        </div>
-                    </div>
-                </div>
-                <div class="mt-3 muted">El resultado respeta los filtros y permisos del usuario y utiliza exclusivamente el universo disponible en SIGET.</div>
-            `;
-        });
-    }
-
-    const canvas = document.getElementById('sigetExecutiveTrend');
-    if (canvas && typeof Chart !== 'undefined') {
-        const labels = @json($monthly->pluck('period')->values());
-        const totals = @json($monthly->pluck('total')->values());
-        const closes = @json($monthly->pluck('closed')->values());
-
-        new Chart(canvas, {
-            type: 'line',
-            data: {
-                labels: labels,
-                datasets: [
-                    { label: 'Entradas', data: totals, borderWidth: 2, tension: .3 },
-                    { label: 'Cierres', data: closes, borderWidth: 2, tension: .3 }
-                ]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                interaction: { mode: 'index', intersect: false },
-                plugins: { legend: { position: 'bottom' } },
-                scales: { y: { beginAtZero: true } }
-            }
-        });
-    }
-});
+(function(){
+    const tabs=document.querySelectorAll('[data-cr-tab]');
+    const panels=document.querySelectorAll('[data-cr-panel]');
+    tabs.forEach(tab=>tab.addEventListener('click',()=>{
+        const key=tab.dataset.crTab;
+        tabs.forEach(t=>t.classList.toggle('active',t===tab));
+        panels.forEach(p=>p.classList.toggle('active',p.dataset.crPanel===key));
+        window.dispatchEvent(new Event('resize'));
+    }));
+})();
 </script>
 
+<script type="application/json" data-siget-chart="sigetReportStatus">{!! json_encode(['type'=>'doughnut','labels'=>$statusLabels,'datasets'=>[['label'=>'Cargas','data'=>$statusChartData]]]) !!}</script>
+<script type="application/json" data-siget-chart="sigetReportAgency">{!! json_encode(['type'=>'bar','labels'=>$agencyLabels,'datasets'=>[['label'=>'Cumplimiento %','data'=>$agencyPct]]]) !!}</script>
+<script type="application/json" data-siget-chart="sigetReportMonthly">{!! json_encode(['type'=>'line','labels'=>$trendLabels,'datasets'=>[['label'=>'Cumplimiento %','data'=>$trendCompliance],['label'=>'Cierres','data'=>$trendClosed],['label'=>'Cargas','data'=>$trendTotal]]]) !!}</script>
+<script type="application/json" data-siget-chart="sigetReportUnits">{!! json_encode(['type'=>'bar','labels'=>$unitLabels,'datasets'=>[['label'=>'Cumplimiento %','data'=>$unitPct]]]) !!}</script>
 @endsection
