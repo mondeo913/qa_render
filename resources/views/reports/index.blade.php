@@ -24,25 +24,26 @@
         'VENCIDA' => 'VENCIDO',
     ];
 
+    $statusClasses = [
+        'PROGRAMADA' => 'info',
+        'REPROGRAMADA' => 'warn',
+        'VALIDADO_Y_CERRADO' => 'ok',
+        'VENCIDA' => 'danger',
+    ];
+
+    $statusNotes = [
+        'PROGRAMADA' => 'En seguimiento',
+        'REPROGRAMADA' => 'Requiere seguimiento',
+        'VALIDADO_Y_CERRADO' => 'Cumplimiento confirmado',
+        'VENCIDA' => 'Incumplimiento',
+    ];
+
     $groupedLoads = $loads->groupBy(function ($load) {
         return $load->agency?->name ?: 'Sin dependencia';
     });
 
     $loadStatus = function ($load) {
         return $load->status instanceof \BackedEnum ? $load->status->value : (string) $load->status;
-    };
-
-    $statusMeta = function ($code) {
-        if ($code === 'VALIDADO_Y_CERRADO') {
-            return ['class' => 'ok', 'label' => 'VALIDADO Y CERRADO'];
-        }
-        if ($code === 'REPROGRAMADA') {
-            return ['class' => 'warn', 'label' => 'REPROGRAMADO'];
-        }
-        if ($code === 'VENCIDA') {
-            return ['class' => 'danger', 'label' => 'VENCIDO'];
-        }
-        return ['class' => 'info', 'label' => 'PROGRAMADO'];
     };
 
     $statusChartData = [];
@@ -177,10 +178,11 @@
             <div class="cr-kpi"><small>Cumplimiento</small><strong>{{ number_format($compliance,1) }}%</strong></div>
         </div>
         <div class="cr-grid-2">
-            <div class="cr-paper"><div class="cr-paper-head"><h3>Distribución por estado</h3><p>Los cuatro estados oficiales de lectura ejecutiva.</p></div><div class="cr-grid-2" style="grid-template-columns:1fr 1fr;gap:0"><div class="cr-chart"><canvas id="sigetReportStatus"></canvas></div><div>@foreach($statuses as $code => $label) @php
-                $qty = (int) ($statusDistribution[$code] ?? 0);
-                $m = $statusMeta($code);
-            @endphp<div class="status-card {{ $m['class'] }}"><strong>{{ $label }}</strong><span style="float:right;font-size:1.1rem">{{ $qty }}</span></div>@endforeach</div></div></div>
+            <div class="cr-paper"><div class="cr-paper-head"><h3>Distribución por estado</h3><p>Los cuatro estados oficiales de lectura ejecutiva.</p></div><div class="cr-grid-2" style="grid-template-columns:1fr 1fr;gap:0"><div class="cr-chart"><canvas id="sigetReportStatus"></canvas></div><div>
+                @foreach($statuses as $code => $label)
+                    <div class="status-card {{ $statusClasses[$code] ?? 'info' }}"><strong>{{ $label }}</strong><span style="float:right;font-size:1.1rem">{{ (int)($statusDistribution[$code] ?? 0) }}</span><div style="font-size:.62rem;color:var(--cr-muted);margin-top:4px">{{ $statusNotes[$code] ?? '' }}</div></div>
+                @endforeach
+            </div></div></div>
             <div class="cr-paper"><div class="cr-paper-head"><h3>Cumplimiento por dependencia</h3><p>Comparación institucional.</p></div><div class="cr-chart"><canvas id="sigetReportAgency"></canvas></div></div>
         </div>
         <div class="cr-paper"><div class="cr-paper-head"><h3>Resumen por dependencia</h3><p>Subtotal institucional y semáforo.</p></div>
@@ -189,10 +191,7 @@
                 <div class="cr-band">{{ $agency }} · {{ $agencyLoads->count() }} cargas</div>
                 <div class="cr-detail"><table class="cr-table"><thead><tr><th>Orden / referencia</th><th>Pauta / periodo</th><th>Estado</th><th>Avance</th></tr></thead><tbody>
                 @foreach($agencyLoads as $load)
-                    @php
-                        $m = $statusMeta($loadStatus($load));
-                    @endphp
-                    <tr><td><strong>{{ $load->title }}</strong></td><td>{{ $load->period_label ?: '—' }}</td><td><span class="semaforo {{ $m['class'] }}">{{ $m['label'] }}</span></td><td>{{ number_format((float)$load->completion_percentage,0) }}%</td></tr>
+                    <tr><td><strong>{{ $load->title }}</strong></td><td>{{ $load->period_label ?: '—' }}</td><td><span class="semaforo {{ $statusClasses[$loadStatus($load)] ?? 'info' }}">{{ $statuses[$loadStatus($load)] ?? $loadStatus($load) }}</span></td><td>{{ number_format((float)$load->completion_percentage,0) }}%</td></tr>
                 @endforeach
                 </tbody></table></div>
             @endforeach
@@ -207,10 +206,10 @@
                     return $load->agency?->id === $agency->id;
                 });
                 $count = $agencyLoads->count();
-                $ac = $agencyLoads->where('status', 'VALIDADO_Y_CERRADO')->count();
-                $ap = $agencyLoads->where('status', 'PROGRAMADA')->count();
-                $ar = $agencyLoads->where('status', 'REPROGRAMADA')->count();
-                $av = $agencyLoads->where('status', 'VENCIDA')->count();
+                $ac = $agencyLoads->where('status','VALIDADO_Y_CERRADO')->count();
+                $ap = $agencyLoads->where('status','PROGRAMADA')->count();
+                $ar = $agencyLoads->where('status','REPROGRAMADA')->count();
+                $av = $agencyLoads->where('status','VENCIDA')->count();
                 $apct = $count ? round(100 * $ac / $count, 1) : 0;
             @endphp
             <tr><td><strong>{{ $agency->name }}</strong></td><td>{{ $ap }}</td><td>{{ $ar }}</td><td>{{ $ac }}</td><td>{{ $av }}</td><td>{{ $apct }}%</td></tr>
@@ -228,7 +227,9 @@
         @if($agenciesPerformance->isEmpty())<tr><td colspan="6" class="text-center p-4 text-muted">Sin dependencias para los filtros actuales.</td></tr>@endif
         </tbody></table></div>
         <div class="cr-paper"><div class="cr-paper-head"><h3>Direcciones / Unidades</h3><p>Desempeño dentro del universo seleccionado.</p></div><div class="cr-chart"><canvas id="sigetReportUnits"></canvas></div><div class="table-responsive"><table class="cr-table"><thead><tr><th>Dirección / Unidad</th><th>Entregables</th><th>Validados</th><th>Cumplimiento</th></tr></thead><tbody>
-        @foreach($unitsPerformance as $row)<tr><td>{{ $row['unit'] ?? 'Sin unidad' }}</td><td>{{ $row['total'] ?? 0 }}</td><td>{{ $row['validated'] ?? 0 }}</td><td>{{ $row['percentage'] ?? 0 }}%</td></tr>@endforeach
+        @foreach($unitsPerformance as $row)
+            <tr><td>{{ $row['unit'] ?? 'Sin unidad' }}</td><td>{{ $row['total'] ?? 0 }}</td><td>{{ $row['validated'] ?? 0 }}</td><td>{{ $row['percentage'] ?? 0 }}%</td></tr>
+        @endforeach
         @if($unitsPerformance->isEmpty())<tr><td colspan="4" class="text-center p-4 text-muted">Sin información.</td></tr>@endif
         </tbody></table></div></div>
     </section>
@@ -236,13 +237,8 @@
     <section class="cr-panel" data-cr-panel="tracking">
         <div class="cr-paper"><div class="cr-paper-head"><h3>Seguimiento de cargas</h3><p>Focos de atención para seguimiento ejecutivo.</p></div><div class="table-responsive"><table class="cr-table"><thead><tr><th>Dependencia</th><th>Orden / referencia</th><th>Pauta</th><th>Estado</th><th>Avance</th></tr></thead><tbody>
         @foreach($loads as $load)
-            @php
-                $statusCode = $loadStatus($load);
-                $showTracking = in_array($statusCode, ['REPROGRAMADA', 'VENCIDA', 'PROGRAMADA'], true);
-                $m = $statusMeta($statusCode);
-            @endphp
-            @if($showTracking)
-                <tr><td>{{ $load->agency?->name ?: 'Sin dependencia' }}</td><td>{{ $load->title }}</td><td>{{ $load->period_label ?: '—' }}</td><td>{{ $m['label'] }}</td><td>{{ number_format((float)$load->completion_percentage,0) }}%</td></tr>
+            @if(in_array($loadStatus($load), ['REPROGRAMADA', 'VENCIDA', 'PROGRAMADA'], true))
+                <tr><td>{{ $load->agency?->name ?: 'Sin dependencia' }}</td><td>{{ $load->title }}</td><td>{{ $load->period_label ?: '—' }}</td><td><span class="semaforo {{ $statusClasses[$loadStatus($load)] ?? 'info' }}">{{ $statuses[$loadStatus($load)] ?? $loadStatus($load) }}</span></td><td>{{ number_format((float)$load->completion_percentage,0) }}%</td></tr>
             @endif
         @endforeach
         @if($loads->isEmpty())<tr><td colspan="5" class="text-center p-4 text-muted">Sin cargas.</td></tr>@endif
@@ -257,10 +253,7 @@
             <div class="cr-band">Dependencia · {{ $agency }}</div>
             <div class="cr-detail"><table class="cr-table"><thead><tr><th>Orden / referencia</th><th>Pauta / periodo</th><th>Fecha apertura</th><th>Fecha entrega</th><th>Estado</th></tr></thead><tbody>
             @foreach($agencyLoads as $load)
-                @php
-                    $m = $statusMeta($loadStatus($load));
-                @endphp
-                <tr><td>{{ $load->title }}</td><td>{{ $load->period_label ?: '—' }}</td><td>{{ $load->effective_open_at?->format('d/m/Y H:i') ?: '—' }}</td><td>{{ $load->delivered_at?->format('d/m/Y H:i') ?: '—' }}</td><td><span class="semaforo {{ $m['class'] }}">{{ $m['label'] }}</span></td></tr>
+                <tr><td>{{ $load->title }}</td><td>{{ $load->period_label ?: '—' }}</td><td>{{ $load->effective_open_at?->format('d/m/Y H:i') ?: '—' }}</td><td>{{ $load->delivered_at?->format('d/m/Y H:i') ?: '—' }}</td><td><span class="semaforo {{ $statusClasses[$loadStatus($load)] ?? 'info' }}">{{ $statuses[$loadStatus($load)] ?? $loadStatus($load) }}</span></td></tr>
             @endforeach
             </tbody></table></div>
         @endforeach
@@ -268,21 +261,19 @@
     </section>
 
     @if($canBuildReports)
-    <section class="cr-panel" data-cr-panel="builder">
-        <div class="cr-paper"><div class="cr-paper-head"><h3>Constructor de Reportes</h3><p>Generación formal del reporte ejecutivo con filtros actuales.</p></div><div class="p-3"><div class="cr-grid-3"><div class="status-card info"><strong>1 · Dependencia</strong><br><small>Agrupar y subtotalizar por dependencia.</small></div><div class="status-card info"><strong>2 · Dirección / Unidad</strong><br><small>Separar cada dirección dentro de su dependencia.</small></div><div class="status-card info"><strong>3 · Orden / Pauta</strong><br><small>Detalle documental de cada carga.</small></div></div></div></div>
-    </section>
+    <section class="cr-panel" data-cr-panel="builder"><div class="cr-paper"><div class="cr-paper-head"><h3>Constructor de Reportes</h3><p>Generación formal del reporte ejecutivo con filtros actuales.</p></div><div class="p-3"><div class="cr-grid-3"><div class="status-card info"><strong>1 · Dependencia</strong><br><small>Agrupar y subtotalizar por dependencia.</small></div><div class="status-card info"><strong>2 · Dirección / Unidad</strong><br><small>Separar cada dirección dentro de su dependencia.</small></div><div class="status-card info"><strong>3 · Orden / Pauta</strong><br><small>Detalle documental de cada carga.</small></div></div></div></div></section>
     @endif
 </div>
 
 <script>
 (function(){
-    var tabs = document.querySelectorAll('[data-cr-tab]');
-    var panels = document.querySelectorAll('[data-cr-panel]');
+    var tabs=document.querySelectorAll('[data-cr-tab]');
+    var panels=document.querySelectorAll('[data-cr-panel]');
     tabs.forEach(function(tab){
-        tab.addEventListener('click', function(){
-            var key = tab.getAttribute('data-cr-tab');
-            tabs.forEach(function(item){ item.classList.toggle('active', item === tab); });
-            panels.forEach(function(panel){ panel.classList.toggle('active', panel.getAttribute('data-cr-panel') === key); });
+        tab.addEventListener('click',function(){
+            var key=tab.getAttribute('data-cr-tab');
+            tabs.forEach(function(item){item.classList.toggle('active',item===tab);});
+            panels.forEach(function(panel){panel.classList.toggle('active',panel.getAttribute('data-cr-panel')===key);});
             window.dispatchEvent(new Event('resize'));
         });
     });
