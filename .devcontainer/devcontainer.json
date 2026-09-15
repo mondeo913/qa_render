@@ -51,7 +51,7 @@
       }
     }
   },
-  "postCreateCommand": "bash .devcontainer/install-k2.sh",
-  "postStartCommand": "bash .devcontainer/start-k2.sh && bash .devcontainer/qa-runtime.sh",
+  "postCreateCommand": "bash .devcontainer/install-siget.sh",
+  "postStartCommand": "bash .devcontainer/repair-runtime.sh && bash .devcontainer/qa-runtime.sh",
   "waitFor": "postCreateCommand"
 }

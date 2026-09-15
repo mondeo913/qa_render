@@ -1,57 +1,82 @@
-# SIGET K2 — Núcleo original + alcance integrado
+# SIGET — Ambiente QA consolidado
 
-Paquete acumulado para instalar directamente en la raíz de un repositorio de GitHub y ejecutar mediante GitHub Codespaces.
+## Objetivo
 
-## Identidad institucional
+Este repositorio contiene la versión QA consolidada de **SIGET — Sistema de Gestión de Evidencias de Transmisión**.
 
-- **SIGET**
-- **Sistema de Gestión de Evidencias de Transmisión**
+La línea QA debe representar una sola versión funcional vigente, sin conservar paquetes, respaldos, instaladores sustituidos o reportes históricos dentro del código fuente.
 
-## Contenido integrado
+## Funcionalidad integrada
 
-- Núcleo original de SIGET adaptado a QA/Codespaces.
-- P0: estabilización del parser de pautas, cuatro roles específicos y permisos corregidos.
-- K1: tablero Kanban de cargas por dependencia.
-- K2: integración visual y funcional acumulativa:
-  - tema claro, oscuro y automático;
-  - autenticación renovada y recuperación de contraseña;
-  - dashboards diferenciados por rol;
-  - calendario inteligente con próximos eventos;
-  - centro de notificaciones con filtros;
-  - repositorio tipo File Manager;
-  - bandeja institucional de revisión;
-  - identidad SIGET corregida en la interfaz y reportes.
+- autenticación y recuperación de acceso;
+- administración de usuarios, roles y permisos;
+- Direcciones, dependencias y unidades organizacionales;
+- tablero de cargas y seguimiento operativo;
+- calendario y pautas;
+- carga y gestión de evidencias;
+- repositorios y revisión institucional;
+- validación y cierre;
+- dashboards por alcance de usuario;
+- reportes ejecutivos e indicadores;
+- exportaciones y diagnóstico QA.
 
-## Responsabilidades funcionales
+## Alcance por rol
 
-- Los operativos capturan, corrigen y envían las cargas.
-- El Enlace Institucional revisa, observa, devuelve, valida y cierra.
-- Los directores supervisan solamente su dirección.
-- El Director General supervisa el cumplimiento institucional consolidado.
-- El Fiscalizador conserva la revisión especializada definida por el núcleo.
+- **Administrador:** administración global y configuración.
+- **Enlace Institucional:** revisión, observación, validación y cierre institucional según su alcance.
+- **Director General:** supervisión institucional consolidada.
+- **Director de Transmisión:** supervisión de su Dirección y unidades descendientes.
+- **Director de Programación y Continuidad:** supervisión de su Dirección y unidades descendientes.
+- **Operativos:** captura, corrección, envío y seguimiento de cargas y evidencias.
+- **Fiscalizador:** revisión especializada definida por el modelo vigente.
 
-## Instalación en GitHub Codespaces
+## Ambiente QA
 
-1. Crea un repositorio nuevo o una rama de integración.
-2. Descomprime el ZIP K2.
-3. Sube el contenido interno directamente a la raíz del repositorio.
-4. Confirma que existan `.devcontainer/`, `app/`, `database/`, `resources/`, `routes/`, `artisan`, `composer.json` y `package.json`.
-5. Crea o reconstruye el Codespace.
-6. Espera a que termine `.devcontainer/install-siget.sh`.
-7. Ejecuta:
+La ruta vigente de Codespaces es:
 
-```bash
-chmod +x K2_CERTIFICAR_COMPLETO.sh
-./K2_CERTIFICAR_COMPLETO.sh
+```text
+.devcontainer/devcontainer.json
+        ↓
+Dockerfile.k2
+        ↓
+install-siget.sh
+        ↓
+repair-runtime.sh
+        ↓
+qa-runtime.sh
 ```
 
-## Puertos QA
+El ambiente utiliza PHP 8.3, PostgreSQL, Supervisor y Mailpit. Node se proporciona mediante la configuración de Dev Containers.
 
-- `8000`: SIGET
-- `8025`: Mailpit
+## Reconstrucción
 
-## Estado de esta entrega
+Abrir el repositorio en GitHub Codespaces y ejecutar **Codespaces: Rebuild Container** cuando sea necesario. El `postCreateCommand` ejecuta `.devcontainer/install-siget.sh`.
 
-La integración de código y la compilación de recursos Vite fueron validadas durante el empaquetado. La certificación completa de PostgreSQL, migraciones, seeders, PHPUnit, permisos por rol y flujo de extremo a extremo debe ejecutarse en el Codespace reconstruido mediante `K2_CERTIFICAR_COMPLETO.sh`.
+## Verificación
 
-El paquete no contiene `.env`, `vendor`, `node_modules`, una base física de PostgreSQL, secretos reales ni evidencias institucionales.
+```bash
+bash .devcontainer/verify-siget.sh
+bash K2_CERTIFICAR_COMPLETO.sh
+```
+
+## Servicios QA
+
+- SIGET: `8000`
+- Mailpit: `8025`
+
+## Diagnóstico
+
+```bash
+bash INICIAR_SIGET.sh
+bash DIAGNOSTICAR_SIGET.sh
+bash MOSTRAR_URLS.sh
+bash .devcontainer/verify-siget.sh
+```
+
+## Certificación
+
+La instalación no equivale a certificación. Antes de promover el sistema se debe reconstruir QA y comprobar dependencias, PostgreSQL, migraciones, seeders, PHPUnit, Vite, permisos por rol, dashboards, filtros, cargas, evidencias, validación, cierre y reportes.
+
+## Regla de mantenimiento
+
+No reincorporar ZIP de entregas anteriores, archivos `backup`, hashes de paquetes, reportes históricos ni instaladores sustituidos. Toda nueva modificación debe partir de la línea vigente y consolidarse antes de preproducción o producción.

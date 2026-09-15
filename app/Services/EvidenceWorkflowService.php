@@ -79,6 +79,15 @@ final class EvidenceWorkflowService
             throw new RuntimeException('La decisión de revisión no es válida.');
         }
 
+        $load = $evidence->scheduledLoad;
+        $loadStatus = $load->status instanceof \BackedEnum
+            ? $load->status->value
+            : (string) $load->status;
+
+        if ($loadStatus === 'VALIDADO_Y_CERRADO') {
+            throw new RuntimeException('La carga ya está validada y cerrada; no admite nuevas revisiones.');
+        }
+
         return DB::transaction(function () use (
             $evidence,
             $reviewer,
@@ -141,16 +150,16 @@ final class EvidenceWorkflowService
             } elseif ($allValidated) {
                 $this->loadStatus->transition(
                     $load,
-                    'EN_REVISION_INSTITUCIONAL',
+                    'VALIDADA',
                     $reviewer,
-                    'Todos los entregables fueron validados.'
+                    'Todos los entregables y evidencias requeridos fueron validados.'
                 );
             } else {
                 $this->loadStatus->transition(
                     $load,
                     'PARCIALMENTE_ENTREGADA',
                     $reviewer,
-                    'Una evidencia fue validada.'
+                    'Una evidencia fue validada; el expediente continúa en revisión.'
                 );
             }
 
@@ -162,6 +171,7 @@ final class EvidenceWorkflowService
                 [
                     'decision' => $decision,
                     'reviewer_id' => $reviewer->id,
+                    'load_status' => $allValidated && $decision === 'APROBADO' ? 'VALIDADA' : null,
                 ]
             );
 

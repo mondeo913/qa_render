@@ -77,6 +77,8 @@ class RolePermissionSeeder extends Seeder
         $directorPermissions = [
             'direction.dashboard','direction.repository','indicators.view','reports.view',
             'repository.view','repository.download','calendar.view','alerts.view','scheduled_load.board',
+            'evidence.review','scheduled_load.review','scheduled_load.verify','scheduled_load.signature_package',
+            'scheduled_load.upload_signed','scheduled_load.close','scheduled_load.reopen',
         ];
         $operatorPermissions = [
             'dashboard.view','calendar.view','evidence.upload','repository.view',
@@ -84,7 +86,12 @@ class RolePermissionSeeder extends Seeder
         ];
 
         $map = [
-            'DIRECTOR_GENERAL' => ['intelligence.view','indicators.view','reports.view','repository.view','scheduled_load.board'],
+            'DIRECTOR_GENERAL' => [
+                'dashboard.view','intelligence.view','indicators.view','reports.view','reports.export',
+                'repository.view','repository.download','scheduled_load.board','evidence.review',
+                'scheduled_load.review','scheduled_load.verify','scheduled_load.signature_package',
+                'scheduled_load.upload_signed','scheduled_load.close','scheduled_load.reopen',
+            ],
             'DIRECTOR' => $directorPermissions,
             'DIRECTOR_TRANSMISION' => $directorPermissions,
             'DIRECTOR_PROGRAMACION_CONTINUIDAD' => $directorPermissions,
@@ -92,7 +99,7 @@ class RolePermissionSeeder extends Seeder
                 'dashboard.view','calendar.view','calendar.import','calendar.confirm','calendar.reschedule','scheduled_load.board',
                 'templates.manage','evidence.review','repository.view','repository.download',
                 'scheduled_load.review','scheduled_load.verify','scheduled_load.signature_package',
-                'scheduled_load.upload_signed','scheduled_load.close','reports.view','reports.export',
+                'scheduled_load.upload_signed','scheduled_load.close','scheduled_load.reopen','reports.view','reports.export',
                 'alerts.view','indicators.view','operations.view','backups.view',
             ],
             'OPERADOR' => $operatorPermissions,

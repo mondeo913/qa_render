@@ -12,7 +12,8 @@ class DatabaseSeeder extends Seeder
             RolePermissionSeeder::class,
             AgencyTemplateSeeder::class,
             CalendarSuspensionSeeder::class,
-            QaDemoSeeder::class,
+            QaUniverseSeeder::class,
+            DashboardDemoDataSeeder::class,
         ]);
     }
 }
