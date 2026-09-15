@@ -72,6 +72,32 @@ function renderCharts() {
         const c = document.getElementById(n.dataset.sigetChart);
         if (!c) return;
         const q = JSON.parse(n.textContent);
+
+        // Reportes antiguos/actuales pueden enviar la estructura Chart.js dentro de data.
+        // Normalizamos ambas formas para evitar gráficos vacíos.
+        if (q.data && (!q.labels || !q.datasets)) {
+            q.labels = q.data.labels || q.labels || [];
+            q.datasets = q.data.datasets || q.datasets || [];
+        }
+
+        // La pestaña Dependencias debe representar agency_performance, no direction_performance.
+        // Tomamos los datos de la tabla visible del panel para mantenerlos sincronizados con el reporte filtrado.
+        if (n.dataset.sigetChart === 'sigetReportUnits') {
+            const panel = c.closest('.panel');
+            const rows = [...(panel?.querySelectorAll('table.tbl tbody tr') || [])]
+                .map(row => [...row.children].map(cell => cell.textContent.trim()))
+                .filter(row => row.length >= 6 && row[0]);
+
+            if (rows.length) {
+                q.type = 'bar';
+                q.labels = rows.map(row => row[0]);
+                q.datasets = [{
+                    label: 'Cumplimiento por dependencia %',
+                    data: rows.map(row => Number.parseFloat(row[5].replace('%', '').replace(',', '.')) || 0)
+                }];
+            }
+        }
+
         const intelligenceTrend = n.dataset.sigetChart === 'executiveTrendChart' && location.pathname.includes('/intelligence');
         if (intelligenceTrend) {
             q.type = 'bar';
@@ -85,6 +111,7 @@ function renderCharts() {
                 plugins: { ...(q.options?.plugins || {}), legend: { position: 'bottom', labels: { usePointStyle: true, boxWidth: 8 } } }
             };
         }
+
         q.data = {
             labels: q.labels || [],
             datasets: (q.datasets || []).map((d, i) => ({
@@ -102,6 +129,7 @@ function renderCharts() {
         q.options = {
             responsive: true,
             maintainAspectRatio: false,
+            animation: { duration: 1600, easing: 'easeOutQuart' },
             interaction: { mode: 'index', intersect: false },
             plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, boxWidth: 8 } } },
             scales: ['bar', 'line'].includes(q.type)
@@ -110,6 +138,28 @@ function renderCharts() {
             ...(q.options || {})
         };
         charts.push(new Chart(c, q));
+    });
+}
+
+function animateReportTabCharts(panel) {
+    if (!panel) return;
+    panel.querySelectorAll('canvas').forEach(canvas => {
+        const chart = Chart.getChart(canvas);
+        if (!chart) return;
+        chart.reset();
+        chart.update();
+    });
+}
+
+function setupReportTabAnimations() {
+    document.querySelectorAll('[data-r]').forEach(button => {
+        button.addEventListener('click', () => {
+            setTimeout(() => {
+                const panel = document.getElementById(button.dataset.r);
+                animateReportTabCharts(panel);
+                window.dispatchEvent(new Event('resize'));
+            }, 80);
+        });
     });
 }
 
@@ -202,12 +252,10 @@ function renderModernTrend(canvasId) {
 
 function upgradeInstitutionalTrends() {
     installTrendStyles();
-    // Only the executive/intelligence views get the institutional trend treatment.
-    // Operational role dashboards retain their own operational visualizations.
     if (document.querySelector('.siget-exec')) renderModernTrend('roleTrendChart');
     if (document.getElementById('executiveTrendChart')) renderModernTrend('executiveTrendChart');
 }
 
 function calendar(){const e=document.getElementById('sigetCalendar');if(!e)return;const a=document.getElementById('calendarAgency');let dates=new Set;const load=async(s,t)=>{const u=new URL(e.dataset.programmedUrl,location.origin);u.searchParams.set('start',s.toISOString());u.searchParams.set('end',t.toISOString());if(a?.value)u.searchParams.set('contracting_agency_id',a.value);const r=await fetch(u,{headers:{Accept:'application/json'}});if(r.ok)dates=new Set((await r.json()).dates||[])};const c=new Calendar(e,{plugins:[dayGridPlugin,interactionPlugin,bootstrap5Plugin],themeSystem:'bootstrap5',locale:'es',initialView:'dayGridMonth',height:'auto',firstDay:1,headerToolbar:{left:'prev,next today',center:'title',right:'dayGridMonth,dayGridWeek'},buttonText:{today:'Hoy',month:'Mes',week:'Semana'},events:{url:e.dataset.eventsUrl,extraParams:()=>({contracting_agency_id:a?.value||''})},datesSet:async i=>load(i.start,i.end),dayCellDidMount:i=>{const d=i.date.toISOString().slice(0,10);if(!dates.has(d)){i.el.classList.add('fc-day-disabled-by-siget');i.el.title='Día sin carga programada en la pauta confirmada.'}},eventDidMount:i=>i.el.title=`${i.event.extendedProps.status} · ${i.event.extendedProps.completion}%`,eventClick:i=>{i.jsEvent.preventDefault();if(i.event.extendedProps.url)location.href=i.event.extendedProps.url}});c.render();a?.addEventListener('change',()=>c.refetchEvents())}
 
-document.addEventListener('DOMContentLoaded',()=>{setupTheme();sidebar();passwords();files();renderCharts();requestAnimationFrame(()=>requestAnimationFrame(upgradeInstitutionalTrends));calendar();document.querySelectorAll('form[data-confirm-close]').forEach(f=>f.addEventListener('submit',e=>{if(!confirm('Esta acción validará y cerrará el expediente. ¿Continuar?'))e.preventDefault()}))});
+document.addEventListener('DOMContentLoaded',()=>{setupTheme();sidebar();passwords();files();renderCharts();setupReportTabAnimations();requestAnimationFrame(()=>requestAnimationFrame(upgradeInstitutionalTrends));calendar();document.querySelectorAll('form[data-confirm-close]').forEach(f=>f.addEventListener('submit',e=>{if(!confirm('Esta acción validará y cerrará el expediente. ¿Continuar?'))e.preventDefault()}))});

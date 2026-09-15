@@ -31,65 +31,19 @@
         true
     );
 
-    $indicatorStatuses = $isDirectionDirector
-        ? [
-            'PROGRAMADA',
-            'REPROGRAMADA',
-            'VALIDADO_Y_CERRADO',
-            'VENCIDA',
-        ]
-        : [
-            'PROGRAMADA',
-            'ABIERTA',
-            'EN_CAPTURA',
-            'ENTREGADA',
-            'EN_REVISION_INSTITUCIONAL',
-            'OBSERVADA',
-            'VALIDADA',
-            'VALIDADO_Y_CERRADO',
-            'VENCIDA',
-            'REPROGRAMADA',
-        ];
+    $indicatorStatuses = [
+    'PROGRAMADA',
+    'REPROGRAMADA',
+    'VALIDADO_Y_CERRADO',
+    'VENCIDA',
+];
 
-    $indicatorStatusLabels = [
-        'PROGRAMADA' => 'PROGRAMADO',
-        'REPROGRAMADA' => 'REPROGRAMADO',
-        'VALIDADO_Y_CERRADO' => 'VALIDADO Y CERRADO',
-        'VENCIDA' => 'VENCIDO',
-        'ABIERTA' => 'ABIERTA',
-        'EN_CAPTURA' => 'EN CAPTURA',
-        'ENTREGADA' => 'ENTREGADA',
-        'EN_REVISION_INSTITUCIONAL' => 'EN REVISIÓN INSTITUCIONAL',
-        'OBSERVADA' => 'OBSERVADA',
-        'VALIDADA' => 'VALIDADA',
-    ];
-    $labels = $monthly->pluck('period')->values()->all();
-    $trendCompliance = $monthly->pluck('compliance')->map(fn($v)=>(float)$v)->values()->all();
-    $trendLoads = $monthly->pluck('total')->map(fn($v)=>(int)$v)->values()->all();
-    $trendClosed = $monthly->pluck('closed')->map(fn($v)=>(int)$v)->values()->all();
-    $unitLabels = $units->pluck('unit')->values()->all();
-    $unitPct = $units->pluck('percentage')->map(fn($v)=>(float)$v)->values()->all();
-    $unitTotal = $units->pluck('total')->map(fn($v)=>(int)$v)->values()->all();
-    $agencyLabels = $agencies->pluck('agency')->values()->all();
-    $agencyPct = $agencies->pluck('percentage')->map(fn($v)=>(float)$v)->values()->all();
-    $statusLabels = $status->keys()->values()->all();
-    $statusValues = $status->values()->map(fn($v)=>(int)$v)->values()->all();
-    $indicatorRows = [
-        ['Cumplimiento institucional','Porcentaje de cargas cerradas respecto del universo seleccionado.','Mensual',$compliance,'≥ 90%',$compliance-90],
-        ['Cierre efectivo','Porcentaje de cargas que llegan a cierre validado.','Mensual',$closure,'≥ 85%',$closure-85],
-        ['Presión de riesgo','Porcentaje de cargas vencidas sobre el universo.','Semanal',$risk,'≤ 10%',$risk-10],
-        ['Estabilidad operativa','Relación inversa de reprogramaciones sobre el universo.','Mensual',$stability,'≥ 90%',$stability-90],
-        ['Reprogramaciones','Total de cargas reprogramadas en el periodo.','Mensual',$reprogrammed,'Referencia',$reprogrammed],
-    ];
-@endphp
-
-<style>
-.siget-indicators{--bg:#07121e;--panel:#0c1a28;--panel2:#101f2e;--line:rgba(170,210,235,.12);--text:#f5f8fb;--muted:#8da2b5;--cyan:#22c5d7;--blue:#4d7fff;--green:#35c77a;--yellow:#e9b949;--red:#ef4655;--purple:#8b5cf6;background:radial-gradient(circle at 85% 0%,rgba(34,197,215,.08),transparent 32%),linear-gradient(180deg,#07121e,#09121b 65%,#08111a);border:1px solid var(--line);border-radius:18px;padding:18px;color:var(--text)}
-.siget-indicators .hero{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:14px}.siget-indicators .eyebrow{font-size:.67rem;text-transform:uppercase;letter-spacing:.12em;color:#6edbe7;font-weight:700}.siget-indicators h2{font-size:1.45rem;color:#fff;margin:3px 0}.siget-indicators .sub{font-size:.75rem;color:var(--muted)}
-.siget-indicators .filters{background:rgba(13,28,42,.92);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:15px}.siget-indicators label{font-size:.68rem;color:#a7bac9;margin-bottom:5px}.siget-indicators select,.siget-indicators input{background:#0a1622!important;border:1px solid rgba(170,210,235,.18)!important;color:#eaf3f8!important;border-radius:8px;font-size:.75rem}.siget-indicators .btn-clear{border:1px solid rgba(34,197,215,.28);color:#6edbe7;background:transparent}
-.siget-indicators .kpi{height:100%;min-height:118px;background:linear-gradient(145deg,#101f2d,#0b1723);border:1px solid var(--line);border-radius:13px;padding:14px;position:relative;overflow:hidden}.siget-indicators .kpi:after{content:"";position:absolute;left:0;right:0;bottom:0;height:3px;background:var(--accent);opacity:.9}.siget-indicators .kpi small{color:#9db0c0;font-size:.68rem;display:block}.siget-indicators .kpi strong{font-size:1.45rem;display:block;color:#fff;margin:5px 0}.siget-indicators .delta{font-size:.65rem;color:#70d49a}.siget-indicators .progress{height:6px;background:#1b2b39;margin-top:8px}.siget-indicators .progress-bar{background:var(--accent)}
-.siget-indicators .panel{background:rgba(12,26,40,.94);border:1px solid var(--line);border-radius:14px;overflow:hidden;height:100%}.siget-indicators .head{padding:13px 15px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:10px;align-items:center}.siget-indicators .head h3{font-size:.91rem;margin:0;color:#fff}.siget-indicators .head p{font-size:.65rem;color:var(--muted);margin:3px 0 0}.siget-indicators .chart{height:260px;padding:10px 12px}.siget-indicators .chart.tall{height:290px}.siget-indicators canvas{width:100%!important;height:100%!important}.siget-indicators .table{--bs-table-bg:transparent;--bs-table-color:#e8f0f5;--bs-table-border-color:var(--line);font-size:.72rem;margin:0}.siget-indicators .table th{color:#7991a5;font-size:.6rem;text-transform:uppercase;letter-spacing:.04em}.siget-indicators .table td,.siget-indicators .table th{padding:9px 10px;vertical-align:middle}.siget-indicators .pill{font-size:.58rem;padding:4px 7px;border-radius:6px;white-space:nowrap}.siget-indicators .risk-list{padding:8px 13px}.siget-indicators .risk-item{display:grid;grid-template-columns:1.2fr .7fr .7fr .8fr;gap:8px;align-items:center;padding:9px 0;border-bottom:1px solid var(--line);font-size:.68rem}.siget-indicators .risk-item:last-child{border-bottom:0}.siget-indicators .muted{color:var(--muted)}
-</style>
+$indicatorStatusLabels = [
+    'PROGRAMADA' => 'PROGRAMADO',
+    'REPROGRAMADA' => 'REPROGRAMADO',
+    'VALIDADO_Y_CERRADO' => 'VALIDADO Y CERRADO',
+    'VENCIDA' => 'VENCIDO',
+];
 
 <div class="siget-indicators">
     <div class="hero">

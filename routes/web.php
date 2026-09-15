@@ -47,6 +47,7 @@ Route::middleware(['auth', 'no-cache-auth'])->group(function () {
     Route::get('/indicadores', [IndicatorController::class, 'index'])->middleware('permission:indicators.view')->name('indicators.index');
     Route::get('/inteligencia', IntelligenceController::class)->middleware('permission:intelligence.view')->name('intelligence');
     Route::get('/reportes', [ReportController::class, 'index'])->middleware('permission:reports.view')->name('reports.index');
+    Route::get('/reportes/xlsx', [ReportController::class, 'xlsx'])->middleware('permission:reports.export')->name('reports.xlsx');
     Route::get('/reportes/csv', [ReportController::class, 'csv'])->middleware('permission:reports.export')->name('reports.csv');
     Route::get('/reportes/pdf', [ReportController::class, 'pdf'])->middleware('permission:reports.export')->name('reports.pdf');
     Route::get('/alertas', [AlertController::class, 'index'])->middleware('permission:alerts.view')->name('alerts.index');
@@ -55,6 +56,8 @@ Route::middleware(['auth', 'no-cache-auth'])->group(function () {
     Route::get('/historial', HistoryController::class)->name('history.index');
     Route::get('/admin/usuarios', [AdminController::class, 'users'])->middleware('permission:users.manage')->name('admin.users');
     Route::post('/admin/usuarios', [AdminController::class, 'storeUser'])->middleware('permission:users.manage')->name('admin.users.store');
+    Route::patch('/admin/usuarios/{user}', [AdminController::class, 'updateUser'])->middleware('permission:users.manage')->name('admin.users.update');
+    Route::delete('/admin/usuarios/{user}', [AdminController::class, 'destroyUser'])->middleware('permission:users.manage')->name('admin.users.destroy');
     Route::patch('/admin/usuarios/{user}/estado', [AdminController::class, 'toggleUser'])->middleware('permission:users.manage')->name('admin.users.toggle');
     Route::get('/admin/roles', [AdminController::class, 'roles'])->middleware('permission:roles.manage')->name('admin.roles');
     Route::put('/admin/roles/{role}', [AdminController::class, 'updateRole'])->middleware('permission:roles.manage')->name('admin.roles.update');

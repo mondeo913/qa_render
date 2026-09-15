@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Models\ScheduledLoad;
 use App\Models\User;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Artisan;
@@ -30,8 +31,22 @@ class SigetQaInitialize extends Command
             return self::FAILURE;
         }
 
+        // El arranque de Codespaces sincroniza usuarios de forma independiente.
+        // Por ello, que existan usuarios no significa que el catálogo de cargas
+        // ya esté poblado. El tablero necesita cargas demostrativas para poder
+        // construir sus filtros de dependencia, dirección y periodo.
+        if (!ScheduledLoad::query()->exists()) {
+            $this->info('No existen cargas programadas. Cargando datos demostrativos QA para poblar el Tablero de cargas...');
+            Artisan::call('db:seed', [
+                '--class' => 'QaDemoSeeder',
+                '--force' => true,
+            ], $this->output);
+
+            return self::SUCCESS;
+        }
+
         if (User::query()->exists()) {
-            $this->info('La base ya contiene usuarios; se conserva la información existente.');
+            $this->info('La base ya contiene usuarios y cargas; se conserva la información existente.');
 
             return self::SUCCESS;
         }

@@ -21,3 +21,7 @@ npm-debug.log*
 yarn-error.log*
 .DS_Store
 Thumbs.db
+
+# Archivos locales/generados de SIGET
+/.phpunit.result.cache
+/storage/app/private/

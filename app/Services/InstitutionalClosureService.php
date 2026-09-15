@@ -170,7 +170,7 @@ final class InstitutionalClosureService
         );
 
         $newStatus = $evidencesCorrect && $packagePrepared && $validation['ready']
-            ? ScheduledLoadStatus::LISTA_PARA_FIRMA->value
+            ? ScheduledLoadStatus::VALIDADA->value
             : ScheduledLoadStatus::EN_REVISION_INSTITUCIONAL->value;
 
         $this->loadStatus->transition(
@@ -178,7 +178,7 @@ final class InstitutionalClosureService
             $newStatus,
             \App\Models\User::query()->find($userId),
             $evidencesCorrect && $packagePrepared && $validation['ready']
-                ? 'Checklist institucional completo; expediente listo para firma.'
+                ? 'Checklist institucional completo; expediente validado y listo para cierre.'
                 : 'Checklist institucional actualizado.'
         );
         $load->update(['traffic_light'=>TrafficLight::PURPLE]);
@@ -192,6 +192,16 @@ final class InstitutionalClosureService
         int $userId,
         array $metadata = []
     ): SignedDocument {
+        $loadStatus = $load->status instanceof \BackedEnum
+            ? $load->status->value
+            : (string) $load->status;
+        if (!in_array($loadStatus, [
+            ScheduledLoadStatus::VALIDADA->value,
+            ScheduledLoadStatus::LISTA_PARA_FIRMA->value,
+        ], true)) {
+            throw new RuntimeException('El expediente debe estar VALIDADO antes de incorporar el documento firmado.');
+        }
+
         $allowed = $load->template->allowed_signed_extensions ?? ['pdf'];
         $extension = strtolower($file->getClientOriginalExtension());
         if (!in_array($extension,$allowed,true)) {
@@ -230,16 +240,10 @@ final class InstitutionalClosureService
                 'version'=>1,
             ]);
 
-            $this->loadStatus->transition(
-                $load,
-                ScheduledLoadStatus::VALIDADA->value,
-                \App\Models\User::query()->find($userId),
-                'Documento firmado incorporado al expediente.'
-            );
             $load->update([
                 'traffic_light'=>TrafficLight::GREEN,
-                'validated_at'=>now(),
-                'validated_by'=>$userId,
+                'validated_at'=>$load->validated_at ?? now(),
+                'validated_by'=>$load->validated_by ?? $userId,
             ]);
 
             return $document->fresh('files');
@@ -250,6 +254,13 @@ final class InstitutionalClosureService
     {
         return DB::transaction(function () use ($load,$userId,$comment) {
             $load->refresh()->load(['deliverables.templateRequirement','institutionalReview','signedDocuments.files']);
+
+            $loadStatus = $load->status instanceof \BackedEnum
+                ? $load->status->value
+                : (string) $load->status;
+            if ($loadStatus !== ScheduledLoadStatus::VALIDADA->value) {
+                throw new RuntimeException('La carga debe encontrarse en estado VALIDADA antes de cerrarse.');
+            }
 
             $validation = $this->validateExpediente($load);
             if (!$validation['ready']) {

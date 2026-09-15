@@ -1,106 +1,62 @@
-<form method="GET" class="card siget-card mb-4">
-<div class="card-header"><div><h2>Contexto de análisis</h2><p>Los filtros solo cambian el alcance de visualización; no modifican la lógica de SIGET.</p></div></div>
+<form method="GET" class="card siget-card mb-4" id="siget-dashboard-filters">
+<div class="card-header"><div><h2>Contexto de análisis</h2><p>Los filtros acotan el universo visible sin modificar la lógica ni los permisos de SIGET.</p></div></div>
 @php
-    // El dashboard usa $agencies/$units para series analíticas; los filtros usan
-    // explícitamente los catálogos originales enviados por DashboardController.
     $filterAgencies = $filterAgencies ?? [];
     $filterUnits = $filterUnits ?? [];
-@endphp
-<div class="card-body row g-3 align-items-end">
-<div class="col-xl-3 col-md-6"><label class="form-label">Dependencia</label><select name="agency_id" class="form-select"><option value="">Todas las dependencias</option>@foreach($filterAgencies as $agency)@php $agencyId=data_get($agency,'id'); $agencyName=data_get($agency,'name',''); @endphp<option value="{{ $agencyId }}" @selected((string)($filters['agency_id'] ?? '') === (string)$agencyId)>{{ $agencyName }}</option>@endforeach</select></div>
-<div class="col-xl-3 col-md-6"><label class="form-label">Dirección / unidad</label><select name="organizational_unit_id" class="form-select"><option value="">Todas las direcciones / unidades</option>@foreach($filterUnits as $unit)@php $unitId=data_get($unit,'id'); $unitName=data_get($unit,'name',''); $filterIds=data_get($unit,'filter_unit_ids'); $filterIds=is_array($filterIds) ? $filterIds : [$unitId]; $filterIds=implode(',',array_map('strval',$filterIds)); @endphp<option value="{{ $filterIds }}" @selected((string)($filters['organizational_unit_id'] ?? '') === $filterIds)>{{ $unitName }}</option>@endforeach</select></div>
-<div class="col-xl-2 col-md-4"><label class="form-label">Estado</label><select name="status" class="form-select"><option value="">Todos</option>
-@php
-    $isExecutiveDashboard = (($role ?? null) === 'DIRECTOR_GENERAL');
-
-    $isDirectionDirector = in_array(($role ?? null), [
-        'DIRECTOR_TRANSMISION',
-        'DIRECTOR_PROGRAMACION_CONTINUIDAD',
-    ], true);
-
-    $dashboardStatuses = $isExecutiveDashboard
-        ? [
-            'REPROGRAMADA',
-            'VENCIDA',
-            'VALIDADO_Y_CERRADO',
-        ]
-        : ($isDirectionDirector
-            ? [
-                'PROGRAMADA',
-                'REPROGRAMADA',
-                'VALIDADO_Y_CERRADO',
-                'VENCIDA',
-            ]
-            : [
-                'PROGRAMADA',
-                'ABIERTA',
-                'EN_CAPTURA',
-                'PARCIALMENTE_ENTREGADA',
-                'ENTREGADA',
-                'EN_REVISION_INSTITUCIONAL',
-                'OBSERVADA',
-                'VALIDADA',
-                'VALIDADO_Y_CERRADO',
-                'VENCIDA',
-                'REPROGRAMADA',
-            ]);
-
-    $statusLabels = [
+    $periodMin = $periodMin ?? null;
+    $periodMax = $periodMax ?? null;
+    $selectedFrom = $filters['from'] ?? '';
+    $selectedTo = $filters['to'] ?? '';
+    $roleCode = auth()->user()?->role?->code;
+    $operatorRoles = ['OPERADOR','OPERADOR_TRANSMISION','OPERADOR_PROGRAMACION_CONTINUIDAD'];
+    $isOperatorDashboard = in_array($roleCode, $operatorRoles, true);
+    $executiveRoles = ['ADMINISTRADOR','DIRECTOR_GENERAL','ENLACE_INSTITUCIONAL'];
+    // Mantener exactamente los estados ejecutivos expuestos por el menú Reportes > Indicadores.
+    $executiveStatuses = [
         'PROGRAMADA' => 'PROGRAMADO',
         'REPROGRAMADA' => 'REPROGRAMADO',
         'VALIDADO_Y_CERRADO' => 'VALIDADO Y CERRADO',
         'VENCIDA' => 'VENCIDO',
     ];
+    $operationalStatuses = [
+        'PROGRAMADA' => 'PROGRAMADA',
+        'ABIERTA' => 'VENTANA ABIERTA',
+        'EN_CAPTURA' => 'EN CAPTURA',
+        'PARCIALMENTE_ENTREGADA' => 'ENTREGA PARCIAL',
+        'ENTREGADA' => 'REALIZADA / ENTREGADA',
+        'EN_REVISION_INSTITUCIONAL' => 'EN REVISIÓN INSTITUCIONAL',
+        'OBSERVADA' => 'OBSERVADA',
+        'LISTA_PARA_FIRMA' => 'LISTA PARA FIRMA',
+        'PENDIENTE_DOCUMENTO_FIRMADO' => 'PENDIENTE DOCUMENTO FIRMADO',
+        'VALIDADA' => 'VALIDADA',
+        'VALIDADO_Y_CERRADO' => 'VALIDADA Y CERRADA',
+        'SUSPENDIDA' => 'SUSPENDIDA / REPROGRAMACIÓN',
+        'REPROGRAMADA' => 'REPROGRAMADA',
+        'REPROGRAMADA_ABIERTA' => 'REPROGRAMADA ABIERTA',
+        'REPROGRAMADA_ENTREGADA' => 'REPROGRAMADA ENTREGADA',
+        'VENCIDA' => 'VENCIDA',
+        'REABIERTA' => 'REABIERTA',
+        'CANCELADA' => 'CANCELADA',
+    ];
+    $availableStatuses = in_array($roleCode, $executiveRoles, true) || !$isOperatorDashboard
+        ? $executiveStatuses
+        : $operationalStatuses;
 @endphp
-@foreach($dashboardStatuses as $status)
-    <option value="{{ $status }}" @selected(($filters['status'] ?? null) === $status)>
-        {{ $statusLabels[$status] ?? str_replace('_', ' ', $status) }}
-    </option>
-@endforeach
-</select></div>
-<div class="col-xl-2 col-md-4"><label class="form-label">Desde</label><input type="date" name="from" value="{{ $filters['from'] ?? '' }}" class="form-control"></div>
-<div class="col-xl-2 col-md-4"><label class="form-label">Hasta</label><input type="date" name="to" value="{{ $filters['to'] ?? '' }}" class="form-control"></div>
+<div class="card-body row g-3 align-items-end">
+<div class="col-xl-3 col-md-6"><label class="form-label">Dependencia</label><select name="agency_id" id="siget-agency-filter" class="form-select"><option value="">Todas las dependencias</option>@foreach($filterAgencies as $agency)@php $agencyId=data_get($agency,'id'); $agencyName=data_get($agency,'name',''); @endphp<option value="{{ $agencyId }}" @selected((string)($filters['agency_id'] ?? '') === (string)$agencyId)>{{ $agencyName }}</option>@endforeach</select></div>
+<div class="col-xl-3 col-md-6"><label class="form-label">Dirección / unidad</label><select name="organizational_unit_id" class="form-select"><option value="">Todas las direcciones / unidades</option>@foreach($filterUnits as $unit)@php $unitId=data_get($unit,'id'); $unitName=data_get($unit,'name',''); $filterIds=data_get($unit,'filter_unit_ids'); $filterIds=is_array($filterIds) ? $filterIds : [$unitId]; $filterIds=implode(',',array_map('strval',$filterIds)); @endphp<option value="{{ $filterIds }}" @selected((string)($filters['organizational_unit_id'] ?? '') === $filterIds)>{{ $unitName }}</option>@endforeach</select></div>
+<div class="col-xl-2 col-md-4"><label class="form-label">Estado de carga</label><select name="status" class="form-select"><option value="">Todos los estados relevantes</option>@foreach($availableStatuses as $status => $label)<option value="{{ $status }}" @selected(($filters['status'] ?? null) === $status)>{{ $label }}</option>@endforeach</select></div>
+<div class="col-xl-2 col-md-4"><label class="form-label">Fecha contratada desde</label><input type="month" name="from" id="siget-period-from" value="{{ $selectedFrom }}" min="{{ $periodMin ?? '' }}" max="{{ $periodMax ?? '' }}" class="form-control"></div>
+<div class="col-xl-2 col-md-4"><label class="form-label">Fecha contratada hasta</label><input type="month" name="to" id="siget-period-to" value="{{ $selectedTo }}" min="{{ $periodMin ?? '' }}" max="{{ $periodMax ?? '' }}" class="form-control"></div>
+<div class="col-12"><div class="siget-period-segmenter border rounded-3 p-3"><div class="d-flex justify-content-between align-items-center gap-2 flex-wrap"><div><strong>Rango de fechas contratado según pauta</strong><div class="small text-muted">El rango se aplica a la fecha efectiva de apertura de cada carga y se acota al universo accesible del usuario.</div></div><span class="badge text-bg-light" id="siget-period-summary">{{ $selectedFrom && $selectedTo ? $selectedFrom.' → '.$selectedTo : ($periodMin && $periodMax ? $periodMin.' → '.$periodMax : 'Sin periodo disponible') }}</span></div></div></div>
 <div class="col-12 d-flex gap-2"><button class="btn btn-primary"><i class="bi bi-funnel me-1"></i>Aplicar filtros</button><a href="{{ route('dashboard') }}" class="btn btn-outline-secondary">Restablecer</a></div>
-</div></form>
-
-<style id="siget-trend-font-scale-10">
-.siget-trend-modern .stm-title{font-size:1.155rem}
-.siget-trend-modern .stm-sub{font-size:.792rem}
-.siget-trend-modern .stm-question{font-size:.814rem}
-.siget-trend-modern .stm-kpi-label{font-size:.693rem}
-.siget-trend-modern .stm-kpi-value{font-size:1.485rem}
-.siget-trend-modern .stm-kpi-note{font-size:.66rem}
-.siget-trend-modern .stm-read{font-size:.748rem}
-.siget-trend-modern .stm-foot-title{font-size:.726rem}
-.siget-trend-modern .stm-foot-text{font-size:.649rem}
-</style>
+</div>
+</form>
 <script>
 (function(){
-    const applyTrendFontScale=()=>{
-        document.querySelectorAll('.siget-trend-modern canvas').forEach(canvas=>{
-            if(typeof Chart==='undefined') return;
-            const chart=Chart.getChart(canvas);
-            if(!chart || chart.$sigetFontScaled10) return;
-            chart.$sigetFontScaled10=true;
-            const legend=chart.options?.plugins?.legend?.labels;
-            if(legend){legend.font={...(typeof legend.font==='object'?legend.font:{}),size:12};}
-            const scales=chart.options?.scales||{};
-            ['x','y','y1'].forEach(axis=>{
-                const s=scales[axis];
-                if(!s) return;
-                s.ticks={...(s.ticks||{}),font:{...(typeof s.ticks?.font==='object'?s.ticks.font:{}),size:11}};
-                if(s.title){s.title.font={...(typeof s.title.font==='object'?s.title.font:{}),size:12};}
-            });
-            if(chart.options?.plugins?.tooltip){
-                chart.options.plugins.tooltip.titleFont={size:12};
-                chart.options.plugins.tooltip.bodyFont={size:11};
-            }
-            chart.update('none');
-        });
-    };
-    const observer=new MutationObserver(applyTrendFontScale);
-    observer.observe(document.body,{childList:true,subtree:true});
-    document.addEventListener('DOMContentLoaded',()=>setTimeout(applyTrendFontScale,150));
-    setTimeout(applyTrendFontScale,500);
+ const from=document.getElementById('siget-period-from'),to=document.getElementById('siget-period-to'),summary=document.getElementById('siget-period-summary');
+ const update=()=>{if(!from||!to)return;if(from.value)to.min=from.value;if(to.value)from.max=to.value;if(from.value&&to.value)summary.textContent=from.value+' → '+to.value;else if(from.value)summary.textContent=from.value+' → Selecciona mes final';else if(to.value)summary.textContent='Selecciona mes inicial → '+to.value;};
+ from?.addEventListener('change',update);to?.addEventListener('change',update);
+ document.getElementById('siget-dashboard-filters')?.addEventListener('submit',e=>{if(from?.value&&to?.value&&from.value>to.value){e.preventDefault();to.setCustomValidity('La fecha contratada final debe ser igual o posterior a la fecha inicial.');to.reportValidity();to.setCustomValidity('');}});update();
 })();
 </script>
