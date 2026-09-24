@@ -1,380 +1,131 @@
 @extends('layouts.app')
 @section('title','Centro de Reportes SIGET')
 @section('page-title','Centro de Reportes SIGET')
-@section('page-subtitle','Reportes ejecutivos, seguimiento y auditoría')
+@section('page-subtitle','Visor institucional de reportes, evidencias y trazabilidad')
 @section('content')
 @php
-$k = $analytics['kpis'] ?? [];
-$agencyRows = collect($analytics['agency_performance'] ?? []);
-$directionRows = collect($analytics['direction_performance'] ?? []);
-$monthlyRows = collect($analytics['monthly_trend'] ?? []);
-$statusDistribution = collect($analytics['status_distribution'] ?? []);
-$riskItems = collect($analytics['risk_items'] ?? []);
-$loadsByAgency = $loads->groupBy(fn($l) => $l->agency?->name ?: 'Sin dependencia');
-$statuses = [
-    'PROGRAMADA' => 'PROGRAMADO',
-    'REPROGRAMADA' => 'REPROGRAMADO',
-    'VALIDADO_Y_CERRADO' => 'VALIDADO Y CERRADO',
-    'VENCIDA' => 'VENCIDO',
-];
-
-$directionLabels = [];
-$directionValues = [];
-foreach ($directionRows as $row) {
-    $directionLabels[] = $row['unit'] ?? 'Sin unidad';
-    $directionValues[] = (float) ($row['percentage'] ?? 0);
-}
-
-$trendLabels = [];
-$trendValues = [];
-foreach ($monthlyRows as $row) {
-    $trendLabels[] = $row['period'] ?? '';
-    $trendValues[] = (float) ($row['compliance'] ?? 0);
-}
-
-$statusLabels = [];
-$statusValues = [];
-$statusNameMap = [
-    'PROGRAMADA' => 'PROGRAMADO',
-    'REPROGRAMADA' => 'REPROGRAMADO',
-    'VALIDADO_Y_CERRADO' => 'VALIDADO Y CERRADO',
-    'VENCIDA' => 'VENCIDO',
-];
-foreach ($statusNameMap as $code => $label) {
-    $statusLabels[] = $label;
-    $statusValues[] = (int) ($statusDistribution[$code] ?? 0);
-}
-
-$agencyLabels = [];
-$agencyRealized = [];
-$agencyClosed = [];
-foreach ($agencyRows as $row) {
-    $agencyLabels[] = $row['agency'] ?? 'Sin dependencia';
-    $agencyRealized[] = (float) ($row['percentage'] ?? 0);
-    $agencyClosed[] = (float) ($row['closure_percentage'] ?? 0);
-}
-
-$executiveStatusLabels = ['PROGRAMADO','REPROGRAMADO','VALIDADO Y CERRADO','VENCIDO'];
-$executiveStatusValues = $statusValues;
-
-$reportStatusChart = [
-    'type' => 'doughnut',
-    'data' => [
-        'labels' => $statusLabels,
-        'datasets' => [[
-            'label' => 'Cargas',
-            'data' => $statusValues,
-        ]],
-    ],
-];
-
-$reportAgencyChart = [
-    'type' => 'bar',
-    'data' => [
-        'labels' => $agencyLabels,
-        'datasets' => [
-            ['label' => 'Avance realizado %', 'data' => $agencyRealized],
-            ['label' => 'Cierre validado %', 'data' => $agencyClosed],
-        ],
-    ],
-];
-
-$reportTrendChart = [
-    'type' => 'line',
-    'data' => [
-        'labels' => $trendLabels,
-        'datasets' => [[
-            'label' => 'Cumplimiento %',
-            'data' => $trendValues,
-            'fill' => false,
-        ]],
-    ],
-];
-
-$reportDirectionChart = [
-    'type' => 'bar',
-    'data' => [
-        'labels' => $directionLabels,
-        'datasets' => [[
-            'label' => 'Avance realizado %',
-            'data' => $directionValues,
-        ]],
-    ],
-];
-
-$reportExecutiveStatusChart = [
-    'type' => 'bar',
-    'data' => [
-        'labels' => $executiveStatusLabels,
-        'datasets' => [[
-            'label' => 'Cargas',
-            'data' => $executiveStatusValues,
-        ]],
-    ],
-];
-
-$builderRows = $loads->map(function ($load) {
-    $unit = $load->deliverables
-        ->map(fn($d) => $d->organizationalUnit?->name)
-        ->filter()
-        ->unique()
-        ->implode(' / ');
-
-    return [
-        'agency' => $load->agency?->name ?: 'Sin dependencia',
-        'unit' => $unit ?: '—',
-        'title' => $load->title,
-        'status' => $load->status instanceof \BackedEnum ? $load->status->value : (string) $load->status,
-        'progress' => (float) $load->completion_percentage,
-        'open' => $load->effective_open_at?->format('d/m/Y H:i') ?: '—',
-        'close' => $load->effective_close_at?->format('d/m/Y H:i') ?: '—',
-        'evidence' => $load->deliverables->flatMap->evidences->count(),
+    $report = request('report', 'executive');
+    $summary = $evidenceSummary ?? ['expected'=>0,'received'=>0,'validated'=>0,'pending'=>0,'observed'=>0,'review'=>0,'delivery_percentage'=>0,'validation_percentage'=>0];
+    $statusLabels = ['PROGRAMADA'=>'PROGRAMADO','REPROGRAMADA'=>'REPROGRAMADO','VALIDADO_Y_CERRADO'=>'VALIDADO Y CERRADO','VENCIDA'=>'VENCIDO'];
+    $reportLinks = [
+        'executive' => 'Reporte ejecutivo institucional',
+        'compliance' => 'Cumplimiento por dependencia',
+        'pending' => 'Seguimiento de pendientes',
+        'evidence' => 'Detalle de evidencias',
+        'audit' => 'Auditoría y trazabilidad',
     ];
-})->values();
+    if ($canBuildReports) {
+        $reportLinks['builder'] = 'Plantillas de reportes';
+    }
+    $linkFor = fn ($type) => route('reports.index', array_merge(request()->query(), ['report' => $type]));
 @endphp
-
 <style>
-.siget-report-shell{background:var(--bg);color:var(--text);min-height:100%}
-.crbox,.crk{background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:12px}
-.crtop{padding:20px 22px;margin-bottom:15px;border-radius:14px;background:linear-gradient(135deg,var(--side),#203c63);color:#fff}
-.crtop h2{margin:0;color:#fff;font-weight:800}.crtop p{margin:4px 0 0;color:#d4dfec;font-size:.76rem}.crtop .eyebrow{font-size:.62rem;text-transform:uppercase;letter-spacing:.09em;opacity:.75;margin-bottom:3px}
-.toolbar{padding:14px;margin-bottom:15px}.toolbar label{font-size:.65rem;font-weight:800;margin-bottom:4px;display:block}.tabs{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:15px}
-.tab{padding:8px 11px;border:1px solid var(--border);border-radius:9px;background:var(--surface);color:var(--text);font-weight:700;font-size:.7rem;cursor:pointer}.tab.on{background:var(--primary);color:#fff}.panel{display:none}.panel.on{display:block}
-.kpis{display:grid;grid-template-columns:repeat(6,1fr);gap:9px;margin-bottom:15px}.crk{padding:12px;position:relative;overflow:hidden}.crk small{display:block;color:var(--muted);font-size:.58rem;text-transform:uppercase;letter-spacing:.04em}.crk strong{font-size:1.35rem;display:block;margin-top:2px}.crk em{font-style:normal;font-size:.59rem;color:var(--muted)}
-.exec-grid{display:grid;grid-template-columns:1.05fr .95fr;gap:15px}.exec-wide{margin-top:15px}.head{padding:12px 14px;background:var(--surface2);border-bottom:1px solid var(--border)}.head h3{margin:0;font-size:.9rem;color:var(--text);font-weight:800}.head p{margin:3px 0 0;font-size:.63rem;color:var(--muted)}
-.chart{height:285px;padding:10px}.chart.tall{height:325px}.chart canvas{width:100%!important;height:100%!important}
-.exec-insight{margin-top:15px;padding:12px 14px;border-left:4px solid var(--primary);background:var(--surface2);border-radius:0 10px 10px 0;font-size:.69rem;line-height:1.45}.exec-insight strong{font-weight:800}
-.exec-table-wrap{overflow:auto}.exec-semaforo{width:100%;border-collapse:separate;border-spacing:0;font-size:.66rem;color:var(--text)}.exec-semaforo th{background:var(--side);color:#fff;padding:8px;text-align:left;font-size:.57rem;position:sticky;top:0}.exec-semaforo td{padding:8px;border-bottom:1px solid var(--border);vertical-align:middle}.exec-semaforo tr:nth-child(even) td{background:var(--surface2)}.meter{min-width:110px}.meter-bar{height:7px;border-radius:999px;background:var(--border);overflow:hidden}.meter-bar span{display:block;height:100%;border-radius:999px}.pct{font-weight:800;font-variant-numeric:tabular-nums}.traffic{display:inline-flex;align-items:center;gap:6px;padding:4px 7px;border-radius:999px;font-weight:800;font-size:.59rem;white-space:nowrap}.traffic-dot{width:8px;height:8px;border-radius:50%;background:currentColor;box-shadow:0 0 0 3px color-mix(in srgb,currentColor 15%,transparent)}
-.green{color:#1fa463}.yellow{color:#d98a00}.red{color:#d64550}.gray{color:#667085}.attention{background:rgba(214,69,80,.07);color:var(--text)}
-.alert-grid{display:grid;grid-template-columns:1.1fr .9fr;gap:15px;margin-top:15px}.alert-item{padding:10px 12px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;gap:10px;align-items:center}.alert-item:last-child{border-bottom:0}.alert-main strong{font-size:.68rem;display:block}.alert-main span{font-size:.6rem;color:var(--muted)}.mini-kpi{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;padding:12px}.mini-kpi .crk strong{font-size:1.1rem}
-.band{padding:8px 11px;background:var(--side);color:#fff;font-weight:800;font-size:.7rem}.tbl{width:100%;border-collapse:collapse;font-size:.68rem;color:var(--text)}.tbl th{background:var(--side);color:#fff;padding:7px;text-align:left;font-size:.58rem}.tbl td{padding:7px;border-bottom:1px solid var(--border)}.tbl tr:nth-child(even) td{background:var(--surface2)}
-.builder-grid{display:grid;grid-template-columns:1.05fr .95fr;gap:15px;padding:15px}.builder-field{padding:12px;border:1px solid var(--border);border-radius:10px;background:var(--surface2);margin-bottom:10px}.builder-field label{display:block;font-weight:800;font-size:.68rem;margin-bottom:5px}.builder-checks{display:grid;grid-template-columns:1fr 1fr;gap:7px}.builder-check{display:flex;gap:7px;align-items:center;padding:7px 8px;border:1px solid var(--border);border-radius:8px;background:var(--surface)}.builder-check label{margin:0;font-weight:600;font-size:.65rem}.builder-preview{min-height:260px;border:1px dashed var(--border);border-radius:10px;background:var(--surface2);padding:12px}.builder-actions{display:flex;gap:8px;flex-wrap:wrap}.builder-help{font-size:.66rem;color:var(--muted);margin-top:4px}
-@media(max-width:1100px){.kpis{grid-template-columns:repeat(3,1fr)}.exec-grid,.alert-grid,.builder-grid{grid-template-columns:1fr}}@media(max-width:650px){.kpis{grid-template-columns:repeat(2,1fr)}.builder-checks{grid-template-columns:1fr}.mini-kpi{grid-template-columns:1fr}.chart,.chart.tall{height:260px}}
-html[data-bs-theme=dark] .crbox,html[data-bs-theme=dark] .crk{box-shadow:0 2px 12px rgba(0,0,0,.22)}
+.report-shell{background:var(--bg);color:var(--text);min-height:100%;font-size:.78rem}
+.report-hero{background:linear-gradient(135deg,#10213b,#174e68);color:#fff;padding:22px 24px;border-radius:14px;margin-bottom:14px}
+.report-hero h2{margin:0;font-weight:800;color:#fff}.report-hero p{margin:5px 0 0;color:#d5e4eb}.report-eyebrow{text-transform:uppercase;letter-spacing:.11em;font-size:.62rem;color:#8be0e3;margin-bottom:4px}
+.report-box{background:var(--surface);border:1px solid var(--border);border-radius:12px}.report-toolbar{padding:14px;margin-bottom:14px}.report-toolbar label{display:block;font-size:.62rem;font-weight:800;margin-bottom:4px}.report-actions{display:flex;flex-wrap:wrap;gap:7px;margin-top:12px}.report-actions .btn{font-size:.7rem}.report-nav{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:14px}.report-nav a{padding:8px 11px;border:1px solid var(--border);border-radius:9px;background:var(--surface);color:var(--text);font-weight:700;font-size:.69rem;text-decoration:none}.report-nav a.active{background:#0d7f8c;color:#fff;border-color:#0d7f8c}
+.report-kpis{display:grid;grid-template-columns:repeat(6,1fr);gap:9px;margin-bottom:14px}.report-kpi{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px}.report-kpi small{display:block;color:var(--muted);font-size:.58rem;text-transform:uppercase;letter-spacing:.04em}.report-kpi strong{display:block;font-size:1.35rem;margin-top:3px}.report-kpi em{font-style:normal;color:var(--muted);font-size:.59rem}.report-kpi.green{border-left:4px solid #1fa463}.report-kpi.amber{border-left:4px solid #d98a00}.report-kpi.red{border-left:4px solid #d64550}
+.report-preview{padding:18px;margin-top:14px}.report-paper{background:#fff;color:#243247;border:1px solid #cfd7e2;border-radius:4px;padding:18px;box-shadow:0 2px 7px rgba(15,35,55,.08)}
+.paper-head{background:#10213b;color:#fff;padding:12px 14px;border-radius:5px;margin-bottom:10px}.paper-head h3{margin:0;color:#fff;font-size:1rem}.paper-head p{margin:3px 0 0;color:#d8e1ec;font-size:.67rem}.paper-meta{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-top:9px}.paper-meta div{border:1px solid #52637b;padding:6px;font-size:.62rem}.paper-meta b{display:block;color:#b9c8dc;font-size:.54rem;text-transform:uppercase}
+.report-section{border:1px solid #d8dee7;border-radius:4px;overflow:hidden;margin-top:10px}.report-section-title{background:#10213b;color:#fff;padding:7px 9px;font-size:.72rem;font-weight:800}.report-subtitle{background:#f0f3f7;color:#5f6d80;padding:6px 9px;font-size:.62rem}.report-table{width:100%;border-collapse:collapse;font-size:.65rem}.report-table th{background:#15263f;color:#fff;padding:7px;text-align:left;font-size:.57rem;text-transform:uppercase}.report-table td{padding:7px;border:1px solid #e0e5ec}.report-table tr:nth-child(even) td{background:#f7f9fb}.report-table .num{text-align:right;font-variant-numeric:tabular-nums}.badge{display:inline-block;padding:3px 6px;border-radius:5px;font-size:.56rem;font-weight:800}.badge.ok{background:#e7f6ee;color:#127a49}.badge.warn{background:#fff4d7;color:#966700}.badge.danger{background:#fdeaea;color:#a82d2d}.badge.info{background:#e8f4f7;color:#0d6673}
+.report-total{display:grid;grid-template-columns:repeat(6,1fr);gap:7px;background:#f0f3f7;border:1px solid #d8dee7;padding:10px;margin-top:10px}.report-total strong{display:block;font-size:1rem;color:#10213b}.report-total span{font-size:.57rem;color:#69778a;text-transform:uppercase}.empty{padding:22px;text-align:center;color:var(--muted)}
+.builder-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.builder-panel{padding:16px}.builder-panel h3{font-size:.82rem;margin:0 0 10px;color:var(--text)}.builder-option{display:flex;align-items:flex-start;gap:8px;padding:8px;border:1px solid var(--border);border-radius:8px;margin-bottom:7px;background:var(--bg)}.builder-option input{margin-top:2px}.builder-option strong{display:block;font-size:.7rem}.builder-option small{display:block;color:var(--muted);font-size:.61rem}.builder-preview{border:1px dashed #80a8b3;border-radius:9px;background:#f6fbfc;padding:13px;margin-top:10px}.builder-preview h4{font-size:.78rem;margin:0 0 7px}.builder-preview ul{margin:0;padding-left:18px;font-size:.67rem}.preset-buttons{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}.preset-buttons button{font-size:.63rem}.builder-actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:13px}
+@media(max-width:1100px){.report-kpis{grid-template-columns:repeat(3,1fr)}.paper-meta{grid-template-columns:repeat(2,1fr)}}@media(max-width:650px){.report-kpis{grid-template-columns:repeat(2,1fr)}.report-total{grid-template-columns:repeat(2,1fr)}.report-table{font-size:.58rem}}
 </style>
-
-<div class="siget-report-shell">
-    <div class="crtop">
-        <div class="eyebrow">SIGET · Centro de Reportes · Vista ejecutiva</div>
-        <h2>Reporte Ejecutivo Institucional</h2>
-        <p>Lectura para toma de decisiones: volumen, cumplimiento, capacidad de cierre, riesgos y desempeño por dependencia.</p>
+<div class="report-shell">
+    <div class="report-hero">
+        <div class="report-eyebrow">SIGET · Centro de reportes · Formato institucional</div>
+        <h2>{{ $reportLinks[$report] ?? 'Centro de reportes' }}</h2>
+        <p>Consulta, previsualiza y exporta información agrupada por dependencia, dirección, unidad, campaña y evidencia.</p>
     </div>
 
-    <form method="GET" action="{{ route('reports.index') }}" class="crbox toolbar">
+    <form method="GET" action="{{ route('reports.index') }}" class="report-box report-toolbar">
+        <input type="hidden" name="report" value="{{ $report }}">
         <div class="row g-3 align-items-end">
-            <div class="col-lg-2"><label>Dependencia</label><select name="agency_id" class="form-select form-select-sm"><option value="">Todas</option>@foreach($agencies as $a)<option value="{{ $a->id }}" @selected(($filters['agency_id'] ?? '') == $a->id)>{{ $a->name }}</option>@endforeach</select></div>
-            <div class="col-lg-3"><label>Dirección / Unidad</label><select name="organizational_unit_id" class="form-select form-select-sm"><option value="">Todas</option>@foreach($units as $u)<option value="{{ $u->id }}" @selected(($filters['organizational_unit_id'] ?? '') == $u->id)>{{ $u->name }}</option>@endforeach</select></div>
-            <div class="col-lg-2"><label>Estado</label><select name="status" class="form-select form-select-sm"><option value="">Todos</option>@foreach($statuses as $c=>$l)<option value="{{ $c }}" @selected(($filters['status'] ?? '') === $c)>{{ $l }}</option>@endforeach</select></div>
+            <div class="col-lg-2"><label>Dependencia</label><select name="agency_id" class="form-select form-select-sm"><option value="">Todas las autorizadas</option>@foreach($agencies as $a)<option value="{{ $a->id }}" @selected(($filters['agency_id'] ?? '') == $a->id)>{{ $a->name }}</option>@endforeach</select></div>
+            <div class="col-lg-3"><label>Dirección / Unidad</label><select name="organizational_unit_id" class="form-select form-select-sm"><option value="">Todas las autorizadas</option>@foreach($units as $u)<option value="{{ $u->id }}" @selected(($filters['organizational_unit_id'] ?? '') == $u->id)>{{ $u->name }}</option>@endforeach</select></div>
+            <div class="col-lg-2"><label>Estado ejecutivo</label><select name="status" class="form-select form-select-sm"><option value="">Todos</option>@foreach($statuses as $code=>$label)<option value="{{ $code }}" @selected(($filters['status'] ?? '') === $code)>{{ $statusLabels[$code] ?? $label }}</option>@endforeach</select></div>
             <div class="col-lg-2"><label>Desde</label><input type="month" name="from" value="{{ $filters['from'] ?? '' }}" class="form-control form-control-sm"></div>
             <div class="col-lg-2"><label>Hasta</label><input type="month" name="to" value="{{ $filters['to'] ?? '' }}" class="form-control form-control-sm"></div>
             <div class="col-lg-1"><button class="btn btn-primary btn-sm w-100">Aplicar</button></div>
         </div>
+        <div class="report-actions">
+            <a class="btn btn-outline-secondary btn-sm" href="{{ route('reports.index') }}">Limpiar</a>
+            @if($canExport)
+                <a class="btn btn-primary btn-sm" href="{{ route('reports.pdf', request()->query()) }}"><i class="bi bi-file-earmark-pdf me-1"></i>Generar PDF</a>
+                <a class="btn btn-success btn-sm" href="{{ route('reports.xlsx', request()->query()) }}"><i class="bi bi-file-earmark-spreadsheet me-1"></i>Excel</a>
+                <a class="btn btn-outline-success btn-sm" href="{{ route('reports.csv', request()->query()) }}"><i class="bi bi-filetype-csv me-1"></i>CSV</a>
+                <button type="button" class="btn btn-outline-dark btn-sm" onclick="window.print()"><i class="bi bi-printer me-1"></i>Imprimir</button>
+            @endif
+        </div>
     </form>
 
-    <div class="tabs">
-        <button type="button" class="tab on" data-r="exec">Ejecutivo</button>
-        <button type="button" class="tab" data-r="comp">Cumplimiento</button>
-        <button type="button" class="tab" data-r="deps">Dependencias</button>
-        <button type="button" class="tab" data-r="track">Seguimiento</button>
-        <button type="button" class="tab" data-r="audit">Auditoría</button>
-        @if($canBuildReports)<button type="button" class="tab" data-r="build">Constructor</button>@endif
-        @if($canExport)<a class="btn btn-danger btn-sm ms-auto" href="{{ route('reports.pdf',request()->query()) }}">PDF Crystal</a><a class="btn btn-success btn-sm" href="{{ route('reports.xlsx',request()->query()) }}">Excel</a>@endif
-    </div>
-
-    <section id="exec" class="panel on">
-        <div class="kpis">
-            <div class="crk"><small>Total cargas</small><strong>{{ number_format((int)($k['total'] ?? 0)) }}</strong><em>universo filtrado</em></div>
-            <div class="crk"><small>Realizadas</small><strong>{{ number_format((int)($k['realized'] ?? 0)) }}</strong><em>{{ number_format((float)(($k['total'] ?? 0) ? (($k['realized'] ?? 0)*100/($k['total'] ?? 1)) : 0),1) }}% del total</em></div>
-            <div class="crk"><small>Validado y cerrado</small><strong>{{ number_format((int)($k['closed'] ?? 0)) }}</strong><em>cierre administrativo</em></div>
-            <div class="crk"><small>Vencidas</small><strong>{{ number_format((int)($k['overdue'] ?? 0)) }}</strong><em>atención inmediata</em></div>
-            <div class="crk"><small>Reprogramadas</small><strong>{{ number_format((int)($k['reprogrammed'] ?? 0)) }}</strong><em>pendientes de ejecución</em></div>
-            <div class="crk"><small>Cumplimiento</small><strong>{{ number_format((float)($k['compliance'] ?? 0),1) }}%</strong><em>cerradas / total</em></div>
-        </div>
-
-        <div class="exec-grid">
-            <div class="crbox">
-                <div class="head"><h3>Distribución ejecutiva de cargas</h3><p>El universo se muestra por los cuatro estados ejecutivos homologados.</p></div>
-                <div class="chart"><canvas id="sigetReportStatus"></canvas></div>
-            </div>
-            <div class="crbox">
-                <div class="head"><h3>Desempeño por dependencia</h3><p>Avance realizado frente a cierre validado.</p></div>
-                <div class="chart"><canvas id="sigetReportAgency"></canvas></div>
-            </div>
-        </div>
-
-        <div class="exec-wide crbox">
-            <div class="head"><h3>Tendencia de cumplimiento</h3><p>Lectura mensual para identificar mejora, estabilidad o deterioro del cierre.</p></div>
-            <div class="chart tall"><canvas id="sigetReportTrend"></canvas></div>
-            <div class="exec-insight"><strong>Lectura ejecutiva:</strong> el indicador de cumplimiento se basa en cargas <strong>VALIDADO Y CERRADO</strong> respecto al total programado del universo filtrado. La barra por dependencia separa ejecución realizada de cierre administrativo para evitar confundir entrega con cierre.</div>
-        </div>
-
-        <div class="exec-wide crbox">
-            <div class="head"><h3>Semáforo institucional por dependencia</h3><p>Verde ≥ 80% · Amarillo 50–79.9% · Rojo &lt; 50%. El semáforo usa el avance realizado.</p></div>
-            <div class="exec-table-wrap">
-                <table class="exec-semaforo">
-                    <thead><tr><th>Semáforo</th><th>Dependencia</th><th>Programadas</th><th>Realizadas</th><th>Reprogramadas</th><th>Vencidas</th><th>Avance</th><th>Cierre validado</th></tr></thead>
-                    <tbody>
-                    @forelse($agencyRows as $row)
-                        @php
-                            $pct = (float)($row['percentage'] ?? 0);
-                            $closePct = (float)($row['closure_percentage'] ?? 0);
-                            $trafficClass = $pct >= 80 ? 'green' : ($pct >= 50 ? 'yellow' : 'red');
-                            $trafficLabel = $pct >= 80 ? 'EN CONTROL' : ($pct >= 50 ? 'ATENCIÓN' : 'CRÍTICO');
-                            $barWidth = max(0, min(100, $pct));
-                        @endphp
-                        <tr class="{{ $trafficClass === 'red' ? 'attention' : '' }}">
-                            <td><span class="traffic {{ $trafficClass }}"><span class="traffic-dot"></span>{{ $trafficLabel }}</span></td>
-                            <td><strong>{{ $row['agency'] ?? 'Sin dependencia' }}</strong></td>
-                            <td>{{ $row['programmed'] ?? 0 }}</td>
-                            <td>{{ $row['realized'] ?? 0 }}</td>
-                            <td>{{ $row['reprogrammed'] ?? 0 }}</td>
-                            <td>{{ $row['overdue'] ?? 0 }}</td>
-                            <td class="meter"><div class="pct">{{ number_format($pct,1) }}%</div><div class="meter-bar"><span style="width:{{ $barWidth }}%"></span></div></td>
-                            <td class="pct">{{ number_format($closePct,1) }}%</td>
-                        </tr>
-                    @empty
-                        <tr><td colspan="8" class="text-center py-4">No hay dependencias con cargas para el filtro seleccionado.</td></tr>
-                    @endforelse
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <div class="alert-grid">
-            <div class="crbox">
-                <div class="head"><h3>Focos de atención</h3><p>Priorización ejecutiva de cargas que requieren intervención.</p></div>
-                <div>
-                    @forelse($riskItems->take(6) as $item)
-                        @php $riskStatus = $item->status instanceof \BackedEnum ? $item->status->value : (string)$item->status; @endphp
-                        <div class="alert-item">
-                            <div class="alert-main"><strong>{{ $item->agency?->name ?: 'Sin dependencia' }} · {{ $item->title }}</strong><span>{{ $statuses[$riskStatus] ?? $riskStatus }} · cierre {{ $item->effective_close_at?->format('d/m/Y') ?: '—' }}</span></div>
-                            <span class="traffic red"><span class="traffic-dot"></span>{{ $riskStatus === 'VENCIDA' ? 'VENCIDO' : 'REVISAR' }}</span>
-                        </div>
-                    @empty
-                        <div class="p-3 text-muted" style="font-size:.68rem">Sin focos críticos en el universo actual.</div>
-                    @endforelse
-                </div>
-            </div>
-            <div class="crbox">
-                <div class="head"><h3>Indicadores de decisión</h3><p>Resumen rápido para Dirección General y Enlace Institucional.</p></div>
-                <div class="mini-kpi">
-                    <div class="crk"><small>Promedio de avance</small><strong>{{ number_format((float)($k['completion_average'] ?? 0),1) }}%</strong></div>
-                    <div class="crk"><small>En revisión</small><strong>{{ number_format((int)($k['review_pending'] ?? 0)) }}</strong></div>
-                    <div class="crk"><small>Próximas a vencer</small><strong>{{ number_format((int)($k['due_soon'] ?? 0)) }}</strong></div>
-                </div>
-                <div class="p-3" style="font-size:.67rem;line-height:1.5;color:var(--muted)">Utiliza primero el semáforo para ubicar dependencias con riesgo; después revisa los focos de atención y finalmente la tendencia mensual para determinar si la capacidad de cierre está mejorando.</div>
-            </div>
-        </div>
-    </section>
-
-    <section id="comp" class="panel"><div class="crbox"><div class="head"><h3>Cumplimiento y Desempeño</h3></div><table class="tbl"><thead><tr><th>Dependencia</th><th>Programado</th><th>Reprogramado</th><th>Validado y cerrado</th><th>Vencido</th></tr></thead><tbody>
-        @foreach($agencies as $agency)
-            @php $agencyLoads = $loads->filter(fn($load) => $load->agency?->id === $agency->id); @endphp
-            <tr><td>{{ $agency->name }}</td><td>{{ $agencyLoads->where('status','PROGRAMADA')->count() }}</td><td>{{ $agencyLoads->where('status','REPROGRAMADA')->count() }}</td><td>{{ $agencyLoads->where('status','VALIDADO_Y_CERRADO')->count() }}</td><td>{{ $agencyLoads->where('status','VENCIDA')->count() }}</td></tr>
+    <nav class="report-nav" aria-label="Plantillas de reporte">
+        @foreach($reportLinks as $type=>$label)
+            <a href="{{ $linkFor($type) }}" class="{{ $report === $type ? 'active' : '' }}">{{ $label }}</a>
         @endforeach
-    </tbody></table></div></section>
+    </nav>
 
-    <section id="deps" class="panel"><div class="crbox"><div class="head"><h3>Dependencias</h3></div><div class="chart"><canvas id="sigetReportDirection"></canvas></div><table class="tbl"><thead><tr><th>Dependencia</th><th>Cargas</th><th>Cerradas</th><th>Vencidas</th><th>Reprogramadas</th><th>Cumplimiento</th></tr></thead><tbody>
-        @foreach($agencyRows as $row)<tr><td>{{ $row['agency'] ?? 'Sin dependencia' }}</td><td>{{ $row['total'] ?? 0 }}</td><td>{{ $row['closed'] ?? 0 }}</td><td>{{ $row['overdue'] ?? 0 }}</td><td>{{ $row['reprogrammed'] ?? 0 }}</td><td>{{ $row['percentage'] ?? 0 }}%</td></tr>@endforeach
-    </tbody></table></div></section>
-
-    <section id="track" class="panel"><div class="crbox"><div class="head"><h3>Seguimiento</h3></div><table class="tbl"><thead><tr><th>Dependencia</th><th>Orden</th><th>Estado</th><th>Avance</th></tr></thead><tbody>
-        @foreach($loads as $load)
-            @php $loadStatus = $load->status instanceof \BackedEnum ? $load->status->value : (string) $load->status; @endphp
-            @if(in_array($loadStatus,['REPROGRAMADA','VENCIDA','PROGRAMADA'],true))<tr><td>{{ $load->agency?->name ?: 'Sin dependencia' }}</td><td>{{ $load->title }}</td><td>{{ $statuses[$loadStatus] ?? $loadStatus }}</td><td>{{ number_format((float)$load->completion_percentage,0) }}%</td></tr>@endif
-        @endforeach
-    </tbody></table></div></section>
-
-    <section id="audit" class="panel"><div class="crbox"><div class="head"><h3>Auditoría</h3></div>
-        @foreach($loadsByAgency as $agency=>$items)
-            <div class="band">Dependencia · {{ $agency }}</div>
-            <table class="tbl"><thead><tr><th>Orden</th><th>Pauta</th><th>Apertura</th><th>Entrega</th><th>Estado</th></tr></thead><tbody>
-            @foreach($items as $load)
-                @php $loadStatus = $load->status instanceof \BackedEnum ? $load->status->value : (string) $load->status; @endphp
-                <tr><td>{{ $load->title }}</td><td>{{ $load->period_label ?: '—' }}</td><td>{{ $load->effective_open_at?->format('d/m/Y H:i') ?: '—' }}</td><td>{{ $load->delivered_at?->format('d/m/Y H:i') ?: '—' }}</td><td>{{ $statuses[$loadStatus] ?? $loadStatus }}</td></tr>
-            @endforeach
-            </tbody></table>
-        @endforeach
-    </div></section>
-
-    @if($canBuildReports)
-    <section id="build" class="panel">
-        <div class="crbox"><div class="head"><h3>Constructor de Reportes</h3><p>Construye una vista reutilizable a partir del universo filtrado.</p></div>
+    @if($report === 'builder' && $canBuildReports)
+        <div class="report-box report-preview">
+            <div class="report-section" style="margin-top:0"><div class="report-section-title">Configurador de plantillas de reportes</div><div class="report-subtitle">Selecciona opciones; no necesitas escribir nombres técnicos de campos. La vista previa se actualiza con las casillas marcadas.</div></div>
+            <div class="preset-buttons"><button type="button" class="btn btn-outline-secondary btn-sm" data-preset="executive">Usar plantilla ejecutiva</button><button type="button" class="btn btn-outline-secondary btn-sm" data-preset="pending">Usar plantilla de pendientes</button><button type="button" class="btn btn-outline-secondary btn-sm" data-preset="audit">Usar plantilla de auditoría</button></div>
             <div class="builder-grid">
-                <div>
-                    <div class="builder-field"><label>Tipo de reporte</label><select id="builderType" class="form-select form-select-sm"><option value="executive">Ejecutivo Crystal</option><option value="compliance">Cumplimiento por dependencia</option><option value="audit">Auditoría de cargas</option><option value="followup">Seguimiento de pendientes</option></select></div>
-                    <div class="builder-field"><label>Agrupar por</label><select id="builderGroup" class="form-select form-select-sm"><option value="agency">Dependencia</option><option value="unit">Dirección / Unidad</option><option value="status">Estado</option><option value="period">Pauta / periodo</option></select></div>
-                    <div class="builder-field"><label>Columnas</label><div class="builder-checks">
-                        <div class="builder-check"><input id="bcAgency" type="checkbox" checked><label for="bcAgency">Dependencia</label></div>
-                        <div class="builder-check"><input id="bcUnit" type="checkbox" checked><label for="bcUnit">Dirección / Unidad</label></div>
-                        <div class="builder-check"><input id="bcTitle" type="checkbox" checked><label for="bcTitle">Orden / carga</label></div>
-                        <div class="builder-check"><input id="bcStatus" type="checkbox" checked><label for="bcStatus">Estado</label></div>
-                        <div class="builder-check"><input id="bcProgress" type="checkbox" checked><label for="bcProgress">Avance</label></div>
-                        <div class="builder-check"><input id="bcDates" type="checkbox"><label for="bcDates">Fechas</label></div>
-                        <div class="builder-check"><input id="bcEvidence" type="checkbox"><label for="bcEvidence">Evidencias</label></div>
-                    </div></div>
-                    <div class="builder-actions"><button type="button" id="builderPreview" class="btn btn-primary btn-sm">Construir vista previa</button></div>
+                <div class="report-box builder-panel">
+                    <h3>1. Tipo y presentación</h3>
+                    <label class="form-label small fw-bold">Tipo de reporte</label><select id="builderReportType" class="form-select form-select-sm mb-3"><option value="executive">Reporte ejecutivo institucional</option><option value="compliance">Cumplimiento por dependencia</option><option value="pending">Seguimiento de pendientes</option><option value="evidence">Detalle de evidencias</option><option value="audit">Auditoría y trazabilidad</option></select>
+                    <label class="form-label small fw-bold">Agrupar resultados por</label><select id="builderGrouping" class="form-select form-select-sm mb-3"><option>Dependencia → Dirección → Unidad</option><option>Dependencia → Campaña</option><option>Dirección → Unidad → Responsable</option><option>Estado → Fecha límite</option><option>Sin agrupación</option></select>
+                    <label class="form-label small fw-bold">Formato de salida</label><select id="builderFormat" class="form-select form-select-sm"><option>PDF institucional</option><option>Excel analítico</option><option>CSV para integración</option><option>Vista web e impresión</option></select>
+                    <div class="builder-actions"><button type="button" class="btn btn-primary btn-sm" id="builderPreview">Actualizar vista previa</button><button type="button" class="btn btn-outline-success btn-sm" id="builderUse">Usar esta configuración</button></div>
                 </div>
-                <div><div class="builder-preview" id="builderPreviewBox"><strong>Constructor listo.</strong><p class="builder-help">Selecciona agrupación y columnas para generar la vista previa.</p></div></div>
+                <div class="report-box builder-panel">
+                    <h3>2. Columnas visibles</h3>
+                    @foreach(['agency'=>'Dependencia','unit'=>'Dirección / Unidad','title'=>'Campaña o carga','responsible'=>'Responsable','expected'=>'Evidencias esperadas','received'=>'Evidencias recibidas','validated'=>'Evidencias validadas','pending'=>'Pendientes','observed'=>'Observadas','close'=>'Fecha límite','status'=>'Estado','risk'=>'Riesgo','progress'=>'Avance'] as $key=>$label)
+                        <label class="builder-option"><input type="checkbox" class="builder-column" value="{{ $key }}" checked><span><strong>{{ $label }}</strong><small>Incluir esta columna en la vista y exportación seleccionada.</small></span></label>
+                    @endforeach
+                </div>
+                <div class="report-box builder-panel">
+                    <h3>3. Filtros incluidos</h3>
+                    @foreach(['agency'=>'Dependencia seleccionada','organizational_unit'=>'Dirección o unidad','campaign'=>'Campaña o periodo','status'=>'Estado de la evidencia','responsible'=>'Responsable operativo','date'=>'Rango de fechas'] as $key=>$label)
+                        <label class="builder-option"><input type="checkbox" class="builder-filter" value="{{ $key }}" checked><span><strong>{{ $label }}</strong><small>Mostrar este filtro en la cabecera del reporte.</small></span></label>
+                    @endforeach
+                    <label class="builder-option"><input type="checkbox" id="builderSubtotals" checked><span><strong>Incluir subtotales</strong><small>Subtotal por cada grupo y total institucional.</small></span></label>
+                </div>
+                <div class="report-box builder-panel">
+                    <h3>4. Vista previa de la plantilla</h3>
+                    <div class="builder-preview"><h4 id="builderPreviewTitle">Reporte ejecutivo institucional</h4><p class="small text-muted mb-2" id="builderPreviewMeta">Dependencia → Dirección → Unidad · PDF institucional</p><strong class="small">Columnas seleccionadas</strong><ul id="builderPreviewColumns"></ul><strong class="small">Filtros visibles</strong><ul id="builderPreviewFilters"></ul></div>
+                    <p class="small text-muted mt-3 mb-0"><i class="bi bi-info-circle me-1"></i>En esta primera versión las plantillas son configuraciones de trabajo del usuario. La persistencia en base de datos y programación de envíos queda para la siguiente fase.</p>
+                </div>
             </div>
         </div>
-    </section>
+        <script>
+        (()=>{const labels={agency:'Dependencia',unit:'Dirección / Unidad',title:'Campaña o carga',responsible:'Responsable',expected:'Evidencias esperadas',received:'Evidencias recibidas',validated:'Evidencias validadas',pending:'Pendientes',observed:'Observadas',close:'Fecha límite',status:'Estado',risk:'Riesgo',progress:'Avance'};const filterLabels={agency:'Dependencia seleccionada',organizational_unit:'Dirección o unidad',campaign:'Campaña o periodo',status:'Estado de la evidencia',responsible:'Responsable operativo',date:'Rango de fechas'};const type=document.getElementById('builderReportType'),group=document.getElementById('builderGrouping'),format=document.getElementById('builderFormat'),title=document.getElementById('builderPreviewTitle'),meta=document.getElementById('builderPreviewMeta'),cols=document.getElementById('builderPreviewColumns'),filters=document.getElementById('builderPreviewFilters');function refresh(){title.textContent=type.options[type.selectedIndex].text;meta.textContent=group.value+' · '+format.value;cols.innerHTML=[...document.querySelectorAll('.builder-column:checked')].map(x=>'<li>'+labels[x.value]+'</li>').join('')||'<li>Sin columnas seleccionadas</li>';filters.innerHTML=[...document.querySelectorAll('.builder-filter:checked')].map(x=>'<li>'+filterLabels[x.value]+'</li>').join('')||'<li>Sin filtros seleccionados</li>';if(document.getElementById('builderSubtotals').checked)filters.innerHTML+='<li>Subtotales y total institucional</li>'}function preset(name){document.querySelectorAll('.builder-column').forEach(x=>x.checked=name==='executive'||(name==='pending'&&['agency','unit','title','responsible','pending','observed','close','status','risk'].includes(x.value))||(name==='audit'&&['agency','unit','title','responsible','status','close'].includes(x.value)));document.querySelectorAll('.builder-filter').forEach(x=>x.checked=true);type.value=name==='pending'?'pending':name==='audit'?'audit':'executive';group.value=name==='audit'?'Estado → Fecha límite':name==='pending'?'Dependencia → Campaña':'Dependencia → Dirección → Unidad';format.value='PDF institucional';refresh()}document.getElementById('builderPreview').addEventListener('click',refresh);document.querySelectorAll('.builder-column,.builder-filter,#builderSubtotals').forEach(x=>x.addEventListener('change',refresh));document.querySelectorAll('[data-preset]').forEach(x=>x.addEventListener('click',()=>preset(x.dataset.preset)));document.getElementById('builderUse').addEventListener('click',()=>{const target=type.value;window.location.href='{{ route('reports.index') }}?report='+target});refresh()})();
+        </script>
+    @elseif($report === 'executive')
+        <div class="report-kpis">
+            <div class="report-kpi"><small>Evidencias esperadas</small><strong>{{ number_format($summary['expected']) }}</strong><em>obligación del periodo</em></div>
+            <div class="report-kpi green"><small>Evidencias recibidas</small><strong>{{ number_format($summary['received']) }}</strong><em>{{ $summary['delivery_percentage'] }}% de entrega</em></div>
+            <div class="report-kpi green"><small>Evidencias validadas</small><strong>{{ number_format($summary['validated']) }}</strong><em>{{ $summary['validation_percentage'] }}% del universo</em></div>
+            <div class="report-kpi amber"><small>Evidencias pendientes</small><strong>{{ number_format($summary['pending']) }}</strong><em>requieren carga</em></div>
+            <div class="report-kpi amber"><small>En revisión</small><strong>{{ number_format($summary['review']) }}</strong><em>pendientes de decisión</em></div>
+            <div class="report-kpi red"><small>Observadas o rechazadas</small><strong>{{ number_format($summary['observed']) }}</strong><em>requieren corrección</em></div>
+        </div>
+        <div class="report-box report-preview">
+            <div class="report-paper">
+                <div class="paper-head"><h3>Reporte Ejecutivo Institucional</h3><p>Resumen de cumplimiento, riesgos y desempeño por dependencia.</p><div class="paper-meta"><div><b>Periodo</b>{{ ($filters['from'] ?? '') ?: 'Universo actual' }} @if(!empty($filters['to'])) → {{ $filters['to'] }} @endif</div><div><b>Generado por</b>{{ auth()->user()->name }}</div><div><b>Emisión</b>{{ now()->format('d/m/Y H:i') }}</div><div><b>Registros</b>{{ number_format($loads->count()) }} cargas</div></div></div>
+                <div class="report-section"><div class="report-section-title">Resumen institucional de evidencias</div><table class="report-table"><thead><tr><th>Indicador</th><th class="num">Esperadas</th><th class="num">Recibidas</th><th class="num">Validadas</th><th class="num">Pendientes</th><th class="num">Observadas</th><th class="num">%</th></tr></thead><tbody><tr><td><strong>Total del universo filtrado</strong></td><td class="num">{{ number_format($summary['expected']) }}</td><td class="num">{{ number_format($summary['received']) }}</td><td class="num">{{ number_format($summary['validated']) }}</td><td class="num">{{ number_format($summary['pending']) }}</td><td class="num">{{ number_format($summary['observed']) }}</td><td class="num"><span class="badge {{ $summary['delivery_percentage'] >= 80 ? 'ok' : ($summary['delivery_percentage'] >= 50 ? 'warn' : 'danger') }}">{{ $summary['delivery_percentage'] }}%</span></td></tr></tbody></table></div>
+                <div class="report-section"><div class="report-section-title">Focos de atención</div><table class="report-table"><thead><tr><th>Dependencia</th><th>Dirección / Unidad</th><th>Campaña / carga</th><th>Fecha límite</th><th>Estado</th><th>Riesgo</th></tr></thead><tbody>@forelse($reportRows->filter(fn($r)=>$r['pending']>0 || $r['observed']>0 || in_array($r['status'],['VENCIDA','REPROGRAMADA'],true))->take(8) as $row)<tr><td>{{ $row['agency'] }}</td><td>{{ $row['unit'] }}</td><td>{{ $row['title'] }}</td><td>{{ $row['close'] }}</td><td>{{ $statusLabels[$row['status']] ?? $row['status'] }}</td><td><span class="badge {{ $row['risk']==='ALTO' ? 'danger' : 'warn' }}">{{ $row['risk'] }}</span></td></tr>@empty<tr><td colspan="6" class="empty">No hay focos de atención en el universo actual.</td></tr>@endforelse</tbody></table></div>
+                <div class="report-total"><div><span>Esperadas</span><strong>{{ number_format($summary['expected']) }}</strong></div><div><span>Recibidas</span><strong>{{ number_format($summary['received']) }}</strong></div><div><span>Validadas</span><strong>{{ number_format($summary['validated']) }}</strong></div><div><span>Pendientes</span><strong>{{ number_format($summary['pending']) }}</strong></div><div><span>Observadas</span><strong>{{ number_format($summary['observed']) }}</strong></div><div><span>Entrega</span><strong>{{ $summary['delivery_percentage'] }}%</strong></div></div>
+            </div>
+        </div>
+    @elseif($report === 'compliance')
+        <div class="report-box report-preview"><div class="report-section" style="margin-top:0"><div class="report-section-title">Cumplimiento por dependencia, dirección y unidad</div><table class="report-table"><thead><tr><th>Dependencia</th><th>Dirección / Unidad</th><th>Campaña / carga</th><th class="num">Esperadas</th><th class="num">Recibidas</th><th class="num">Validadas</th><th class="num">Pendientes</th><th class="num">Cumplimiento</th></tr></thead><tbody>@forelse($reportRows as $row)<tr><td>{{ $row['agency'] }}</td><td>{{ $row['unit'] }}</td><td>{{ $row['title'] }}</td><td class="num">{{ $row['expected'] }}</td><td class="num">{{ $row['received'] }}</td><td class="num">{{ $row['validated'] }}</td><td class="num">{{ $row['pending'] }}</td><td class="num"><span class="badge {{ $row['expected'] && $row['received']/$row['expected'] >= .8 ? 'ok' : ($row['expected'] && $row['received']/$row['expected'] >= .5 ? 'warn' : 'danger') }}">{{ $row['expected'] ? round($row['received']*100/$row['expected'],1) : 0 }}%</span></td></tr>@empty<tr><td colspan="8" class="empty">No hay registros para los filtros seleccionados.</td></tr>@endforelse</tbody></table></div></div>
+    @elseif($report === 'pending')
+        <div class="report-box report-preview"><div class="report-section" style="margin-top:0"><div class="report-section-title">Seguimiento de pendientes y vencimientos</div><div class="report-subtitle">Solo se muestran cargas con evidencias pendientes, observadas, rechazadas o con riesgo operativo.</div><table class="report-table"><thead><tr><th>Dependencia</th><th>Dirección / Unidad</th><th>Campaña / carga</th><th>Responsable</th><th>Fecha límite</th><th class="num">Pendientes</th><th class="num">Observadas</th><th>Estado</th><th>Riesgo</th></tr></thead><tbody>@forelse($reportRows->filter(fn($r)=>$r['pending']>0 || $r['observed']>0 || in_array($r['status'],['VENCIDA','REPROGRAMADA'],true)) as $row)<tr><td>{{ $row['agency'] }}</td><td>{{ $row['unit'] }}</td><td>{{ $row['title'] }}</td><td>{{ $row['responsible'] }}</td><td>{{ $row['close'] }}</td><td class="num">{{ $row['pending'] }}</td><td class="num">{{ $row['observed'] }}</td><td>{{ $statusLabels[$row['status']] ?? $row['status'] }}</td><td><span class="badge {{ $row['risk']==='ALTO' ? 'danger' : 'warn' }}">{{ $row['risk'] }}</span></td></tr>@empty<tr><td colspan="9" class="empty">No hay pendientes para los filtros seleccionados.</td></tr>@endforelse</tbody></table></div></div>
+    @elseif($report === 'evidence')
+        <div class="report-box report-preview"><div class="report-section" style="margin-top:0"><div class="report-section-title">Detalle de evidencias y expedientes</div><table class="report-table"><thead><tr><th>Dependencia</th><th>Dirección / Unidad</th><th>Campaña / carga</th><th>Responsable</th><th>Apertura</th><th>Cierre</th><th>Estado</th><th class="num">Esperadas</th><th class="num">Recibidas</th><th class="num">Validadas</th></tr></thead><tbody>@forelse($reportRows as $row)<tr><td>{{ $row['agency'] }}</td><td>{{ $row['unit'] }}</td><td>{{ $row['title'] }}</td><td>{{ $row['responsible'] }}</td><td>{{ $row['open'] }}</td><td>{{ $row['close'] }}</td><td>{{ $statusLabels[$row['status']] ?? $row['status'] }}</td><td class="num">{{ $row['expected'] }}</td><td class="num">{{ $row['received'] }}</td><td class="num">{{ $row['validated'] }}</td></tr>@empty<tr><td colspan="10" class="empty">No hay evidencias para los filtros seleccionados.</td></tr>@endforelse</tbody></table></div></div>
+    @else
+        <div class="report-box report-preview"><div class="report-section" style="margin-top:0"><div class="report-section-title">Historial de cambios de estado</div><table class="report-table"><thead><tr><th>Fecha</th><th>Usuario</th><th>Dependencia</th><th>Carga</th><th>Estado anterior</th><th>Estado nuevo</th><th>Motivo</th></tr></thead><tbody>@forelse($statusHistory as $item)<tr><td>{{ $item->created_at?->format('d/m/Y H:i') }}</td><td>{{ $item->user?->name ?? 'Sistema' }}</td><td>{{ $item->scheduledLoad?->agency?->name ?? '—' }}</td><td>{{ $item->scheduledLoad?->title ?? '—' }}</td><td>{{ $statusLabels[$item->old_status] ?? $item->old_status ?? '—' }}</td><td>{{ $statusLabels[$item->new_status] ?? $item->new_status }}</td><td>{{ $item->reason ?: '—' }}</td></tr>@empty<tr><td colspan="7" class="empty">No hay cambios de estado en el universo seleccionado.</td></tr>@endforelse</tbody></table></div><div class="report-section"><div class="report-section-title">Eventos de auditoría</div><table class="report-table"><thead><tr><th>Fecha</th><th>Usuario</th><th>Evento</th><th>Entidad</th><th>ID</th></tr></thead><tbody>@forelse($auditRows as $item)<tr><td>{{ $item->created_at?->format('d/m/Y H:i') }}</td><td>{{ $item->user?->name ?? 'Sistema' }}</td><td>{{ $item->event }}</td><td>{{ class_basename($item->entity_type) }}</td><td>{{ $item->entity_id ?: '—' }}</td></tr>@empty<tr><td colspan="5" class="empty">No hay eventos de auditoría en el universo seleccionado.</td></tr>@endforelse</tbody></table></div></div>
     @endif
 </div>
-
-<script>
-document.querySelectorAll('[data-r]').forEach(function(button){
-    button.addEventListener('click',function(){
-        document.querySelectorAll('.tab').forEach(function(item){item.classList.remove('on');});
-        document.querySelectorAll('.panel').forEach(function(panel){panel.classList.remove('on');});
-        button.classList.add('on');
-        var target=document.getElementById(button.dataset.r);
-        if(target) target.classList.add('on');
-        window.dispatchEvent(new Event('resize'));
-    });
-});
-</script>
-
-@if($canBuildReports)
-<script>
-(function(){
-    var box=document.getElementById('builderPreviewBox');
-    var rows=@json($builderRows);
-    var labels={PROGRAMADA:'PROGRAMADO',REPROGRAMADA:'REPROGRAMADO',VALIDADO_Y_CERRADO:'VALIDADO Y CERRADO',VENCIDA:'VENCIDO'};
-    function esc(value){return String(value ?? '').replace(/[&<>\"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#039;'}[c];});}
-    function checked(id){var el=document.getElementById(id);return !!el && el.checked;}
-    function render(){
-        var group=document.getElementById('builderGroup').value;
-        var cols=[];
-        if(checked('bcAgency')) cols.push(['agency','Dependencia']);
-        if(checked('bcUnit')) cols.push(['unit','Dirección / Unidad']);
-        if(checked('bcTitle')) cols.push(['title','Orden / carga']);
-        if(checked('bcStatus')) cols.push(['status','Estado']);
-        if(checked('bcProgress')) cols.push(['progress','Avance']);
-        if(checked('bcDates')){cols.push(['open','Apertura']);cols.push(['close','Cierre']);}
-        if(checked('bcEvidence')) cols.push(['evidence','Evidencias']);
-        var grouped={};
-        rows.forEach(function(row){var key=row[group] ?? '—';if(!grouped[key]) grouped[key]=[];grouped[key].push(row);});
-        var title=document.getElementById('builderType').selectedOptions[0].text;
-        var groupTitle=document.getElementById('builderGroup').selectedOptions[0].text;
-        var html='<div class="band">'+esc(title)+' · '+esc(groupTitle)+' · '+rows.length+' registros</div>';
-        Object.keys(grouped).sort().forEach(function(key){
-            html+='<div style="margin-top:10px;font-weight:800">'+esc(key)+'</div><div style="overflow:auto"><table class="tbl"><thead><tr>';
-            cols.forEach(function(col){html+='<th>'+esc(col[1])+'</th>';});
-            html+='</tr></thead><tbody>';
-            grouped[key].forEach(function(row){html+='<tr>';cols.forEach(function(col){var value=row[col[0]];if(col[0]==='status') value=labels[value] ?? value;if(col[0]==='progress') value=Number(value).toFixed(0)+'%';html+='<td>'+esc(value)+'</td>';});html+='</tr>';});
-            html+='</tbody></table></div>';
-        });
-        box.innerHTML=html;
-    }
-    document.getElementById('builderPreview').addEventListener('click',render);
-})();
-</script>
-@endif
-
-<script type="application/json" data-siget-chart="sigetReportStatus">{!! json_encode($reportStatusChart) !!}</script>
-<script type="application/json" data-siget-chart="sigetReportAgency">{!! json_encode($reportAgencyChart) !!}</script>
-<script type="application/json" data-siget-chart="sigetReportTrend">{!! json_encode($reportTrendChart) !!}</script>
-<script type="application/json" data-siget-chart="sigetReportDirection">{!! json_encode($reportDirectionChart) !!}</script>
-<script type="application/json" data-siget-chart="sigetReportExecutiveStatus">{!! json_encode($reportExecutiveStatusChart) !!}</script>
 @endsection
