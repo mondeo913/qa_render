@@ -29,7 +29,7 @@ class ReportController extends Controller
     private function filters(Request $request): array
     {
         $filters = $request->validate([
-            'report' => ['nullable', 'in:executive,compliance,pending,evidence,audit'],
+            'report' => ['nullable', 'in:executive,compliance,pending,evidence,audit,builder'],
             'agency_id' => ['nullable', 'integer'],
             'organizational_unit_id' => ['nullable', 'string', 'max:500'],
             'status' => ['nullable', 'string', 'max:60'],

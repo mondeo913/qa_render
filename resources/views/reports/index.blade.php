@@ -14,6 +14,9 @@
         'evidence' => 'Detalle de evidencias',
         'audit' => 'Auditoría y trazabilidad',
     ];
+    if ($canBuildReports) {
+        $reportLinks['builder'] = 'Plantillas de reportes';
+    }
     $linkFor = fn ($type) => route('reports.index', array_merge(request()->query(), ['report' => $type]));
 @endphp
 <style>
@@ -26,6 +29,7 @@
 .paper-head{background:#10213b;color:#fff;padding:12px 14px;border-radius:5px;margin-bottom:10px}.paper-head h3{margin:0;color:#fff;font-size:1rem}.paper-head p{margin:3px 0 0;color:#d8e1ec;font-size:.67rem}.paper-meta{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-top:9px}.paper-meta div{border:1px solid #52637b;padding:6px;font-size:.62rem}.paper-meta b{display:block;color:#b9c8dc;font-size:.54rem;text-transform:uppercase}
 .report-section{border:1px solid #d8dee7;border-radius:4px;overflow:hidden;margin-top:10px}.report-section-title{background:#10213b;color:#fff;padding:7px 9px;font-size:.72rem;font-weight:800}.report-subtitle{background:#f0f3f7;color:#5f6d80;padding:6px 9px;font-size:.62rem}.report-table{width:100%;border-collapse:collapse;font-size:.65rem}.report-table th{background:#15263f;color:#fff;padding:7px;text-align:left;font-size:.57rem;text-transform:uppercase}.report-table td{padding:7px;border:1px solid #e0e5ec}.report-table tr:nth-child(even) td{background:#f7f9fb}.report-table .num{text-align:right;font-variant-numeric:tabular-nums}.badge{display:inline-block;padding:3px 6px;border-radius:5px;font-size:.56rem;font-weight:800}.badge.ok{background:#e7f6ee;color:#127a49}.badge.warn{background:#fff4d7;color:#966700}.badge.danger{background:#fdeaea;color:#a82d2d}.badge.info{background:#e8f4f7;color:#0d6673}
 .report-total{display:grid;grid-template-columns:repeat(6,1fr);gap:7px;background:#f0f3f7;border:1px solid #d8dee7;padding:10px;margin-top:10px}.report-total strong{display:block;font-size:1rem;color:#10213b}.report-total span{font-size:.57rem;color:#69778a;text-transform:uppercase}.empty{padding:22px;text-align:center;color:var(--muted)}
+.builder-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.builder-panel{padding:16px}.builder-panel h3{font-size:.82rem;margin:0 0 10px;color:var(--text)}.builder-option{display:flex;align-items:flex-start;gap:8px;padding:8px;border:1px solid var(--border);border-radius:8px;margin-bottom:7px;background:var(--bg)}.builder-option input{margin-top:2px}.builder-option strong{display:block;font-size:.7rem}.builder-option small{display:block;color:var(--muted);font-size:.61rem}.builder-preview{border:1px dashed #80a8b3;border-radius:9px;background:#f6fbfc;padding:13px;margin-top:10px}.builder-preview h4{font-size:.78rem;margin:0 0 7px}.builder-preview ul{margin:0;padding-left:18px;font-size:.67rem}.preset-buttons{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}.preset-buttons button{font-size:.63rem}.builder-actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:13px}
 @media(max-width:1100px){.report-kpis{grid-template-columns:repeat(3,1fr)}.paper-meta{grid-template-columns:repeat(2,1fr)}}@media(max-width:650px){.report-kpis{grid-template-columns:repeat(2,1fr)}.report-total{grid-template-columns:repeat(2,1fr)}.report-table{font-size:.58rem}}
 </style>
 <div class="report-shell">
@@ -60,10 +64,44 @@
         @foreach($reportLinks as $type=>$label)
             <a href="{{ $linkFor($type) }}" class="{{ $report === $type ? 'active' : '' }}">{{ $label }}</a>
         @endforeach
-        @if($canBuildReports)<a href="{{ route('admin.settings') }}">Plantillas de reportes</a>@endif
     </nav>
 
-    @if($report === 'executive')
+    @if($report === 'builder' && $canBuildReports)
+        <div class="report-box report-preview">
+            <div class="report-section" style="margin-top:0"><div class="report-section-title">Configurador de plantillas de reportes</div><div class="report-subtitle">Selecciona opciones; no necesitas escribir nombres técnicos de campos. La vista previa se actualiza con las casillas marcadas.</div></div>
+            <div class="preset-buttons"><button type="button" class="btn btn-outline-secondary btn-sm" data-preset="executive">Usar plantilla ejecutiva</button><button type="button" class="btn btn-outline-secondary btn-sm" data-preset="pending">Usar plantilla de pendientes</button><button type="button" class="btn btn-outline-secondary btn-sm" data-preset="audit">Usar plantilla de auditoría</button></div>
+            <div class="builder-grid">
+                <div class="report-box builder-panel">
+                    <h3>1. Tipo y presentación</h3>
+                    <label class="form-label small fw-bold">Tipo de reporte</label><select id="builderReportType" class="form-select form-select-sm mb-3"><option value="executive">Reporte ejecutivo institucional</option><option value="compliance">Cumplimiento por dependencia</option><option value="pending">Seguimiento de pendientes</option><option value="evidence">Detalle de evidencias</option><option value="audit">Auditoría y trazabilidad</option></select>
+                    <label class="form-label small fw-bold">Agrupar resultados por</label><select id="builderGrouping" class="form-select form-select-sm mb-3"><option>Dependencia → Dirección → Unidad</option><option>Dependencia → Campaña</option><option>Dirección → Unidad → Responsable</option><option>Estado → Fecha límite</option><option>Sin agrupación</option></select>
+                    <label class="form-label small fw-bold">Formato de salida</label><select id="builderFormat" class="form-select form-select-sm"><option>PDF institucional</option><option>Excel analítico</option><option>CSV para integración</option><option>Vista web e impresión</option></select>
+                    <div class="builder-actions"><button type="button" class="btn btn-primary btn-sm" id="builderPreview">Actualizar vista previa</button><button type="button" class="btn btn-outline-success btn-sm" id="builderUse">Usar esta configuración</button></div>
+                </div>
+                <div class="report-box builder-panel">
+                    <h3>2. Columnas visibles</h3>
+                    @foreach(['agency'=>'Dependencia','unit'=>'Dirección / Unidad','title'=>'Campaña o carga','responsible'=>'Responsable','expected'=>'Evidencias esperadas','received'=>'Evidencias recibidas','validated'=>'Evidencias validadas','pending'=>'Pendientes','observed'=>'Observadas','close'=>'Fecha límite','status'=>'Estado','risk'=>'Riesgo','progress'=>'Avance'] as $key=>$label)
+                        <label class="builder-option"><input type="checkbox" class="builder-column" value="{{ $key }}" checked><span><strong>{{ $label }}</strong><small>Incluir esta columna en la vista y exportación seleccionada.</small></span></label>
+                    @endforeach
+                </div>
+                <div class="report-box builder-panel">
+                    <h3>3. Filtros incluidos</h3>
+                    @foreach(['agency'=>'Dependencia seleccionada','organizational_unit'=>'Dirección o unidad','campaign'=>'Campaña o periodo','status'=>'Estado de la evidencia','responsible'=>'Responsable operativo','date'=>'Rango de fechas'] as $key=>$label)
+                        <label class="builder-option"><input type="checkbox" class="builder-filter" value="{{ $key }}" checked><span><strong>{{ $label }}</strong><small>Mostrar este filtro en la cabecera del reporte.</small></span></label>
+                    @endforeach
+                    <label class="builder-option"><input type="checkbox" id="builderSubtotals" checked><span><strong>Incluir subtotales</strong><small>Subtotal por cada grupo y total institucional.</small></span></label>
+                </div>
+                <div class="report-box builder-panel">
+                    <h3>4. Vista previa de la plantilla</h3>
+                    <div class="builder-preview"><h4 id="builderPreviewTitle">Reporte ejecutivo institucional</h4><p class="small text-muted mb-2" id="builderPreviewMeta">Dependencia → Dirección → Unidad · PDF institucional</p><strong class="small">Columnas seleccionadas</strong><ul id="builderPreviewColumns"></ul><strong class="small">Filtros visibles</strong><ul id="builderPreviewFilters"></ul></div>
+                    <p class="small text-muted mt-3 mb-0"><i class="bi bi-info-circle me-1"></i>En esta primera versión las plantillas son configuraciones de trabajo del usuario. La persistencia en base de datos y programación de envíos queda para la siguiente fase.</p>
+                </div>
+            </div>
+        </div>
+        <script>
+        (()=>{const labels={agency:'Dependencia',unit:'Dirección / Unidad',title:'Campaña o carga',responsible:'Responsable',expected:'Evidencias esperadas',received:'Evidencias recibidas',validated:'Evidencias validadas',pending:'Pendientes',observed:'Observadas',close:'Fecha límite',status:'Estado',risk:'Riesgo',progress:'Avance'};const filterLabels={agency:'Dependencia seleccionada',organizational_unit:'Dirección o unidad',campaign:'Campaña o periodo',status:'Estado de la evidencia',responsible:'Responsable operativo',date:'Rango de fechas'};const type=document.getElementById('builderReportType'),group=document.getElementById('builderGrouping'),format=document.getElementById('builderFormat'),title=document.getElementById('builderPreviewTitle'),meta=document.getElementById('builderPreviewMeta'),cols=document.getElementById('builderPreviewColumns'),filters=document.getElementById('builderPreviewFilters');function refresh(){title.textContent=type.options[type.selectedIndex].text;meta.textContent=group.value+' · '+format.value;cols.innerHTML=[...document.querySelectorAll('.builder-column:checked')].map(x=>'<li>'+labels[x.value]+'</li>').join('')||'<li>Sin columnas seleccionadas</li>';filters.innerHTML=[...document.querySelectorAll('.builder-filter:checked')].map(x=>'<li>'+filterLabels[x.value]+'</li>').join('')||'<li>Sin filtros seleccionados</li>';if(document.getElementById('builderSubtotals').checked)filters.innerHTML+='<li>Subtotales y total institucional</li>'}function preset(name){document.querySelectorAll('.builder-column').forEach(x=>x.checked=name==='executive'||(name==='pending'&&['agency','unit','title','responsible','pending','observed','close','status','risk'].includes(x.value))||(name==='audit'&&['agency','unit','title','responsible','status','close'].includes(x.value)));document.querySelectorAll('.builder-filter').forEach(x=>x.checked=true);type.value=name==='pending'?'pending':name==='audit'?'audit':'executive';group.value=name==='audit'?'Estado → Fecha límite':name==='pending'?'Dependencia → Campaña':'Dependencia → Dirección → Unidad';format.value='PDF institucional';refresh()}document.getElementById('builderPreview').addEventListener('click',refresh);document.querySelectorAll('.builder-column,.builder-filter,#builderSubtotals').forEach(x=>x.addEventListener('change',refresh));document.querySelectorAll('[data-preset]').forEach(x=>x.addEventListener('click',()=>preset(x.dataset.preset)));document.getElementById('builderUse').addEventListener('click',()=>{const target=type.value;window.location.href='{{ route('reports.index') }}?report='+target});refresh()})();
+        </script>
+    @elseif($report === 'executive')
         <div class="report-kpis">
             <div class="report-kpi"><small>Evidencias esperadas</small><strong>{{ number_format($summary['expected']) }}</strong><em>obligación del periodo</em></div>
             <div class="report-kpi green"><small>Evidencias recibidas</small><strong>{{ number_format($summary['received']) }}</strong><em>{{ $summary['delivery_percentage'] }}% de entrega</em></div>
