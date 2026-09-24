@@ -530,7 +530,7 @@ class ReportController extends Controller
         ];
 
         foreach ($headers as $column => $header) {
-            $sheet->setCellValueByColumnAndRow($column + 1, 1, $header);
+            $sheet->setCellValue([$column + 1, 1], $header);
         }
 
         $row = 2;
@@ -597,7 +597,7 @@ class ReportController extends Controller
             ];
 
             foreach ($values as $column => $value) {
-                $sheet->setCellValueByColumnAndRow($column + 1, $row, $value);
+                $sheet->setCellValue([$column + 1, $row], $value);
             }
 
             $row++;
