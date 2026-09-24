@@ -47,6 +47,9 @@ Route::middleware(['auth', 'no-cache-auth'])->group(function () {
     Route::get('/indicadores', [IndicatorController::class, 'index'])->middleware('permission:indicators.view')->name('indicators.index');
     Route::get('/inteligencia', IntelligenceController::class)->middleware('permission:intelligence.view')->name('intelligence');
     Route::get('/reportes', [ReportController::class, 'index'])->middleware('permission:reports.view')->name('reports.index');
+    Route::get('/reportes/plantillas', function () {
+        return redirect()->route('reports.index', ['report' => 'builder']);
+    })->middleware('permission:reports.view')->name('reports.templates');
     Route::get('/reportes/xlsx', [ReportController::class, 'xlsx'])->middleware('permission:reports.export')->name('reports.xlsx');
     Route::get('/reportes/csv', [ReportController::class, 'csv'])->middleware('permission:reports.export')->name('reports.csv');
     Route::get('/reportes/pdf', [ReportController::class, 'pdf'])->middleware('permission:reports.export')->name('reports.pdf');
