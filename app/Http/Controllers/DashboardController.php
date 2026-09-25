@@ -40,7 +40,10 @@ class DashboardController extends Controller
         }
         $agencies = $agenciesQuery->orderBy('name')->get();
 
-        $unitsQuery = OrganizationalUnit::query()->where('organizational_units.active', true);
+        $unitsQuery = OrganizationalUnit::query()
+            ->where('organizational_units.active', true)
+            ->where('organizational_units.unit_type', 'DIRECTION')
+            ->whereIn('organizational_units.code', ['DIR_A', 'DIR_B']);
         if (!$isGlobalDashboard) {
             $unitsQuery->whereIn('organizational_units.id', function ($q) use ($accessibleLoads) {
                 $q->select('scheduled_load_deliverables.organizational_unit_id')

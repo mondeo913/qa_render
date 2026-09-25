@@ -55,6 +55,13 @@ class K2VisualFunctionalIntegrationTest extends TestCase {
             'unit_type' => 'DIRECTION',
             'active' => true,
         ]);
+        OrganizationalUnit::query()->create([
+            'contracting_agency_id' => $agency->id,
+            'code' => 'AREA_DEPENDENCIA',
+            'name' => 'Nombre que no debe aparecer como dirección',
+            'unit_type' => 'AREA',
+            'active' => true,
+        ]);
 
         foreach (['ADMINISTRADOR', 'DIRECTOR_GENERAL'] as $code) {
             $role = Role::where('code', $code)->firstOrFail();
@@ -65,6 +72,8 @@ class K2VisualFunctionalIntegrationTest extends TestCase {
                 ->assertOk()
                 ->assertSee('Dependencia nueva')
                 ->assertSee('value="'.$agency->id.'" selected', false)
+                ->assertSee('Dirección de Transmisión')
+                ->assertDontSee('Nombre que no debe aparecer como dirección')
                 ->assertSee('Spots programados');
         }
     }
