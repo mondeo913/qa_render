@@ -16,6 +16,7 @@ use App\Models\User;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 
 class AdminController extends Controller
@@ -209,10 +210,63 @@ class AdminController extends Controller
         $this->authorizeAdmin($request, 'agencies.manage');
 
         try {
-            $agency->delete();
+            DB::transaction(function () use ($agency): void {
+                $agencyId = $agency->id;
+                $unitIds = DB::table('organizational_units')->where('contracting_agency_id', $agencyId)->pluck('id');
+                $templateIds = DB::table('evidence_templates')->where('contracting_agency_id', $agencyId)->pluck('id');
+                $importIds = DB::table('calendar_imports')->where('contracting_agency_id', $agencyId)->pluck('id');
+                $loadIds = DB::table('scheduled_loads')->where('contracting_agency_id', $agencyId)->pluck('id');
+                $folderIds = DB::table('repository_folders')->where('contracting_agency_id', $agencyId)->pluck('id');
+
+                if ($loadIds->isNotEmpty()) {
+                    DB::table('load_closures')->whereIn('scheduled_load_id', $loadIds)->delete();
+                    DB::table('institutional_reviews')->whereIn('scheduled_load_id', $loadIds)->delete();
+                    DB::table('load_status_history')->whereIn('scheduled_load_id', $loadIds)->delete();
+                    DB::table('notifications')->whereIn('scheduled_load_id', $loadIds)->delete();
+                    DB::table('accounting_notices')->whereIn('scheduled_load_id', $loadIds)->delete();
+                    DB::table('review_assignments')->whereIn('scheduled_load_id', $loadIds)->delete();
+                    DB::table('load_reschedules')->whereIn('scheduled_load_id', $loadIds)->delete();
+                    DB::table('evidences')->whereIn('scheduled_load_id', $loadIds)->delete();
+                    DB::table('signed_documents')->whereIn('scheduled_load_id', $loadIds)->delete();
+                    DB::table('scheduled_load_deliverables')->whereIn('scheduled_load_id', $loadIds)->delete();
+                    DB::table('repository_folders')->whereIn('scheduled_load_id', $loadIds)->update(['scheduled_load_id' => null]);
+                    DB::table('scheduled_loads')->whereIn('id', $loadIds)->delete();
+                }
+
+                if ($importIds->isNotEmpty()) {
+                    DB::table('calendar_import_rows')->whereIn('calendar_import_id', $importIds)->delete();
+                    DB::table('calendar_imports')->whereIn('id', $importIds)->delete();
+                }
+
+                DB::table('calendar_suspensions')->where('contracting_agency_id', $agencyId)->delete();
+                DB::table('template_requirements')->whereIn('template_id', $templateIds)->delete();
+                DB::table('evidence_templates')->whereIn('id', $templateIds)->delete();
+
+                if ($unitIds->isNotEmpty()) {
+                    DB::table('scheduled_load_deliverables')->whereIn('organizational_unit_id', $unitIds)->delete();
+                    DB::table('template_requirements')->whereIn('responsible_unit_id', $unitIds)->update(['responsible_unit_id' => null]);
+                    DB::table('users')->whereIn('organizational_unit_id', $unitIds)->update(['organizational_unit_id' => null]);
+                    DB::table('repository_folders')->whereIn('organizational_unit_id', $unitIds)->update(['organizational_unit_id' => null]);
+                    DB::table('organizational_units')->whereIn('id', $unitIds)->update(['parent_id' => null]);
+                    DB::table('organizational_units')->whereIn('id', $unitIds)->delete();
+                }
+
+                DB::table('user_scopes')->where('contracting_agency_id', $agencyId)->delete();
+                DB::table('users')->where('contracting_agency_id', $agencyId)->update(['contracting_agency_id' => null]);
+
+                if ($folderIds->isNotEmpty()) {
+                    DB::table('evidences')->whereIn('folder_id', $folderIds)->update(['folder_id' => null]);
+                    DB::table('signed_documents')->whereIn('folder_id', $folderIds)->update(['folder_id' => null]);
+                    DB::table('evidence_files')->whereIn('folder_id', $folderIds)->update(['folder_id' => null]);
+                    DB::table('repository_folders')->whereIn('id', $folderIds)->update(['parent_id' => null]);
+                    DB::table('repository_folders')->whereIn('id', $folderIds)->delete();
+                }
+
+                $agency->delete();
+            });
         } catch (QueryException) {
             return back()->withErrors([
-                'agency' => 'No se puede eliminar la dependencia porque tiene unidades o registros relacionados.',
+                'agency' => 'No se pudo completar la eliminación en cascada. La operación fue revertida para proteger la integridad de los datos.',
             ]);
         }
 

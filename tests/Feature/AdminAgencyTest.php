@@ -85,7 +85,7 @@ class AdminAgencyTest extends TestCase
         $this->assertDatabaseMissing('contracting_agencies', ['id' => $agency->id]);
     }
 
-    public function test_agency_with_units_cannot_be_deleted(): void
+    public function test_agency_with_units_is_deleted_in_cascade(): void
     {
         [$user] = $this->adminWithAgencyPermission();
         $agency = ContractingAgency::query()->create(['code' => 'KEEP', 'name' => 'Con unidad', 'active' => true]);
@@ -101,9 +101,10 @@ class AdminAgencyTest extends TestCase
             ->actingAs($user)
             ->delete(route('admin.agencies.destroy', $agency), ['_token' => 'test-token'])
             ->assertRedirect()
-            ->assertSessionHasErrors('agency');
+            ->assertSessionHas('success', 'Dependencia eliminada.');
 
-        $this->assertDatabaseHas('contracting_agencies', ['id' => $agency->id, 'code' => 'KEEP']);
+        $this->assertDatabaseMissing('contracting_agencies', ['id' => $agency->id]);
+        $this->assertDatabaseMissing('organizational_units', ['contracting_agency_id' => $agency->id]);
     }
 
     private function adminWithAgencyPermission(): array
