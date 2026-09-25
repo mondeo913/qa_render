@@ -118,6 +118,35 @@ final class DashboardAnalyticsService
         $deliverableFunnel = $deliverableFunnelQuery->whereIn('scheduled_load_id', $accessibleLoadIds)->select('status', DB::raw('COUNT(*) AS total'))->groupBy('status')->pluck('total', 'status')->all();
         $evidenceFunnel = Evidence::query()->whereIn('scheduled_load_id', $accessibleLoadIds)->select('status', DB::raw('COUNT(*) AS total'))->groupBy('status')->pluck('total', 'status')->all();
 
+        $evidenceDeliverables = ScheduledLoadDeliverable::query()
+            ->with(['evidences:id,deliverable_id,status,submitted_at,validated_at', 'organizationalUnit:id,name'])
+            ->whereIn('scheduled_load_id', $accessibleLoadIds)
+            ->whereNotIn('status', ['CANCELADA'])
+            ->get();
+        $expectedEvidence = $evidenceDeliverables->count();
+        $receivedEvidence = $evidenceDeliverables->filter(fn ($d) => $d->evidences->isNotEmpty())->count();
+        $validatedEvidence = $evidenceDeliverables->filter(fn ($d) => $d->evidences->contains(fn ($e) => in_array($e->status?->value ?? (string) $e->status, ['VALIDADO', 'CERRADO'], true)))->count();
+        $observedEvidence = $evidenceDeliverables->filter(fn ($d) => $d->evidences->contains(fn ($e) => in_array($e->status?->value ?? (string) $e->status, ['OBSERVADO', 'RECHAZADO'], true)))->count();
+        $reviewEvidence = $evidenceDeliverables->filter(fn ($d) => $d->evidences->contains(fn ($e) => in_array($e->status?->value ?? (string) $e->status, ['EN_REVISION', 'ENVIADO'], true)))->count();
+        $pendingEvidence = max(0, $expectedEvidence - $receivedEvidence);
+        $evidenceSummary = [
+            'expected' => $expectedEvidence,
+            'received' => $receivedEvidence,
+            'validated' => $validatedEvidence,
+            'pending' => $pendingEvidence,
+            'observed' => $observedEvidence,
+            'review' => $reviewEvidence,
+            'delivery_percentage' => $expectedEvidence ? round(100 * $receivedEvidence / $expectedEvidence, 1) : 0,
+            'validation_percentage' => $receivedEvidence ? round(100 * $validatedEvidence / $receivedEvidence, 1) : 0,
+            'observation_percentage' => $receivedEvidence ? round(100 * $observedEvidence / $receivedEvidence, 1) : 0,
+        ];
+        $evidenceByUnit = $evidenceDeliverables->groupBy(fn ($d) => $d->organizationalUnit?->name ?: 'Sin dirección')->map(function ($rows, $unit) {
+            $expected = $rows->count();
+            $received = $rows->filter(fn ($d) => $d->evidences->isNotEmpty())->count();
+            $validated = $rows->filter(fn ($d) => $d->evidences->contains(fn ($e) => in_array($e->status?->value ?? (string) $e->status, ['VALIDADO', 'CERRADO'], true)))->count();
+            return ['unit' => $unit, 'expected' => $expected, 'received' => $received, 'validated' => $validated, 'pending' => max(0, $expected - $received), 'percentage' => $expected ? round(100 * $received / $expected, 1) : 0];
+        })->sortBy('percentage')->values()->all();
+
         $agencyProgress = (clone $base())
             ->where('status', '!=', 'CANCELADA')
             ->join('contracting_agencies', 'contracting_agencies.id', '=', 'scheduled_loads.contracting_agency_id')
@@ -229,6 +258,8 @@ final class DashboardAnalyticsService
             'unit_performance' => $unitPerformance,
             'deliverable_funnel' => $deliverableFunnel,
             'evidence_funnel' => $evidenceFunnel,
+            'evidence_summary' => $evidenceSummary,
+            'evidence_by_unit' => $evidenceByUnit,
             'agency_performance' => $agencyPerformance,
             'direction_performance' => $directionPerformance,
             'pauta_summary' => $pautaSummary,
