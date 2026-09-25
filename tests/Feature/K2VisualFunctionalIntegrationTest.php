@@ -92,4 +92,28 @@ class K2VisualFunctionalIntegrationTest extends TestCase {
             ->assertSee('Pauta Bienestar')
             ->assertDontSee('Pauta Salud');
     }
+
+    public function test_campaign_filter_lists_multiple_pautas_from_same_agency(): void {
+        $this->seed(RolePermissionSeeder::class);
+        $firstLoad = ScheduledLoad::factory()->create(['title' => 'Pauta Enero']);
+        $secondLoad = ScheduledLoad::factory()->create(['title' => 'Pauta Febrero']);
+        $secondLoad->update(['contracting_agency_id' => $firstLoad->contracting_agency_id]);
+        $role = Role::where('code', 'DIRECTOR_GENERAL')->firstOrFail();
+        $user = User::factory()->create(['role_id' => $role->id, 'status' => 'ACTIVE']);
+
+        $this->actingAs($user)
+            ->get(route('dashboard', ['agency_id' => $firstLoad->contracting_agency_id]))
+            ->assertOk()
+            ->assertSee('Pauta Enero')
+            ->assertSee('Pauta Febrero');
+
+        $this->actingAs($user)
+            ->get(route('dashboard', [
+                'agency_id' => $firstLoad->contracting_agency_id,
+                'campaign' => 'Pauta Febrero',
+            ]))
+            ->assertOk()
+            ->assertSee('name="campaign"', false)
+            ->assertSee('value="Pauta Febrero" selected', false);
+    }
 }
