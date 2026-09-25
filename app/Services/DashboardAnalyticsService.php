@@ -118,8 +118,10 @@ final class DashboardAnalyticsService
         $deliverableFunnel = $deliverableFunnelQuery->whereIn('scheduled_load_id', $accessibleLoadIds)->select('status', DB::raw('COUNT(*) AS total'))->groupBy('status')->pluck('total', 'status')->all();
         $evidenceFunnel = Evidence::query()->whereIn('scheduled_load_id', $accessibleLoadIds)->select('status', DB::raw('COUNT(*) AS total'))->groupBy('status')->pluck('total', 'status')->all();
 
-        $evidenceDeliverables = ScheduledLoadDeliverable::query()
-            ->with(['evidences:id,deliverable_id,status,submitted_at,validated_at', 'organizationalUnit:id,name', 'scheduledLoad:id,title'])
+        $evidenceDeliverablesQuery = ScheduledLoadDeliverable::query();
+        $this->access->scopeDeliverables($evidenceDeliverablesQuery, $user);
+        $evidenceDeliverables = $evidenceDeliverablesQuery
+            ->with(['evidences:id,deliverable_id,status,submitted_at,validated_at', 'organizationalUnit:id,name', 'responsibleUser:id,name', 'scheduledLoad:id,title'])
             ->whereIn('scheduled_load_id', $accessibleLoadIds)
             ->whereNotIn('status', ['CANCELADA'])
             ->get();
@@ -162,6 +164,20 @@ final class DashboardAnalyticsService
             $received = $rows->filter(fn ($d) => $d->evidences->isNotEmpty())->count();
             return ['campaign' => $campaign, 'expected' => $expected, 'received' => $received, 'percentage' => $expected ? round(100 * $received / $expected, 1) : 0];
         })->sortBy('percentage')->take(5)->values()->all();
+        $evidenceByResponsible = $evidenceDeliverables
+            ->filter(fn ($d) => $d->responsibleUser)
+            ->groupBy(fn ($d) => $d->responsibleUser->name)
+            ->map(function ($rows, $responsible) {
+                $expected = $rows->count();
+                $received = $rows->filter(fn ($d) => $d->evidences->isNotEmpty())->count();
+                return [
+                    'responsible' => $responsible,
+                    'expected' => $expected,
+                    'received' => $received,
+                    'pending' => max(0, $expected - $received),
+                    'percentage' => $expected ? round(100 * $received / $expected, 1) : 0,
+                ];
+            })->sortByDesc('expected')->values()->all();
 
         $agencyProgress = (clone $base())
             ->where('status', '!=', 'CANCELADA')
@@ -243,7 +259,15 @@ final class DashboardAnalyticsService
             'overdue' => $overdue,
         ];
 
-        $upcoming = (clone $base())->with(['agency', 'deliverables.organizationalUnit'])->where('effective_close_at', '>=', now())->orderBy('effective_close_at')->limit(8)->get();
+        $upcomingQuery = (clone $base())->where('effective_close_at', '>=', now())->orderBy('effective_close_at')->limit(8);
+        $upcomingQuery->with([
+            'agency',
+            'deliverables' => function ($query) use ($user) {
+                $this->access->scopeDeliverables($query, $user);
+                $query->with(['organizationalUnit', 'responsibleUser']);
+            },
+        ]);
+        $upcoming = $upcomingQuery->get();
         $recent = (clone $base())->with(['agency', 'deliverables.organizationalUnit'])->orderByDesc('updated_at')->limit(10)->get();
         $completionAverage = round((float)((clone $base())->avg('completion_percentage') ?? 0), 2);
         $reviewPending = (clone $base())->whereIn('status', ['ENTREGADA', 'EN_REVISION_INSTITUCIONAL'])->count();
@@ -268,6 +292,8 @@ final class DashboardAnalyticsService
                 'review_pending' => $reviewPending,
                 'observed' => $observed,
                 'due_soon' => $dueSoon,
+                'evidence_expected' => $expectedEvidence,
+                'evidence_received' => $receivedEvidence,
             ],
             'status_distribution' => $statusDistribution,
             'monthly_trend' => $monthlyTrend,
@@ -279,6 +305,7 @@ final class DashboardAnalyticsService
             'evidence_trend' => $evidenceTrend,
             'pending_by_due' => $pendingByDue,
             'evidence_by_campaign' => $evidenceByCampaign,
+            'evidence_by_responsible' => $evidenceByResponsible,
             'agency_performance' => $agencyPerformance,
             'direction_performance' => $directionPerformance,
             'pauta_summary' => $pautaSummary,
@@ -310,6 +337,15 @@ final class DashboardAnalyticsService
                         ->whereIn('organizational_unit_id', $unitIds);
                 });
             }
+        }
+
+        if (!empty($filters['responsible_id'])) {
+            $responsibleId = (int) $filters['responsible_id'];
+            $query->whereIn('scheduled_loads.id', function ($q) use ($responsibleId) {
+                $q->select('scheduled_load_id')
+                    ->from('scheduled_load_deliverables')
+                    ->where('responsible_user_id', $responsibleId);
+            });
         }
 
         if (!empty($filters['campaign'])) {

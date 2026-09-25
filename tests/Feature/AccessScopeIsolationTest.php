@@ -94,5 +94,26 @@ class AccessScopeIsolationTest extends TestCase
         $response->assertOk();
         $response->assertSee($monitorReq->name);
         $response->assertDontSee($productionReq->name);
+
+        $dashboard = $this->actingAs($monitoringUser)->get(route('dashboard'));
+        $dashboard->assertOk();
+        $dashboard->assertSee($monitoring->name);
+        $dashboard->assertDontSee($production->name);
+
+        $transmissionDirector = User::factory()->create([
+            'role_id' => Role::query()->where('code', 'DIRECTOR_TRANSMISION')->firstOrFail()->id,
+            'contracting_agency_id' => $agency->id,
+            'organizational_unit_id' => $monitoring->id,
+        ]);
+        $programmingDirector = User::factory()->create([
+            'role_id' => Role::query()->where('code', 'DIRECTOR_PROGRAMACION_CONTINUIDAD')->firstOrFail()->id,
+            'contracting_agency_id' => $agency->id,
+            'organizational_unit_id' => $production->id,
+        ]);
+
+        $this->actingAs($transmissionDirector)->get(route('dashboard'))
+            ->assertOk()->assertSee($monitoring->name)->assertDontSee($production->name);
+        $this->actingAs($programmingDirector)->get(route('dashboard'))
+            ->assertOk()->assertSee($production->name)->assertDontSee($monitoring->name);
     }
 }

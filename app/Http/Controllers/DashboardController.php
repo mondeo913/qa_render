@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\ContractingAgency;
 use App\Models\OrganizationalUnit;
 use App\Models\ScheduledLoad;
+use App\Models\User;
 use App\Services\AccessScopeService;
 use App\Services\DashboardAnalyticsService;
 use App\Enums\RoleCode;
@@ -20,6 +21,7 @@ class DashboardController extends Controller
             'agency_id' => ['nullable', 'integer'],
             'organizational_unit_id' => ['nullable', 'string', 'max:500'],
             'campaign' => ['nullable', 'string', 'max:255'],
+            'responsible_id' => ['nullable', 'integer', 'min:1'],
             'status' => ['nullable', 'string', 'max:60'],
             'from' => ['nullable', 'date_format:Y-m'],
             'to' => ['nullable', 'date_format:Y-m', 'after_or_equal:from'],
@@ -45,13 +47,18 @@ class DashboardController extends Controller
             ->where('organizational_units.unit_type', 'DIRECTION')
             ->whereIn('organizational_units.code', ['DIR_A', 'DIR_B']);
         if (!$isGlobalDashboard) {
-            $unitsQuery->whereIn('organizational_units.id', function ($q) use ($accessibleLoads) {
-                $q->select('scheduled_load_deliverables.organizational_unit_id')
-                    ->from('scheduled_load_deliverables')
-                    ->whereIn('scheduled_load_deliverables.scheduled_load_id', (clone $accessibleLoads)->select('scheduled_loads.id'))
-                    ->whereNotNull('scheduled_load_deliverables.organizational_unit_id')
-                    ->distinct();
-            });
+            $scopedUnitIds = $access->accessibleUnitIds($user);
+            if ($scopedUnitIds !== []) {
+                $unitsQuery->whereIn('organizational_units.id', $scopedUnitIds);
+            } else {
+                $unitsQuery->whereIn('organizational_units.id', function ($q) use ($accessibleLoads) {
+                    $q->select('scheduled_load_deliverables.organizational_unit_id')
+                        ->from('scheduled_load_deliverables')
+                        ->whereIn('scheduled_load_deliverables.scheduled_load_id', (clone $accessibleLoads)->select('scheduled_loads.id'))
+                        ->whereNotNull('scheduled_load_deliverables.organizational_unit_id')
+                        ->distinct();
+                });
+            }
         }
 
         if (!empty($filters['agency_id'])) {
@@ -92,12 +99,34 @@ class DashboardController extends Controller
                 });
             }
         }
+        if (!empty($filters['responsible_id'])) {
+            $campaignsQuery->whereIn('scheduled_loads.id', function ($q) use ($filters) {
+                $q->select('scheduled_load_id')
+                    ->from('scheduled_load_deliverables')
+                    ->where('responsible_user_id', (int) $filters['responsible_id']);
+            });
+        }
         $filterCampaigns = $campaignsQuery
             ->select('scheduled_loads.title')
             ->distinct()
             ->orderBy('scheduled_loads.title')
             ->pluck('scheduled_loads.title')
             ->values();
+
+        $responsibleQuery = User::query()
+            ->join('scheduled_load_deliverables', 'scheduled_load_deliverables.responsible_user_id', '=', 'users.id')
+            ->whereIn('scheduled_load_deliverables.scheduled_load_id', (clone $accessibleLoads)->select('scheduled_loads.id'))
+            ->where('users.status', 'ACTIVE')
+            ->select('users.id', 'users.name')
+            ->distinct();
+        if (!empty($filters['organizational_unit_id'])) {
+            $unitIds = collect(explode(',', (string) $filters['organizational_unit_id']))
+                ->map(fn ($id) => (int) trim($id))->filter()->unique()->values()->all();
+            if ($unitIds) {
+                $responsibleQuery->whereIn('scheduled_load_deliverables.organizational_unit_id', $unitIds);
+            }
+        }
+        $filterResponsibles = $responsibleQuery->orderBy('users.name')->get();
 
         $periodLoads = clone $accessibleLoads;
         if (!empty($filters['agency_id'])) {
@@ -131,6 +160,7 @@ class DashboardController extends Controller
             'filterAgencies' => $agencies,
             'filterUnits' => $units,
             'filterCampaigns' => $filterCampaigns,
+            'filterResponsibles' => $filterResponsibles,
             'periodMin' => $periodMin,
             'periodMax' => $periodMax,
             'presentation' => RolePresentation::for($user->role?->code),
@@ -140,9 +170,6 @@ class DashboardController extends Controller
             'ADMINISTRADOR',
             'DIRECTOR_GENERAL',
             'ENLACE_INSTITUCIONAL',
-            'DIRECTOR',
-            'DIRECTOR_TRANSMISION',
-            'DIRECTOR_PROGRAMACION_CONTINUIDAD',
         ];
 
         if (in_array($user->role?->code, $dashboardRoles, true)) {
