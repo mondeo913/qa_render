@@ -180,9 +180,32 @@ class AdminController extends Controller
             'legal_name' => ['nullable', 'string', 'max:260'],
         ]);
 
-        ContractingAgency::query()->create($data + ['active' => true]);
+        $agency = ContractingAgency::query()->create($data + ['active' => true]);
+        $this->ensureDefaultDirections($agency);
 
         return back()->with('success', 'Dependencia creada.');
+    }
+
+    private function ensureDefaultDirections(ContractingAgency $agency): void
+    {
+        $directions = [
+            'DIR_A' => 'Dirección de Transmisión',
+            'DIR_B' => 'Dirección de Programación y Continuidad',
+        ];
+
+        foreach ($directions as $code => $name) {
+            OrganizationalUnit::query()->updateOrCreate(
+                [
+                    'contracting_agency_id' => $agency->id,
+                    'code' => $code,
+                ],
+                [
+                    'name' => $name,
+                    'unit_type' => 'DIRECTION',
+                    'active' => true,
+                ]
+            );
+        }
     }
 
     public function updateAgency(Request $request, ContractingAgency $agency): RedirectResponse

@@ -71,6 +71,35 @@ class AdminAgencyTest extends TestCase
         ]);
     }
 
+    public function test_new_agency_gets_transmission_and_programming_directions(): void
+    {
+        [$user] = $this->adminWithAgencyPermission();
+
+        $this->withSession(['_token' => 'test-token'])
+            ->actingAs($user)
+            ->post(route('admin.agencies.store'), [
+                '_token' => 'test-token',
+                'code' => 'NEW',
+                'name' => 'Nueva dependencia',
+            ])
+            ->assertRedirect();
+
+        $agency = ContractingAgency::query()->where('code', 'NEW')->firstOrFail();
+
+        $this->assertDatabaseHas('organizational_units', [
+            'contracting_agency_id' => $agency->id,
+            'code' => 'DIR_A',
+            'name' => 'Dirección de Transmisión',
+            'unit_type' => 'DIRECTION',
+        ]);
+        $this->assertDatabaseHas('organizational_units', [
+            'contracting_agency_id' => $agency->id,
+            'code' => 'DIR_B',
+            'name' => 'Dirección de Programación y Continuidad',
+            'unit_type' => 'DIRECTION',
+        ]);
+    }
+
     public function test_administrator_can_delete_an_agency_without_related_records(): void
     {
         [$user] = $this->adminWithAgencyPermission();
