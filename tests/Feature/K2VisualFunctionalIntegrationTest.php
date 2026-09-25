@@ -27,4 +27,19 @@ class K2VisualFunctionalIntegrationTest extends TestCase {
         $this->actingAs($user)->get(route('dashboard'))->assertOk()->assertSee('Dashboard de Transmisión');
         $this->assertFalse($role->permissions()->where('code','scheduled_load.close')->exists());
     }
+
+    public function test_executive_dashboard_is_available_to_admin_and_general_director(): void {
+        $this->seed(RolePermissionSeeder::class);
+
+        foreach (['ADMINISTRADOR' => 'Administrador', 'DIRECTOR_GENERAL' => 'Director General'] as $code => $label) {
+            $role = Role::where('code', $code)->firstOrFail();
+            $user = User::factory()->create(['role_id' => $role->id, 'status' => 'ACTIVE']);
+
+            $this->actingAs($user)
+                ->get(route('dashboard'))
+                ->assertOk()
+                ->assertSee('Dashboard ejecutivo')
+                ->assertSee($label.' · cumplimiento institucional de evidencias');
+        }
+    }
 }

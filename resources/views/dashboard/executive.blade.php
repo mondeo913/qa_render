@@ -1,7 +1,7 @@
 @extends('layouts.app')
 @section('title','Dashboard ejecutivo SIGET')
 @section('page-title','Dashboard ejecutivo')
-@section('page-subtitle','Director General · cumplimiento institucional de evidencias')
+@section('page-subtitle', (auth()->user()?->role?->code === 'ADMINISTRADOR' ? 'Administrador' : 'Director General').' · cumplimiento institucional de evidencias')
 @section('content')
 @php
 $summary=$analytics['evidence_summary']??['expected'=>0,'received'=>0,'validated'=>0,'pending'=>0,'observed'=>0,'review'=>0,'delivery_percentage'=>0,'validation_percentage'=>0,'observation_percentage'=>0];
