@@ -37,4 +37,4 @@ if [[ -f "${PGDATA}/PG_VERSION" && -f "${PGDATA}/postmaster.pid" ]]; then
   fi
 fi
 
-exec bash .devcontainer/start-k2.sh
+exec bash .devcontainer/start-siget.sh

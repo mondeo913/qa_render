@@ -118,6 +118,28 @@ postgres_is_ready() {
     -d "${PGDATABASE}" >/dev/null 2>&1
 }
 
+clear_stale_postmaster_pid() {
+  if [[ ! -f "${PGDATA}/PG_VERSION" || ! -f "${PGDATA}/postmaster.pid" ]]; then
+    return 0
+  fi
+  if postgres_is_ready; then
+    return 0
+  fi
+  local pg_ctl=""
+  if command -v pg_ctl >/dev/null 2>&1; then
+    pg_ctl="$(command -v pg_ctl)"
+  elif command -v pg_config >/dev/null 2>&1; then
+    local pg_bin
+    pg_bin="$(pg_config --bindir 2>/dev/null || true)"
+    [[ -x "${pg_bin}/pg_ctl" ]] && pg_ctl="${pg_bin}/pg_ctl"
+  fi
+  if [[ -n "${pg_ctl}" ]] && "${pg_ctl}" -D "${PGDATA}" status >/dev/null 2>&1; then
+    return 0
+  fi
+  echo "Eliminando postmaster.pid obsoleto de PostgreSQL."
+  rm -f "${PGDATA}/postmaster.pid"
+}
+
 initialize_postgres() {
   local pg_bin password_file
   pg_bin="$(find_postgres_bin)"
@@ -159,6 +181,7 @@ start_postgres() {
   local pg_bin
   pg_bin="$(find_postgres_bin)"
 
+  clear_stale_postmaster_pid
   initialize_postgres
 
   if ! postgres_is_ready; then
@@ -281,6 +304,18 @@ stopasgroup=true
 killasgroup=true
 stdout_logfile=${LOG_DIR}/mailpit.log
 stderr_logfile=${LOG_DIR}/mailpit-error.log
+
+[program:siget-postgres-watchdog]
+directory=${PROJECT_ROOT}
+command=/usr/bin/env bash ${PROJECT_ROOT}/.devcontainer/postgres-watchdog.sh
+autostart=true
+autorestart=true
+startsecs=2
+startretries=20
+stopasgroup=true
+killasgroup=true
+stdout_logfile=${LOG_DIR}/postgres-watchdog-supervisor.log
+stderr_logfile=${LOG_DIR}/postgres-watchdog-supervisor-error.log
 EOF
 }
 
