@@ -184,6 +184,26 @@ class AdminController extends Controller
         return back()->with('success', 'Dependencia creada.');
     }
 
+    public function updateAgency(Request $request, ContractingAgency $agency): RedirectResponse
+    {
+        $this->authorizeAdmin($request, 'agencies.manage');
+
+        $data = $request->validate([
+            'code' => [
+                'required',
+                'string',
+                'max:50',
+                Rule::unique('contracting_agencies', 'code')->ignore($agency->id),
+            ],
+            'name' => ['required', 'string', 'max:220'],
+            'legal_name' => ['nullable', 'string', 'max:260'],
+        ]);
+
+        $agency->update($data);
+
+        return back()->with('success', 'Dependencia actualizada.');
+    }
+
     public function storeUnit(Request $request): RedirectResponse
     {
         $this->authorizeAdmin($request, 'agencies.manage');
