@@ -67,6 +67,7 @@ Route::middleware(['auth', 'no-cache-auth'])->group(function () {
     Route::get('/admin/dependencias', [AdminController::class, 'agencies'])->middleware('permission:agencies.manage')->name('admin.agencies');
     Route::post('/admin/dependencias', [AdminController::class, 'storeAgency'])->middleware('permission:agencies.manage')->name('admin.agencies.store');
     Route::patch('/admin/dependencias/{agency}', [AdminController::class, 'updateAgency'])->middleware('permission:agencies.manage')->name('admin.agencies.update');
+    Route::delete('/admin/dependencias/{agency}', [AdminController::class, 'destroyAgency'])->middleware('permission:agencies.manage')->name('admin.agencies.destroy');
     Route::post('/admin/unidades', [AdminController::class, 'storeUnit'])->middleware('permission:agencies.manage')->name('admin.units.store');
     Route::get('/plantillas', [AdminController::class, 'templates'])->middleware('permission:templates.manage')->name('admin.templates');
     Route::post('/plantillas/requisitos', [AdminController::class, 'storeRequirement'])->middleware('permission:templates.manage')->name('admin.templates.requirements.store');

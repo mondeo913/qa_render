@@ -204,6 +204,21 @@ class AdminController extends Controller
         return back()->with('success', 'Dependencia actualizada.');
     }
 
+    public function destroyAgency(Request $request, ContractingAgency $agency): RedirectResponse
+    {
+        $this->authorizeAdmin($request, 'agencies.manage');
+
+        try {
+            $agency->delete();
+        } catch (QueryException) {
+            return back()->withErrors([
+                'agency' => 'No se puede eliminar la dependencia porque tiene unidades o registros relacionados.',
+            ]);
+        }
+
+        return back()->with('success', 'Dependencia eliminada.');
+    }
+
     public function storeUnit(Request $request): RedirectResponse
     {
         $this->authorizeAdmin($request, 'agencies.manage');

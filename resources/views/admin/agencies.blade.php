@@ -40,9 +40,14 @@
                         <h2>{{ $agency->name }}</h2>
                         <p>{{ $agency->code }} · {{ $agency->legal_name }}</p>
                     </div>
-                    <button type="button" class="btn btn-outline-primary btn-sm" data-edit-agency="{{ $agency->id }}">
-                        Editar
-                    </button>
+                    <div class="d-flex gap-2">
+                        <button type="button" class="btn btn-outline-primary btn-sm" data-edit-agency="{{ $agency->id }}">Editar</button>
+                        <form method="POST" action="{{ route('admin.agencies.destroy', $agency) }}" onsubmit="return confirm('¿Desea eliminar esta dependencia? Esta acción no se puede deshacer.');">
+                            @csrf
+                            @method('DELETE')
+                            <button type="submit" class="btn btn-outline-danger btn-sm">Eliminar</button>
+                        </form>
+                    </div>
                 </div>
                 <div class="card-body d-none" data-agency-form="{{ $agency->id }}">
                     <form method="POST" action="{{ route('admin.agencies.update', $agency) }}">

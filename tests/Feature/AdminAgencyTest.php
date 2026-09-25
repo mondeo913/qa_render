@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\ContractingAgency;
 use App\Models\Permission;
 use App\Models\Role;
+use App\Models\OrganizationalUnit;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -68,6 +69,41 @@ class AdminAgencyTest extends TestCase
             'code' => 'ONE',
             'name' => 'Una',
         ]);
+    }
+
+    public function test_administrator_can_delete_an_agency_without_related_records(): void
+    {
+        [$user] = $this->adminWithAgencyPermission();
+        $agency = ContractingAgency::query()->create(['code' => 'DEL', 'name' => 'Eliminar', 'active' => true]);
+
+        $this->withSession(['_token' => 'test-token'])
+            ->actingAs($user)
+            ->delete(route('admin.agencies.destroy', $agency), ['_token' => 'test-token'])
+            ->assertRedirect()
+            ->assertSessionHas('success', 'Dependencia eliminada.');
+
+        $this->assertDatabaseMissing('contracting_agencies', ['id' => $agency->id]);
+    }
+
+    public function test_agency_with_units_cannot_be_deleted(): void
+    {
+        [$user] = $this->adminWithAgencyPermission();
+        $agency = ContractingAgency::query()->create(['code' => 'KEEP', 'name' => 'Con unidad', 'active' => true]);
+        OrganizationalUnit::query()->create([
+            'contracting_agency_id' => $agency->id,
+            'code' => 'UNIT',
+            'name' => 'Unidad relacionada',
+            'unit_type' => 'AREA',
+            'active' => true,
+        ]);
+
+        $this->withSession(['_token' => 'test-token'])
+            ->actingAs($user)
+            ->delete(route('admin.agencies.destroy', $agency), ['_token' => 'test-token'])
+            ->assertRedirect()
+            ->assertSessionHasErrors('agency');
+
+        $this->assertDatabaseHas('contracting_agencies', ['id' => $agency->id, 'code' => 'KEEP']);
     }
 
     private function adminWithAgencyPermission(): array
