@@ -18,6 +18,7 @@ class DashboardController extends Controller
         $filters = $request->validate([
             'agency_id' => ['nullable', 'integer'],
             'organizational_unit_id' => ['nullable', 'string', 'max:500'],
+            'campaign' => ['nullable', 'string', 'max:255'],
             'status' => ['nullable', 'string', 'max:60'],
             'from' => ['nullable', 'date_format:Y-m'],
             'to' => ['nullable', 'date_format:Y-m', 'after_or_equal:from'],

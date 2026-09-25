@@ -119,7 +119,7 @@ final class DashboardAnalyticsService
         $evidenceFunnel = Evidence::query()->whereIn('scheduled_load_id', $accessibleLoadIds)->select('status', DB::raw('COUNT(*) AS total'))->groupBy('status')->pluck('total', 'status')->all();
 
         $evidenceDeliverables = ScheduledLoadDeliverable::query()
-            ->with(['evidences:id,deliverable_id,status,submitted_at,validated_at', 'organizationalUnit:id,name'])
+            ->with(['evidences:id,deliverable_id,status,submitted_at,validated_at', 'organizationalUnit:id,name', 'scheduledLoad:id,title'])
             ->whereIn('scheduled_load_id', $accessibleLoadIds)
             ->whereNotIn('status', ['CANCELADA'])
             ->get();
@@ -146,6 +146,22 @@ final class DashboardAnalyticsService
             $validated = $rows->filter(fn ($d) => $d->evidences->contains(fn ($e) => in_array($e->status?->value ?? (string) $e->status, ['VALIDADO', 'CERRADO'], true)))->count();
             return ['unit' => $unit, 'expected' => $expected, 'received' => $received, 'validated' => $validated, 'pending' => max(0, $expected - $received), 'percentage' => $expected ? round(100 * $received / $expected, 1) : 0];
         })->sortBy('percentage')->values()->all();
+        $evidenceTrend = $evidenceDeliverables->groupBy(fn ($d) => $d->due_at?->format('Y-m') ?: 'Sin fecha')->sortKeys()->take(-6)->map(function ($rows, $period) {
+            $expected = $rows->count();
+            $received = $rows->filter(fn ($d) => $d->evidences->isNotEmpty())->count();
+            $validated = $rows->filter(fn ($d) => $d->evidences->contains(fn ($e) => in_array($e->status?->value ?? (string) $e->status, ['VALIDADO', 'CERRADO'], true)))->count();
+            return ['period' => $period, 'expected' => $expected, 'received' => $received, 'validated' => $validated];
+        })->values()->all();
+        $pendingByDue = $evidenceDeliverables->filter(fn ($d) => $d->evidences->isEmpty())->groupBy(function ($d) {
+            if (!$d->due_at) return 'Sin fecha';
+            $days = now()->diffInDays($d->due_at, false);
+            return $days < 0 ? 'Vencidas' : ($days <= 3 ? '1 a 3 días' : ($days <= 7 ? '4 a 7 días' : 'Más de 7 días'));
+        })->map(fn ($rows, $bucket) => ['bucket' => $bucket, 'total' => $rows->count()])->values()->all();
+        $evidenceByCampaign = $evidenceDeliverables->groupBy(fn ($d) => $d->scheduledLoad?->title ?: 'Sin campaña')->map(function ($rows, $campaign) {
+            $expected = $rows->count();
+            $received = $rows->filter(fn ($d) => $d->evidences->isNotEmpty())->count();
+            return ['campaign' => $campaign, 'expected' => $expected, 'received' => $received, 'percentage' => $expected ? round(100 * $received / $expected, 1) : 0];
+        })->sortBy('percentage')->take(5)->values()->all();
 
         $agencyProgress = (clone $base())
             ->where('status', '!=', 'CANCELADA')
@@ -260,6 +276,9 @@ final class DashboardAnalyticsService
             'evidence_funnel' => $evidenceFunnel,
             'evidence_summary' => $evidenceSummary,
             'evidence_by_unit' => $evidenceByUnit,
+            'evidence_trend' => $evidenceTrend,
+            'pending_by_due' => $pendingByDue,
+            'evidence_by_campaign' => $evidenceByCampaign,
             'agency_performance' => $agencyPerformance,
             'direction_performance' => $directionPerformance,
             'pauta_summary' => $pautaSummary,
@@ -291,6 +310,10 @@ final class DashboardAnalyticsService
                         ->whereIn('organizational_unit_id', $unitIds);
                 });
             }
+        }
+
+        if (!empty($filters['campaign'])) {
+            $query->where('scheduled_loads.title', (string) $filters['campaign']);
         }
 
         if (!empty($filters['status'])) {
