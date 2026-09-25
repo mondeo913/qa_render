@@ -74,6 +74,31 @@ class DashboardController extends Controller
             ->sortBy(fn ($unit) => mb_strtolower(trim((string) $unit->name)))
             ->values();
 
+        $campaignsQuery = (clone $accessibleLoads)
+            ->where('scheduled_loads.status', '!=', 'CANCELADA')
+            ->whereNotNull('scheduled_loads.title')
+            ->where('scheduled_loads.title', '!=', '');
+        if (!empty($filters['agency_id'])) {
+            $campaignsQuery->where('scheduled_loads.contracting_agency_id', (int) $filters['agency_id']);
+        }
+        if (!empty($filters['organizational_unit_id'])) {
+            $unitIds = collect(explode(',', (string) $filters['organizational_unit_id']))
+                ->map(fn ($id) => (int) trim($id))->filter()->unique()->values()->all();
+            if ($unitIds) {
+                $campaignsQuery->whereIn('scheduled_loads.id', function ($q) use ($unitIds) {
+                    $q->select('scheduled_load_id')
+                        ->from('scheduled_load_deliverables')
+                        ->whereIn('organizational_unit_id', $unitIds);
+                });
+            }
+        }
+        $filterCampaigns = $campaignsQuery
+            ->select('scheduled_loads.title')
+            ->distinct()
+            ->orderBy('scheduled_loads.title')
+            ->pluck('scheduled_loads.title')
+            ->values();
+
         $periodLoads = clone $accessibleLoads;
         if (!empty($filters['agency_id'])) {
             $periodLoads->where('scheduled_loads.contracting_agency_id', (int) $filters['agency_id']);
@@ -105,6 +130,7 @@ class DashboardController extends Controller
             'units' => $units,
             'filterAgencies' => $agencies,
             'filterUnits' => $units,
+            'filterCampaigns' => $filterCampaigns,
             'periodMin' => $periodMin,
             'periodMax' => $periodMax,
             'presentation' => RolePresentation::for($user->role?->code),

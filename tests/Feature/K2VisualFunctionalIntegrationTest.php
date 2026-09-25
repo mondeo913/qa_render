@@ -4,6 +4,7 @@ use App\Models\Role;
 use App\Models\User;
 use App\Models\ContractingAgency;
 use App\Models\OrganizationalUnit;
+use App\Models\ScheduledLoad;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -76,5 +77,19 @@ class K2VisualFunctionalIntegrationTest extends TestCase {
                 ->assertDontSee('Nombre que no debe aparecer como dirección')
                 ->assertSee('Spots programados');
         }
+    }
+
+    public function test_campaign_filter_only_lists_pautas_from_selected_agency(): void {
+        $this->seed(RolePermissionSeeder::class);
+        $firstLoad = ScheduledLoad::factory()->create(['title' => 'Pauta Bienestar']);
+        $secondLoad = ScheduledLoad::factory()->create(['title' => 'Pauta Salud']);
+        $role = Role::where('code', 'DIRECTOR_GENERAL')->firstOrFail();
+        $user = User::factory()->create(['role_id' => $role->id, 'status' => 'ACTIVE']);
+
+        $this->actingAs($user)
+            ->get(route('dashboard', ['agency_id' => $firstLoad->contracting_agency_id]))
+            ->assertOk()
+            ->assertSee('Pauta Bienestar')
+            ->assertDontSee('Pauta Salud');
     }
 }
