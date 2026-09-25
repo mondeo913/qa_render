@@ -2,6 +2,8 @@
 namespace Tests\Feature;
 use App\Models\Role;
 use App\Models\User;
+use App\Models\ContractingAgency;
+use App\Models\OrganizationalUnit;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -40,6 +42,30 @@ class K2VisualFunctionalIntegrationTest extends TestCase {
                 ->assertOk()
                 ->assertSee('Dashboard ejecutivo')
                 ->assertSee($label.' · cumplimiento institucional de evidencias');
+        }
+    }
+
+    public function test_global_dashboard_filters_include_new_agencies_without_loads(): void {
+        $this->seed(RolePermissionSeeder::class);
+        $agency = ContractingAgency::factory()->create(['code' => 'NEW_FILTER', 'name' => 'Dependencia nueva']);
+        OrganizationalUnit::query()->create([
+            'contracting_agency_id' => $agency->id,
+            'code' => 'DIR_A',
+            'name' => 'Dirección de Transmisión',
+            'unit_type' => 'DIRECTION',
+            'active' => true,
+        ]);
+
+        foreach (['ADMINISTRADOR', 'DIRECTOR_GENERAL'] as $code) {
+            $role = Role::where('code', $code)->firstOrFail();
+            $user = User::factory()->create(['role_id' => $role->id, 'status' => 'ACTIVE']);
+
+            $this->actingAs($user)
+                ->get(route('dashboard', ['agency_id' => $agency->id]))
+                ->assertOk()
+                ->assertSee('Dependencia nueva')
+                ->assertSee('value="'.$agency->id.'" selected', false)
+                ->assertSee('Spots programados');
         }
     }
 }

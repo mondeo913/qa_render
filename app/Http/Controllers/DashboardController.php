@@ -7,6 +7,7 @@ use App\Models\OrganizationalUnit;
 use App\Models\ScheduledLoad;
 use App\Services\AccessScopeService;
 use App\Services\DashboardAnalyticsService;
+use App\Enums\RoleCode;
 use App\Support\RolePresentation;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
@@ -28,21 +29,27 @@ class DashboardController extends Controller
 
         $accessibleLoads = $access->scopeLoads(ScheduledLoad::query(), $user);
 
-        $agencies = ContractingAgency::query()
-            ->where('active', true)
-            ->whereIn('id', (clone $accessibleLoads)->select('contracting_agency_id')->distinct())
-            ->orderBy('name')
-            ->get();
+        $isGlobalDashboard = in_array($user->role?->code, [
+            RoleCode::ADMINISTRADOR->value,
+            RoleCode::DIRECTOR_GENERAL->value,
+        ], true);
 
-        $unitsQuery = OrganizationalUnit::query()
-            ->where('organizational_units.active', true)
-            ->whereIn('organizational_units.id', function ($q) use ($accessibleLoads) {
+        $agenciesQuery = ContractingAgency::query()->where('active', true);
+        if (!$isGlobalDashboard) {
+            $agenciesQuery->whereIn('id', (clone $accessibleLoads)->select('contracting_agency_id')->distinct());
+        }
+        $agencies = $agenciesQuery->orderBy('name')->get();
+
+        $unitsQuery = OrganizationalUnit::query()->where('organizational_units.active', true);
+        if (!$isGlobalDashboard) {
+            $unitsQuery->whereIn('organizational_units.id', function ($q) use ($accessibleLoads) {
                 $q->select('scheduled_load_deliverables.organizational_unit_id')
                     ->from('scheduled_load_deliverables')
                     ->whereIn('scheduled_load_deliverables.scheduled_load_id', (clone $accessibleLoads)->select('scheduled_loads.id'))
                     ->whereNotNull('scheduled_load_deliverables.organizational_unit_id')
                     ->distinct();
             });
+        }
 
         if (!empty($filters['agency_id'])) {
             $unitsQuery->where('organizational_units.contracting_agency_id', (int) $filters['agency_id']);
