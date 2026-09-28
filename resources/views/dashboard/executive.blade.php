@@ -45,6 +45,15 @@ html[data-bs-theme=dark] .exec{background:#0b1017;color:#edf4fa}html[data-bs-the
 .exec-kpi label{font-weight:700;letter-spacing:.01em;color:#d7e2ec;text-shadow:0 1px 1px rgba(0,0,0,.22)}
 html[data-bs-theme=dark] .exec-kpi label{color:#e8f1f7}
 .exec-kpi strong{font-weight:800}
+
+/* Dashboard typography scale: readable at normal desktop zoom and responsive. */
+.exec{font-size:.9rem}
+.exec-brand small{font-size:.8rem}.exec-title p{font-size:.84rem}.exec-actions .btn{font-size:.82rem}
+.exec-filters label{font-size:.74rem}.exec-filters .form-select,.exec-filters .form-control{font-size:.82rem}
+.exec-period{font-size:.75rem}.exec-period button{font-size:.75rem}
+.exec-kpi label{font-size:.78rem;line-height:1.2}.exec-kpi strong{font-size:1.8rem}
+.exec-card h3{font-size:1rem}.exec-card .card-sub{font-size:.76rem}.exec-bar-row{font-size:.76rem}.exec-status-row{font-size:.76rem}
+.exec-table{font-size:.78rem}.exec-table th{font-size:.66rem}.exec-table-title span{font-size:.72rem}.exec-badge{font-size:.68rem}
 </style>
 <div class="exec">
 <div class="exec-top"><div></div><div class="exec-actions"><a class="btn btn-primary" href="{{ route('reports.pdf',request()->query()) }}"><i class="bi bi-download export-icon"></i>Exportar resumen</a></div></div>
