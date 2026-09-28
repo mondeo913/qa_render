@@ -121,7 +121,7 @@ final class DashboardAnalyticsService
         $evidenceDeliverablesQuery = ScheduledLoadDeliverable::query();
         $this->access->scopeDeliverables($evidenceDeliverablesQuery, $user);
         $evidenceDeliverables = $evidenceDeliverablesQuery
-            ->with(['evidences:id,deliverable_id,status,submitted_at,validated_at', 'organizationalUnit:id,name,code,unit_type', 'responsibleUser:id,name', 'scheduledLoad:id,title'])
+            ->with(['evidences:id,deliverable_id,status,submitted_at,validated_at', 'organizationalUnit:id,name,code,unit_type', 'responsibleUser:id,name', 'scheduledLoad:id,title,calendar_import_id', 'scheduledLoad.calendarImport:id,original_filename'])
             ->whereIn('scheduled_load_id', $accessibleLoadIds)
             ->whereNotIn('status', ['CANCELADA'])
             ->get();
@@ -168,11 +168,23 @@ final class DashboardAnalyticsService
             $days = now()->diffInDays($d->due_at, false);
             return $days < 0 ? 'Vencidas' : ($days <= 3 ? '1 a 3 días' : ($days <= 7 ? '4 a 7 días' : 'Más de 7 días'));
         })->map(fn ($rows, $bucket) => ['bucket' => $bucket, 'total' => $rows->count()])->values()->all();
-        $evidenceByCampaign = $evidenceDeliverables->groupBy(fn ($d) => $d->scheduledLoad?->title ?: 'Sin campaña')->map(function ($rows, $campaign) {
-            $expected = $rows->count();
-            $received = $rows->filter(fn ($d) => $d->evidences->isNotEmpty())->count();
-            return ['campaign' => $campaign, 'expected' => $expected, 'received' => $received, 'percentage' => $expected ? round(100 * $received / $expected, 1) : 0];
-        })->sortBy('percentage')->take(5)->values()->all();
+        $evidenceByCampaign = $evidenceDeliverables
+            ->groupBy(fn ($d) => $d->scheduledLoad?->calendarImport?->id ?: 'legacy-'.$d->scheduled_load_id)
+            ->map(function ($rows) {
+                $import = $rows->first()?->scheduledLoad?->calendarImport;
+                $pautaName = $import?->original_filename ?: ($rows->first()?->scheduledLoad?->title ?: 'Pauta sin nombre');
+                $expected = $rows->count();
+                $received = $rows->filter(fn ($d) => $d->evidences->isNotEmpty())->count();
+                return [
+                    'campaign' => $pautaName,
+                    'pauta' => $pautaName,
+                    'pauta_id' => $import?->id ? (int) $import->id : null,
+                    'expected' => $expected,
+                    'received' => $received,
+                    'percentage' => $expected ? round(100 * $received / $expected, 1) : 0,
+                ];
+            })->sortBy('percentage')->take(5)->values()->all();
+
         $evidenceByResponsible = $evidenceDeliverables
             ->filter(fn ($d) => $d->responsibleUser)
             ->groupBy(fn ($d) => $d->responsibleUser->name)
@@ -358,9 +370,13 @@ final class DashboardAnalyticsService
             });
         }
 
-        if (!empty($filters['campaign'])) {
-            // El selector envía agencia::pauta para distinguir pautas homónimas
-            // entre dependencias; se conserva compatibilidad con títulos antiguos.
+        if (!empty($filters['pauta_id'])) {
+            // La Pauta es la importación del Excel. Todas las cargas generadas
+            // por ese archivo comparten calendar_import_id.
+            $query->where('scheduled_loads.calendar_import_id', (int) $filters['pauta_id']);
+        } elseif (!empty($filters['campaign'])) {
+            // Compatibilidad con enlaces antiguos: antes "campaign" filtraba
+            // por scheduled_loads.title, que representa una carga diaria, no la pauta.
             $campaignFilter = explode('::', (string) $filters['campaign'], 2);
             $campaignAgencyId = isset($campaignFilter[1]) && ctype_digit($campaignFilter[0])
                 ? (int) $campaignFilter[0]
