@@ -106,11 +106,25 @@ class DashboardController extends Controller
                     ->where('responsible_user_id', (int) $filters['responsible_id']);
             });
         }
+        // Las pautas deben identificarse por dependencia + nombre para evitar
+        // mezclar dos pautas con el mismo título pertenecientes a dependencias distintas.
         $filterCampaigns = $campaignsQuery
-            ->select('scheduled_loads.title')
+            ->join('contracting_agencies', 'contracting_agencies.id', '=', 'scheduled_loads.contracting_agency_id')
+            ->select([
+                'scheduled_loads.title',
+                'scheduled_loads.contracting_agency_id',
+                'contracting_agencies.name as agency_name',
+            ])
             ->distinct()
+            ->orderBy('contracting_agencies.name')
             ->orderBy('scheduled_loads.title')
-            ->pluck('scheduled_loads.title')
+            ->get()
+            ->map(fn ($campaign) => [
+                'value' => ((int) $campaign->contracting_agency_id).'::'.(string) $campaign->title,
+                'label' => trim((string) $campaign->agency_name).' · '.trim((string) $campaign->title),
+                'title' => (string) $campaign->title,
+                'agency_id' => (int) $campaign->contracting_agency_id,
+            ])
             ->values();
 
         $responsibleQuery = User::query()
