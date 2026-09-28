@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Enums\ScheduledLoadStatus;
 use App\Models\User;
 use App\Services\IntelligenceAnalyticsService;
 use Illuminate\Contracts\View\View;
@@ -18,8 +17,9 @@ class IntelligenceController extends Controller
 
         $filters = $request->validate([
             'agency_id' => ['nullable', 'integer'],
+            'pauta_id' => ['nullable', 'integer'],
             'organizational_unit_id' => ['nullable', 'string', 'max:500'],
-            'status' => ['nullable', 'string', Rule::in(array_map(fn ($case) => $case->value, ScheduledLoadStatus::cases()))],
+            'status' => ['nullable', 'string', Rule::in(array_keys(IntelligenceAnalyticsService::executiveStatusOptions()))],
             'from' => ['nullable', 'date'],
             'to' => ['nullable', 'date', 'after_or_equal:from'],
         ]);
@@ -62,6 +62,8 @@ class IntelligenceController extends Controller
             'analytics' => $payload,
             'agencies' => $options['agencies'],
             'units' => $options['units'],
+            'pautas' => $options['pautas'],
+            'statusOptions' => IntelligenceAnalyticsService::executiveStatusOptions(),
             'filters' => $filters,
         ]);
     }

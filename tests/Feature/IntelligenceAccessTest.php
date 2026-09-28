@@ -77,6 +77,47 @@ class IntelligenceAccessTest extends TestCase
         $response->assertDontSee('Carga Inteligencia Programación');
     }
 
+    public function test_ejecutivos_ven_solo_estados_principales_y_clasificacion_por_pauta(): void
+    {
+        $this->seed([RolePermissionSeeder::class, AgencyTemplateSeeder::class]);
+
+        $agency = ContractingAgency::query()->where('code', 'IMSS')->firstOrFail();
+        $admin = User::factory()->create([
+            'role_id' => Role::query()->where('code', 'ADMINISTRADOR')->firstOrFail()->id,
+            'contracting_agency_id' => $agency->id,
+        ]);
+        $import = CalendarImport::factory()->create([
+            'contracting_agency_id' => $agency->id,
+            'uploaded_by' => $admin->id,
+            'original_filename' => 'Pauta Ejecutiva Septiembre 2026.xlsx',
+        ]);
+        $row = CalendarImportRow::factory()->create(['calendar_import_id' => $import->id]);
+        $template = EvidenceTemplate::query()
+            ->where('contracting_agency_id', $agency->id)
+            ->where('code', 'PAUTA_MENSUAL')
+            ->firstOrFail();
+
+        $load = $this->createLoad($agency, $import, $row, $template, 'Carga Ejecutiva');
+        $load->update(['status' => 'VALIDADA']);
+
+        $response = $this->actingAs($admin)->get(route('intelligence'));
+
+        $response->assertOk();
+        $response->assertSee('Clasificación ejecutiva por Pauta y Dependencia');
+        $response->assertSee('Pauta Ejecutiva Septiembre 2026.xlsx');
+        $response->assertSee('Programadas');
+        $response->assertSee('Reprogramadas');
+        $response->assertSee('Validadas');
+        $response->assertSee('Cerradas');
+        $response->assertSee('Vencidas');
+        $response->assertDontSee('Reprogramada abierta');
+        $response->assertDontSee('Pendiente firma');
+        $response->assertDontSee('Suspendida');
+
+        $filtered = $this->actingAs($admin)->get(route('intelligence', ['status' => 'VALIDADA']));
+        $filtered->assertOk()->assertSee('Pauta Ejecutiva Septiembre 2026.xlsx');
+    }
+
     private function createLoad(
         ContractingAgency $agency,
         CalendarImport $import,

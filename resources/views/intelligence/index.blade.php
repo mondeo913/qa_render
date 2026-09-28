@@ -10,15 +10,11 @@
     $quality = collect($analytics['quality_items'] ?? []);
     $agencyRows = collect($analytics['agency_performance'] ?? []);
     $directions = collect($analytics['direction_performance'] ?? []);
+    $pautaRows = collect($analytics['pauta_performance'] ?? []);
+    $pautas = collect($pautas ?? []);
+    $statusOptions = $statusOptions ?? [];
     $radar = $analytics['radar_summary'] ?? ['CRÍTICO'=>0,'ATENCIÓN'=>0,'NORMAL'=>0];
     $health = $analytics['system_health'] ?? null;
-    $statusLabels = [
-        'PROGRAMADA'=>'Programada','ABIERTA'=>'Abierta','EN_CAPTURA'=>'En captura','PARCIALMENTE_ENTREGADA'=>'Entrega parcial',
-        'ENTREGADA'=>'Entregada','EN_REVISION_INSTITUCIONAL'=>'En revisión','OBSERVADA'=>'Observada','LISTA_PARA_FIRMA'=>'Lista para firma',
-        'PENDIENTE_DOCUMENTO_FIRMADO'=>'Pendiente firma','VALIDADA'=>'Validada','VALIDADO_Y_CERRADO'=>'Cerrada','SUSPENDIDA'=>'Suspendida',
-        'REPROGRAMADA'=>'Reprogramada','REPROGRAMADA_ABIERTA'=>'Reprogramada abierta','REPROGRAMADA_ENTREGADA'=>'Reprogramada entregada',
-        'VENCIDA'=>'Vencida','CANCELADA'=>'Cancelada','REABIERTA'=>'Reabierta'
-    ];
 @endphp
 
 <section class="siget-hero mb-4">
@@ -26,21 +22,22 @@
         <div>
             <span class="badge text-bg-primary mb-2">{{ $analytics['role']['code'] ?? 'SIGET' }}</span>
             <h2 class="mb-1">Radar y alertas</h2>
-            <p class="mb-0">Esta vista no modifica cargas, evidencias ni estados. Lee el mismo flujo autorizado para el usuario y señala dónde requiere atención.</p>
+            <p class="mb-0">Esta vista no modifica cargas, evidencias ni estados. Lee el mismo universo autorizado y organiza la información por pauta, dependencia, revisión, validación, cierre y riesgo.</p>
         </div>
         <div class="text-end"><small class="d-block text-muted">Actualizado</small><strong>{{ optional($analytics['generated_at'] ?? null)->format('d/m/Y H:i') }}</strong></div>
     </div>
 </section>
 
 <form method="GET" class="card siget-card mb-4">
-    <div class="card-header"><div><h2>Filtros de lectura</h2><p>Los indicadores y alertas se recalculan con el universo visible para su perfil.</p></div></div>
+    <div class="card-header"><div><h2>Filtros de lectura ejecutiva</h2><p>La lectura se clasifica primero por <strong>pauta</strong> y <strong>dependencia</strong>; el estado conserva únicamente las categorías ejecutivas principales.</p></div></div>
     <div class="card-body row g-3 align-items-end">
+        <div class="col-xl-4 col-md-6"><label class="form-label">Pauta</label><select name="pauta_id" class="form-select"><option value="">Todas las pautas visibles</option>@foreach($pautas as $pauta)<option value="{{ $pauta['id'] }}" @selected((string)($filters['pauta_id']??'') === (string)$pauta['id'])>{{ $pauta['name'] }} · {{ $pauta['agency'] }}</option>@endforeach</select></div>
         <div class="col-xl-3 col-md-6"><label class="form-label">Dependencia</label><select name="agency_id" class="form-select"><option value="">Todas las visibles</option>@foreach($agencies as $agency)<option value="{{ $agency->id }}" @selected((string)($filters['agency_id']??'') === (string)$agency->id)>{{ $agency->name }}</option>@endforeach</select></div>
         <div class="col-xl-3 col-md-6"><label class="form-label">Dirección</label><select name="organizational_unit_id" class="form-select"><option value="">Todas las visibles</option>@foreach($units as $unit)@php $unitIdList=implode(',',array_map('strval',(array)($unit->filter_unit_ids??[$unit->id]))); @endphp<option value="{{ $unitIdList }}" @selected((string)($filters['organizational_unit_id']??'') === $unitIdList)>{{ $unit->name }}</option>@endforeach</select></div>
-        <div class="col-xl-2 col-md-4"><label class="form-label">Estado</label><select name="status" class="form-select"><option value="">Todos</option>@foreach($statusLabels as $status=>$label)<option value="{{ $status }}" @selected(($filters['status']??null)===$status)>{{ $label }}</option>@endforeach</select></div>
+        <div class="col-xl-2 col-md-6"><label class="form-label">Estado ejecutivo</label><select name="status" class="form-select"><option value="">Todos los principales</option>@foreach($statusOptions as $status=>$definition)<option value="{{ $status }}" @selected(($filters['status']??null)===$status)>{{ $definition['label'] }}</option>@endforeach</select></div>
         <div class="col-xl-2 col-md-4"><label class="form-label">Desde</label><input type="date" name="from" value="{{ $filters['from']??'' }}" class="form-control"></div>
         <div class="col-xl-2 col-md-4"><label class="form-label">Hasta</label><input type="date" name="to" value="{{ $filters['to']??'' }}" class="form-control"></div>
-        <div class="col-12 d-flex gap-2"><button class="btn btn-primary"><i class="bi bi-funnel me-1"></i>Actualizar radar</button><a href="{{ route('intelligence') }}" class="btn btn-outline-secondary">Restablecer</a></div>
+        <div class="col-12 d-flex gap-2"><button class="btn btn-primary"><i class="bi bi-funnel me-1"></i>Actualizar lectura</button><a href="{{ route('intelligence') }}" class="btn btn-outline-secondary">Restablecer</a></div>
     </div>
 </form>
 
@@ -80,6 +77,26 @@
         @endforeach
         <div class="small text-muted">La clasificación se calcula con cargas vencidas, vencimientos en 72 horas y porcentaje de cierre del universo visible.</div>
     </div></div></div>
+</div>
+
+<div class="card siget-card mb-4">
+    <div class="card-header"><div><h2>Clasificación ejecutiva por Pauta y Dependencia</h2><p>Consolidado institucional: <strong>programadas, reprogramadas, en revisión, validadas, cerradas y vencidas</strong>. La vista evita exponer estados internos de operación que no aportan a la lectura ejecutiva.</p></div></div>
+    <div class="table-responsive"><table class="table align-middle mb-0"><thead><tr><th>Pauta</th><th>Dependencia</th><th>Programadas</th><th>Reprogramadas</th><th>En revisión</th><th>Validadas</th><th>Cerradas</th><th>Vencidas</th></tr></thead><tbody>
+    @forelse($pautaRows as $row)
+        <tr>
+            <td><strong>{{ $row['pauta_name'] }}</strong><small class="d-block text-muted">{{ number_format($row['total']) }} cargas</small></td>
+            <td>{{ $row['agency'] }}</td>
+            <td>{{ number_format($row['programmed']) }}</td>
+            <td>{{ number_format($row['reprogrammed']) }}</td>
+            <td><span class="badge {{ $row['in_review'] > 0 ? 'text-bg-warning' : 'text-bg-secondary' }}">{{ number_format($row['in_review']) }}</span></td>
+            <td><span class="badge text-bg-info">{{ number_format($row['validated']) }}</span></td>
+            <td><span class="badge text-bg-success">{{ number_format($row['closed']) }}</span></td>
+            <td><span class="badge {{ $row['overdue'] > 0 ? 'text-bg-danger' : 'text-bg-secondary' }}">{{ number_format($row['overdue']) }}</span></td>
+        </tr>
+    @empty
+        <tr><td colspan="8" class="text-center py-4">No hay pautas dentro del alcance seleccionado.</td></tr>
+    @endforelse
+    </tbody></table></div>
 </div>
 
 <div class="row g-4 mb-4">

@@ -13,6 +13,18 @@ use Illuminate\Support\Facades\DB;
 
 final class IntelligenceAnalyticsService
 {
+    private const EXECUTIVE_STATUS_OPTIONS = [
+        'PROGRAMADA' => ['label' => 'Programadas', 'statuses' => ['PROGRAMADA']],
+        'REPROGRAMADA' => ['label' => 'Reprogramadas', 'statuses' => ['REPROGRAMADA', 'REPROGRAMADA_ABIERTA', 'REPROGRAMADA_ENTREGADA']],
+        'VALIDADA' => ['label' => 'Validadas', 'statuses' => ['VALIDADA']],
+        'CERRADA' => ['label' => 'Cerradas', 'statuses' => ['VALIDADO_Y_CERRADO']],
+        'VENCIDA' => ['label' => 'Vencidas', 'statuses' => ['VENCIDA']],
+    ];
+
+    public static function executiveStatusOptions(): array
+    {
+        return self::EXECUTIVE_STATUS_OPTIONS;
+    }
     public function __construct(
         private readonly AccessScopeService $access,
         private readonly DashboardAnalyticsService $dashboard,
@@ -39,6 +51,7 @@ final class IntelligenceAnalyticsService
 
         $agencyPerformance = $this->agencyPerformance($base);
         $directionPerformance = $this->directionPerformance($base);
+        $pautaPerformance = $this->pautaPerformance($base);
         $attention = $this->attentionItems($user, $filters, $accessibleLoadIds);
         $quality = $this->qualityItems($user, $accessibleLoadIds);
 
@@ -53,6 +66,7 @@ final class IntelligenceAnalyticsService
         $analytics['generated_at'] = $now;
         $analytics['agency_performance'] = $agencyPerformance;
         $analytics['direction_performance'] = $directionPerformance;
+        $analytics['pauta_performance'] = $pautaPerformance;
         $analytics['radar_summary'] = $radar;
         $analytics['attention_items'] = $attention;
         $analytics['quality_items'] = $quality;
@@ -103,7 +117,23 @@ final class IntelligenceAnalyticsService
             ->sortBy(fn ($unit) => mb_strtolower((string) $unit->name))
             ->values();
 
-        return ['agencies'=>$agencies,'units'=>$units];
+        $pautas = (clone $loadQuery)
+            ->where('scheduled_loads.status', '!=', 'CANCELADA')
+            ->join('calendar_imports', 'calendar_imports.id', '=', 'scheduled_loads.calendar_import_id')
+            ->join('contracting_agencies', 'contracting_agencies.id', '=', 'scheduled_loads.contracting_agency_id')
+            ->select('calendar_imports.id as id', 'calendar_imports.original_filename', 'contracting_agencies.name as agency_name')
+            ->selectRaw('COUNT(DISTINCT scheduled_loads.id) AS load_count')
+            ->groupBy('calendar_imports.id', 'calendar_imports.original_filename', 'contracting_agencies.name')
+            ->orderByDesc('calendar_imports.id')
+            ->get()
+            ->map(fn ($row) => [
+                'id' => (int) $row->id,
+                'name' => $row->original_filename ?: 'Pauta sin nombre',
+                'agency' => $row->agency_name,
+                'load_count' => (int) $row->load_count,
+            ]);
+
+        return ['agencies'=>$agencies,'units'=>$units,'pautas'=>$pautas];
     }
 
     private function filteredBase(User $user, array $filters): Builder
@@ -131,8 +161,15 @@ final class IntelligenceAnalyticsService
             }
         }
 
+        if (!empty($filters['pauta_id'])) {
+            $query->where('scheduled_loads.calendar_import_id', (int) $filters['pauta_id']);
+        }
+
         if (!empty($filters['status'])) {
-            $query->where('scheduled_loads.status', $filters['status']);
+            $option = self::EXECUTIVE_STATUS_OPTIONS[$filters['status']] ?? null;
+            if ($option) {
+                $query->whereIn('scheduled_loads.status', $option['statuses']);
+            }
         }
         if (!empty($filters['from'])) {
             $query->whereDate('scheduled_loads.effective_open_at', '>=', $filters['from']);
@@ -142,6 +179,46 @@ final class IntelligenceAnalyticsService
         }
 
         return $query;
+    }
+
+    private function pautaPerformance(callable $base): array
+    {
+        $now = now();
+        $until = $now->copy()->addDays(3);
+
+        return (clone $base())
+            ->where('scheduled_loads.status', '!=', 'CANCELADA')
+            ->join('calendar_imports', 'calendar_imports.id', '=', 'scheduled_loads.calendar_import_id')
+            ->join('contracting_agencies', 'contracting_agencies.id', '=', 'scheduled_loads.contracting_agency_id')
+            ->select('calendar_imports.id as pauta_id', 'calendar_imports.original_filename', 'contracting_agencies.id as agency_id', 'contracting_agencies.name as agency')
+            ->selectRaw('COUNT(DISTINCT scheduled_loads.id) AS total')
+            ->selectRaw("COUNT(DISTINCT CASE WHEN scheduled_loads.status='PROGRAMADA' THEN scheduled_loads.id END) AS programmed")
+            ->selectRaw("COUNT(DISTINCT CASE WHEN scheduled_loads.status IN ('REPROGRAMADA','REPROGRAMADA_ABIERTA','REPROGRAMADA_ENTREGADA') THEN scheduled_loads.id END) AS reprogrammed")
+            ->selectRaw("COUNT(DISTINCT CASE WHEN scheduled_loads.status IN ('EN_REVISION_INSTITUCIONAL','OBSERVADA','LISTA_PARA_FIRMA','PENDIENTE_DOCUMENTO_FIRMADO') THEN scheduled_loads.id END) AS in_review")
+            ->selectRaw("COUNT(DISTINCT CASE WHEN scheduled_loads.status='VALIDADA' THEN scheduled_loads.id END) AS validated")
+            ->selectRaw("COUNT(DISTINCT CASE WHEN scheduled_loads.status='VALIDADO_Y_CERRADO' THEN scheduled_loads.id END) AS closed")
+            ->selectRaw("COUNT(DISTINCT CASE WHEN scheduled_loads.status='VENCIDA' THEN scheduled_loads.id END) AS overdue")
+            ->selectRaw("COUNT(DISTINCT CASE WHEN scheduled_loads.effective_close_at BETWEEN ? AND ? AND scheduled_loads.status NOT IN ('VALIDADO_Y_CERRADO','CANCELADA','VENCIDA') THEN scheduled_loads.id END) AS due_soon", [$now, $until])
+            ->groupBy('calendar_imports.id', 'calendar_imports.original_filename', 'contracting_agencies.id', 'contracting_agencies.name')
+            ->orderByDesc('calendar_imports.id')
+            ->orderBy('contracting_agencies.name')
+            ->get()
+            ->map(fn ($row) => [
+                'pauta_id' => (int) $row->pauta_id,
+                'pauta_name' => $row->original_filename ?: 'Pauta sin nombre',
+                'agency_id' => (int) $row->agency_id,
+                'agency' => $row->agency,
+                'total' => (int) $row->total,
+                'programmed' => (int) $row->programmed,
+                'reprogrammed' => (int) $row->reprogrammed,
+                'in_review' => (int) $row->in_review,
+                'validated' => (int) $row->validated,
+                'closed' => (int) $row->closed,
+                'overdue' => (int) $row->overdue,
+                'due_soon' => (int) $row->due_soon,
+                'closure_percentage' => (int) $row->total === 0 ? 0 : round(100 * (int) $row->closed / (int) $row->total, 1),
+            ])
+            ->all();
     }
 
     private function agencyPerformance(callable $base): array
