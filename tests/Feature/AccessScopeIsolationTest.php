@@ -86,10 +86,17 @@ class AccessScopeIsolationTest extends TestCase
             'status' => 'PENDIENTE',
         ]);
 
+        $director = User::factory()->create([
+            'role_id' => Role::query()->where('code', 'DIRECTOR_TRANSMISION')->firstOrFail()->id,
+            'contracting_agency_id' => $agency->id,
+            'organizational_unit_id' => $monitoring->id,
+        ]);
+
         $access = app(AccessScopeService::class);
 
         $this->assertTrue($access->canAccessDeliverable($monitoringUser, $monitorDeliverable));
         $this->assertFalse($access->canAccessDeliverable($monitoringUser, $productionDeliverable));
+        $this->assertTrue($access->canAccessLoad($director, $load));
 
         $response = $this->actingAs($monitoringUser)->get(route('loads.show', $load));
         $response->assertOk();
