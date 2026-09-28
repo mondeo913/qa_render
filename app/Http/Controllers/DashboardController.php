@@ -20,6 +20,7 @@ class DashboardController extends Controller
         $filters = $request->validate([
             'agency_id' => ['nullable', 'integer'],
             'organizational_unit_id' => ['nullable', 'string', 'max:500'],
+            'pauta_id' => ['nullable', 'integer', 'min:1'],
             'campaign' => ['nullable', 'string', 'max:255'],
             'responsible_id' => ['nullable', 'integer', 'min:1'],
             'status' => ['nullable', 'string', 'max:60'],
@@ -106,24 +107,30 @@ class DashboardController extends Controller
                     ->where('responsible_user_id', (int) $filters['responsible_id']);
             });
         }
-        // Las pautas deben identificarse por dependencia + nombre para evitar
-        // mezclar dos pautas con el mismo título pertenecientes a dependencias distintas.
-        $filterCampaigns = $campaignsQuery
+        // La pauta es el Excel que cargó Enlace Institucional y queda registrada
+        // en calendar_imports. Una pauta puede generar varias cargas diarias;
+        // por eso el filtro nunca debe usar scheduled_loads.title.
+        $filterPautas = (clone $accessibleLoads)
+            ->where('scheduled_loads.status', '!=', 'CANCELADA')
+            ->join('calendar_imports', 'calendar_imports.id', '=', 'scheduled_loads.calendar_import_id')
             ->join('contracting_agencies', 'contracting_agencies.id', '=', 'scheduled_loads.contracting_agency_id')
             ->select([
-                'scheduled_loads.title',
-                'scheduled_loads.contracting_agency_id',
+                'calendar_imports.id as pauta_id',
+                'calendar_imports.original_filename',
+                'contracting_agencies.id as agency_id',
                 'contracting_agencies.name as agency_name',
             ])
-            ->distinct()
+            ->selectRaw('COUNT(DISTINCT scheduled_loads.id) AS load_count')
+            ->groupBy('calendar_imports.id', 'calendar_imports.original_filename', 'contracting_agencies.id', 'contracting_agencies.name')
             ->orderBy('contracting_agencies.name')
-            ->orderBy('scheduled_loads.title')
+            ->orderByDesc('calendar_imports.id')
             ->get()
-            ->map(fn ($campaign) => [
-                'value' => ((int) $campaign->contracting_agency_id).'::'.(string) $campaign->title,
-                'label' => trim((string) $campaign->agency_name).' · '.trim((string) $campaign->title),
-                'title' => (string) $campaign->title,
-                'agency_id' => (int) $campaign->contracting_agency_id,
+            ->map(fn ($pauta) => [
+                'value' => (string) ((int) $pauta->pauta_id),
+                'label' => trim((string) $pauta->agency_name).' · '.trim((string) ($pauta->original_filename ?: 'Pauta sin nombre')),
+                'name' => (string) ($pauta->original_filename ?: 'Pauta sin nombre'),
+                'agency_id' => (int) $pauta->agency_id,
+                'load_count' => (int) $pauta->load_count,
             ])
             ->values();
 
@@ -174,7 +181,7 @@ class DashboardController extends Controller
             'units' => $units,
             'filterAgencies' => $agencies,
             'filterUnits' => $units,
-            'filterCampaigns' => $filterCampaigns,
+            'filterPautas' => $filterPautas,
             'filterResponsibles' => $filterResponsibles,
             'periodMin' => $periodMin,
             'periodMax' => $periodMax,
