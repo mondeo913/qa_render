@@ -76,6 +76,27 @@
 @media(max-width:1200px){.direction-intelligence .compact-role-kpis{grid-template-columns:repeat(3,minmax(0,1fr))}.direction-intelligence .di-chart-grid-primary{grid-template-columns:1fr 1fr}.direction-intelligence .di-chart-grid-primary>[class*="col-"]:last-child{grid-column:1/-1}.direction-intelligence .di-chart-grid-secondary,.direction-intelligence .di-chart-grid-tertiary{grid-template-columns:1fr 1fr}}
 @media(max-width:700px){.direction-intelligence .compact-role-kpis{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.direction-intelligence .di-chart-grid,.direction-intelligence .di-chart-grid-primary,.direction-intelligence .di-chart-grid-secondary,.direction-intelligence .di-chart-grid-tertiary{grid-template-columns:1fr}.direction-intelligence .di-chart-grid-primary>[class*="col-"]:last-child{grid-column:auto}.direction-intelligence .di-chart{height:250px;min-height:250px}.direction-intelligence .role-kpi-card{height:104px;min-height:104px;padding:10px}}
 
+/* Escala estándar de Inteligencia para Director: comparable con Director General, Administrador y Enlace. */
+.direction-intelligence .compact-role-kpis{grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:0 0 14px}
+.direction-intelligence .role-kpi-card{height:94px;min-height:94px;padding:12px 13px;grid-template-columns:36px minmax(0,1fr);grid-template-rows:auto 1fr;column-gap:10px;border-radius:13px}
+.direction-intelligence .role-kpi-icon{width:36px;height:36px;border-radius:10px;font-size:.9rem}
+.direction-intelligence .role-kpi-card small{font-size:.7rem;line-height:1.12}
+.direction-intelligence .role-kpi-card strong{font-size:1.35rem;line-height:1.05}
+.direction-intelligence .di-panel{min-height:270px;border-radius:14px}
+.direction-intelligence .di-head{padding:11px 14px}
+.direction-intelligence .di-head h3{font-size:.9rem}
+.direction-intelligence .di-head p{font-size:.65rem;margin-top:3px}
+.direction-intelligence .di-chart{height:230px;min-height:230px;padding:8px 12px 10px}
+.direction-intelligence .di-table{font-size:.7rem}
+.direction-intelligence .di-table th{font-size:.59rem}
+.direction-intelligence .di-table td,.direction-intelligence .di-table th{padding:8px 9px}
+.direction-intelligence .di-badge{font-size:.56rem;padding:3px 6px}
+.direction-intelligence .di-empty{padding:20px;font-size:.7rem}
+.direction-intelligence .di-quality{max-height:235px;overflow:auto}
+@media(max-width:1200px){.direction-intelligence .compact-role-kpis{grid-template-columns:repeat(4,minmax(0,1fr))}.direction-intelligence .di-chart-grid-primary{grid-template-columns:1fr 1fr}.direction-intelligence .di-chart-grid-primary>[class*="col-"]:last-child{grid-column:1/-1}.direction-intelligence .di-chart-grid-secondary,.direction-intelligence .di-chart-grid-tertiary{grid-template-columns:1fr 1fr}}
+@media(max-width:700px){.direction-intelligence .compact-role-kpis{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.direction-intelligence .role-kpi-card{height:92px;min-height:92px;padding:10px}.direction-intelligence .di-chart-grid,.direction-intelligence .di-chart-grid-primary,.direction-intelligence .di-chart-grid-secondary,.direction-intelligence .di-chart-grid-tertiary{grid-template-columns:1fr}.direction-intelligence .di-chart-grid-primary>[class*="col-"]:last-child{grid-column:auto}.direction-intelligence .di-chart{height:235px;min-height:235px}}
+
+
 </style>
 
 @if($isDirectionDirector)
