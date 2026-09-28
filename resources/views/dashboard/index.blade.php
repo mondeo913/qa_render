@@ -37,6 +37,15 @@ $monthlyLabels = $monthly->pluck('period')->values();
 .siget-exec .kpi small{font-size:.82rem}.siget-exec .kpi strong{font-size:1.7rem}.siget-exec .delta{font-size:.78rem}
 .siget-exec .panel-head h3{font-size:1.05rem}.siget-exec .panel-head p{font-size:.8rem}.siget-exec .table{font-size:.8rem}.siget-exec .table th{font-size:.7rem}.siget-exec .decision-item strong{font-size:.9rem}.siget-exec .decision-item span{font-size:.8rem}.siget-exec .badge-exec{font-size:.7rem}
 .siget-role .role-title{font-size:1.45rem}.siget-role .role-sub{font-size:.88rem}.siget-role .role-card small{font-size:.82rem}.siget-role .role-card strong{font-size:1.45rem}.siget-role .role-card .role-title.fs-6{font-size:1.05rem!important}.siget-role .table{font-size:.8rem}.siget-role .table th{font-size:.7rem}
+.dashboard-role-compact{padding-top:0}
+.compact-role-kpis{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:8px;margin-left:0;margin-right:0}
+.compact-role-kpis>[class*="col-"]{width:auto!important;max-width:none!important;padding-left:0;padding-right:0}
+.compact-role-kpis .role-kpi-card{min-height:72px;height:72px;padding:8px 9px;display:grid;grid-template-columns:28px 1fr;grid-template-rows:auto 1fr;column-gap:8px;align-items:center}
+.compact-role-kpis .role-kpi-icon{grid-row:1 / span 2;width:28px;height:28px;border-radius:8px;display:grid;place-items:center;font-size:.82rem}
+.compact-role-kpis .role-kpi-card small{font-size:.62rem;line-height:1.05;white-space:normal;overflow-wrap:anywhere}
+.compact-role-kpis .role-kpi-card strong{font-size:1.05rem;line-height:1}
+@media(max-width:1399px){.compact-role-kpis{grid-template-columns:repeat(4,minmax(0,1fr))}}
+@media(max-width:700px){.compact-role-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:700px){.siget-exec h2{font-size:1.35rem}.siget-role .role-title{font-size:1.25rem}.exec-kpi label{font-size:.72rem}}
 </style>
 
@@ -55,10 +64,38 @@ $monthlyLabels = $monthly->pluck('period')->values();
 <div class="col-xl-4"><div class="panel"><div class="panel-head"><div><h3>Lectura para Dirección General</h3><p>Resumen ejecutivo para toma de decisiones.</p></div></div><div class="decision"><div class="decision-item" style="--dot:#35c77a"><i class="decision-dot"></i><div><strong>El cumplimiento institucional</strong><span>{{ $compliance }}% sobre {{ number_format($total) }} cargas, con tendencia del periodo seleccionado.</span></div></div><div class="decision-item" style="--dot:#e9b949"><i class="decision-dot"></i><div><strong>La brecha de desempeño</strong><span>{{ $units->filter(fn($u)=>(float)($u['percentage']??0)<80)->count() }} Dirección(es) requieren seguimiento por debajo de 80%.</span></div></div><div class="decision-item" style="--dot:#ef4655"><i class="decision-dot"></i><div><strong>La presión de riesgo</strong><span>{{ $overdue }} cargas vencidas representan {{ $riskRate }}% del universo y se concentran por dependencia.</span></div></div><div class="decision-item" style="--dot:#4f7cff"><i class="decision-dot"></i><div><strong>La oportunidad inmediata</strong><span>{{ $k['due_soon'] ?? 0 }} cargas vencen en las próximas 72 horas; priorizar donde coincidan vencimiento y bajo cumplimiento.</span></div></div></div></div></div>
 </div></div>
 @else
-<div class="siget-role"><div class="mb-3"><div class="role-title">{{ $presentation['title'] ?? 'Dashboard SIGET' }}</div><div class="role-sub">{{ $presentation['subtitle'] ?? 'Indicadores del sistema' }}</div></div>
+<div class="siget-role dashboard-role-compact">
 @include('dashboard.partials.filters')
-@php $roleCards = match($role) {'ENLACE_INSTITUCIONAL'=>[['Entregables',$total],['En operación',$active],['Por revisar',$k['review_pending']??0],['Observados',$k['observed']??0],['Reprogramados',$reprogrammed],['Cierre',$closureRate.'%']], 'ADMINISTRADOR'=>[['Cargas registradas',$total],['Activas',$active],['Cerradas',$closed],['Vencidas',$overdue],['Reprogramadas',$reprogrammed],['Avance medio',$completion.'%']], 'DIRECTOR_TRANSMISION'=>[['Spots asignados',$total],['Evidencias esperadas',$k['evidence_expected']??0],['Evidencias enviadas',$k['evidence_received']??0],['Pendientes',$k['pending']??0],['Observadas o rechazadas',$k['observed']??0],['Vencidas',$overdue],['Pendientes de validación',$k['review_pending']??0],['Cumplimiento',$compliance.'%']], 'DIRECTOR_PROGRAMACION_CONTINUIDAD'=>[['Spots asignados',$total],['Evidencias esperadas',$k['evidence_expected']??0],['Evidencias enviadas',$k['evidence_received']??0],['Pendientes',$k['pending']??0],['Observadas o rechazadas',$k['observed']??0],['Vencidas',$overdue],['Pendientes de validación',$k['review_pending']??0],['Cumplimiento',$compliance.'%']], default=>[['Total',$total],['Activas',$active],['Cerradas',$closed],['Vencidas',$overdue],['Reprogramadas',$reprogrammed],['Cumplimiento',$compliance.'%']]} @endphp
-<div class="row g-3 mb-3">@foreach($roleCards as $card)<div class="col-6 col-xl-2"><div class="role-card"><small>{{ $card[0] }}</small><strong>{{ $card[1] }}</strong></div></div>@endforeach</div>
+@php
+$roleCards = match($role) {
+    'ENLACE_INSTITUCIONAL' => [
+        ['Entregables',$total,'bi-layers','info'],['En operación',$active,'bi-activity','primary'],['Por revisar',$k['review_pending']??0,'bi-clipboard-check','warning'],
+        ['Observados',$k['observed']??0,'bi-exclamation-triangle','danger'],['Reprogramados',$reprogrammed,'bi-arrow-repeat','purple'],['Cierre',$closureRate.'%','bi-patch-check','success']
+    ],
+    'ADMINISTRADOR' => [
+        ['Cargas registradas',$total,'bi-layers','info'],['Activas',$active,'bi-activity','primary'],['Cerradas',$closed,'bi-check2-circle','success'],
+        ['Vencidas',$overdue,'bi-calendar-x','danger'],['Reprogramadas',$reprogrammed,'bi-arrow-repeat','purple'],['Avance medio',$completion.'%','bi-speedometer2','warning']
+    ],
+    'DIRECTOR_TRANSMISION','DIRECTOR_PROGRAMACION_CONTINUIDAD' => [
+        ['Spots asignados',$total,'bi-broadcast-pin','info'],['Evidencias esperadas',$k['evidence_expected']??0,'bi-files','primary'],
+        ['Evidencias enviadas',$k['evidence_received']??0,'bi-cloud-arrow-up','success'],['Pendientes',$k['pending']??0,'bi-hourglass-split','warning'],
+        ['Observadas o rechazadas',$k['observed']??0,'bi-exclamation-octagon','danger'],['Vencidas',$overdue,'bi-calendar-x','danger'],
+        ['Pendientes de validación',$k['review_pending']??0,'bi-clipboard-check','warning'],['Cumplimiento',$compliance.'%','bi-bullseye','success']
+    ],
+    default => [
+        ['Total',$total,'bi-layers','info'],['Activas',$active,'bi-activity','primary'],['Cerradas',$closed,'bi-check2-circle','success'],
+        ['Vencidas',$overdue,'bi-calendar-x','danger'],['Reprogramadas',$reprogrammed,'bi-arrow-repeat','purple'],['Cumplimiento',$compliance.'%','bi-bullseye','success']
+    ],
+};
+@endphp
+<div class="row g-2 mb-3 compact-role-kpis">
+@foreach($roleCards as $card)
+<div class="col-6 col-xl-2 col-xxl-auto"><div class="role-card role-kpi-card">
+    <div class="role-kpi-icon text-bg-{{ $card[3] }}"><i class="bi {{ $card[2] }}"></i></div>
+    <small>{{ $card[0] }}</small><strong>{{ $card[1] }}</strong>
+</div></div>
+@endforeach
+</div>
 <div class="row g-3"><div class="col-xl-7"><div class="role-card"><div class="role-title fs-6">{{ $role==='DIRECTOR_PROGRAMACION_CONTINUIDAD'?'Planeación vs ejecución':'Ritmo de operación' }}</div><div class="role-sub mb-2">Entradas, ejecución, cierres y cumplimiento.</div><div class="role-chart"><canvas id="roleTrendChart"></canvas></div></div></div><div class="col-xl-5"><div class="role-card"><div class="role-title fs-6">Estado operativo</div><div class="role-sub mb-2">Distribución actual de estados.</div><div class="role-chart"><canvas id="roleStatusChart"></canvas></div></div></div><div class="col-xl-6"><div class="role-card"><div class="role-title fs-6">{{ $role==='DIRECTOR_TRANSMISION'?'Carga por unidad':'Avance por Dirección' }}</div><div class="role-sub mb-2">Volumen y cumplimiento de la dirección seleccionada.</div><div class="role-chart"><canvas id="roleDirectionChart"></canvas></div></div></div><div class="col-xl-6"><div class="role-card"><div class="role-title fs-6">Carga por responsable operativo</div><div class="role-sub mb-2">Responsables asignados a las pautas visibles.</div><div class="role-chart"><canvas id="roleResponsibleChart"></canvas></div></div></div><div class="col-12"><div class="role-card"><div class="role-title fs-6">Bandeja de evidencias de la dirección</div><div class="role-sub mb-2">Las cargas y responsables pertenecen únicamente al alcance de esta dirección.</div><div class="table-responsive"><table class="table table-sm align-middle"><thead><tr><th>Pauta / carga</th><th>Dirección</th><th>Responsable</th><th>Fecha límite</th><th>Estado</th></tr></thead><tbody>@forelse(collect($analytics['upcoming'] ?? [])->take(10) as $load)<tr><td>{{ $load->title }}</td><td>{{ $load->deliverables->pluck('organizationalUnit.name')->filter()->unique()->join(', ') ?: 'Sin dirección' }}</td><td>{{ $load->deliverables->pluck('responsibleUser.name')->filter()->unique()->join(', ') ?: 'Sin asignar' }}</td><td>{{ $load->effective_close_at?->format('d/m/Y') ?: 'Sin fecha' }}</td><td>{{ $load->status instanceof \BackedEnum ? $load->status->value : $load->status }}</td></tr>@empty<tr><td colspan="5" class="text-center text-secondary">No hay cargas próximas para esta dirección.</td></tr>@endforelse</tbody></table></div></div></div></div></div>
 @endif
 <script>
