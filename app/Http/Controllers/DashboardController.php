@@ -110,10 +110,34 @@ class DashboardController extends Controller
         // La pauta es el Excel que cargó Enlace Institucional y queda registrada
         // en calendar_imports. Una pauta puede generar varias cargas diarias;
         // por eso el filtro nunca debe usar scheduled_loads.title.
-        $filterPautas = (clone $accessibleLoads)
+        $pautasQuery = (clone $accessibleLoads)
             ->where('scheduled_loads.status', '!=', 'CANCELADA')
             ->join('calendar_imports', 'calendar_imports.id', '=', 'scheduled_loads.calendar_import_id')
-            ->join('contracting_agencies', 'contracting_agencies.id', '=', 'scheduled_loads.contracting_agency_id')
+            ->join('contracting_agencies', 'contracting_agencies.id', '=', 'scheduled_loads.contracting_agency_id');
+
+        if (!empty($filters['agency_id'])) {
+            $pautasQuery->where('scheduled_loads.contracting_agency_id', (int) $filters['agency_id']);
+        }
+        if (!empty($filters['organizational_unit_id'])) {
+            $unitIds = collect(explode(',', (string) $filters['organizational_unit_id']))
+                ->map(fn ($id) => (int) trim($id))->filter()->unique()->values()->all();
+            if ($unitIds) {
+                $pautasQuery->whereIn('scheduled_loads.id', function ($q) use ($unitIds) {
+                    $q->select('scheduled_load_id')
+                        ->from('scheduled_load_deliverables')
+                        ->whereIn('organizational_unit_id', $unitIds);
+                });
+            }
+        }
+        if (!empty($filters['responsible_id'])) {
+            $pautasQuery->whereIn('scheduled_loads.id', function ($q) use ($filters) {
+                $q->select('scheduled_load_id')
+                    ->from('scheduled_load_deliverables')
+                    ->where('responsible_user_id', (int) $filters['responsible_id']);
+            });
+        }
+
+        $filterPautas = $pautasQuery
             ->select([
                 'calendar_imports.id as pauta_id',
                 'calendar_imports.original_filename',
@@ -133,6 +157,7 @@ class DashboardController extends Controller
                 'load_count' => (int) $pauta->load_count,
             ])
             ->values();
+
 
         $responsibleQuery = User::query()
             ->join('scheduled_load_deliverables', 'scheduled_load_deliverables.responsible_user_id', '=', 'users.id')
