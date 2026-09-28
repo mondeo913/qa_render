@@ -33,7 +33,6 @@
 
 <div class="row g-2 mb-3 board-kpis">
 
-<div class="row g-3 mb-4">
 @php $kpis=[
     ['label'=>'Total','value'=>$summary['total'],'icon'=>'bi-collection','type'=>'info'],
     ['label'=>'Por hacer','value'=>$summary['todo'],'icon'=>'bi-list-check','type'=>'primary'],
