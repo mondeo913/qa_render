@@ -31,6 +31,7 @@ class ReportController extends Controller
         $filters = $request->validate([
             'report' => ['nullable', 'in:executive,compliance,pending,evidence,audit,builder'],
             'agency_id' => ['nullable', 'integer'],
+            'pauta_id' => ['nullable', 'integer', 'min:1'],
             'organizational_unit_id' => ['nullable', 'string', 'max:500'],
             'status' => ['nullable', 'string', 'max:60'],
             'from' => ['nullable', 'date_format:Y-m'],
@@ -98,6 +99,10 @@ class ReportController extends Controller
         $query,
         array $filters
     ) {
+        if (!empty($filters['pauta_id'])) {
+            $query->where('scheduled_loads.calendar_import_id', (int) $filters['pauta_id']);
+        }
+
         if (!empty($filters['agency_id'])) {
             $query->where(
                 'scheduled_loads.contracting_agency_id',
@@ -283,38 +288,23 @@ class ReportController extends Controller
                 ->whereIn('contracting_agency_id', $agencyIds)
                 ->orderBy('name')
                 ->get();
-        } elseif (
-            RoleCode::isDirectionDirector($role) ||
-            RoleCode::isOperator($role)
-        ) {
-            $agencyIds = $request->user()
-                ->scopes()
-                ->where('can_read', true)
-                ->whereNotNull('contracting_agency_id')
-                ->pluck('contracting_agency_id')
-                ->map(fn ($id) => (int) $id)
-                ->all();
+        } elseif (RoleCode::isDirectionDirector($role) || RoleCode::isOperator($role)) {
+            // El universo ya está filtrado por AccessScopeService. Para Directores
+            // esto significa todas las dependencias que tengan su misma Dirección.
+            $agencies = $loads
+                ->map(fn ($load) => $load->agency)
+                ->filter()
+                ->unique('id')
+                ->sortBy('name')
+                ->values();
 
-            if ($request->user()->contracting_agency_id) {
-                $agencyIds[] = (int) $request->user()->contracting_agency_id;
-            }
-
-            $agencyIds = array_values(array_unique($agencyIds));
-            $unitIds = $access->accessibleUnitIds($request->user());
-
-            $agencies = ContractingAgency::query()
-                ->where('active', true)
-                ->whereIn('id', $agencyIds)
-                ->orderBy('name')
-                ->get();
-
-            $units = OrganizationalUnit::query()
-                ->with('agency')
-                ->where('active', true)
-                ->whereIn('id', $unitIds)
-                ->whereIn('contracting_agency_id', $agencyIds)
-                ->orderBy('name')
-                ->get();
+            $units = $loads
+                ->flatMap(fn ($load) => $load->deliverables)
+                ->map(fn ($deliverable) => $deliverable->organizationalUnit)
+                ->filter()
+                ->unique('id')
+                ->sortBy('name')
+                ->values();
         } else {
             $agencies = $loads
                 ->map(fn ($load) => $load->agency)
