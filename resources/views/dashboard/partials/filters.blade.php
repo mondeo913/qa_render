@@ -1,5 +1,4 @@
 <form method="GET" class="card siget-card mb-4" id="siget-dashboard-filters">
-<div class="card-header"><div><h2>Contexto de análisis</h2><p>Los filtros acotan el universo visible sin modificar la lógica ni los permisos de SIGET.</p></div></div>
 @php
     $filterAgencies = $filterAgencies ?? [];
     $filterUnits = $filterUnits ?? [];
@@ -43,12 +42,17 @@
         : $operationalStatuses;
 @endphp
 <style>
-#siget-dashboard-filters .form-label{font-size:.72rem;font-weight:700;line-height:1.1;margin-bottom:.25rem}
-#siget-dashboard-filters .form-select,#siget-dashboard-filters .form-control{font-size:.76rem;line-height:1.2;min-height:32px;padding:.34rem .55rem}
-#siget-dashboard-filters .card-header h2{font-size:1rem}
-#siget-dashboard-filters .card-header p{font-size:.72rem}
-@media (min-width:1200px){
+#siget-dashboard-filters .form-label{font-size:.66rem;font-weight:700;line-height:1.05;margin-bottom:.2rem}
+#siget-dashboard-filters .form-select,#siget-dashboard-filters .form-control{font-size:.7rem;line-height:1.1;min-height:30px;height:30px;padding:.25rem .45rem}
+#siget-dashboard-filters .btn{font-size:.68rem;line-height:1.1;min-height:30px;padding:.25rem .4rem}
+#siget-dashboard-filters .siget-period-segmenter{padding:.55rem .7rem!important}
+#siget-dashboard-filters .siget-period-segmenter strong{font-size:.68rem}
+#siget-dashboard-filters .siget-period-segmenter .small{font-size:.62rem!important}
+#siget-dashboard-filters .siget-period-segmenter .badge{font-size:.62rem}
+#siget-dashboard-filters .card-body{padding:.7rem .8rem}
+@media (min-width:1400px){
   #siget-dashboard-filters .filter-primary-row>[class*="col-"]{min-width:0}
+  #siget-dashboard-filters .filter-primary-row{row-gap:.45rem!important}
 }
 </style>
 <div class="card-body row g-2 align-items-end filter-primary-row">
