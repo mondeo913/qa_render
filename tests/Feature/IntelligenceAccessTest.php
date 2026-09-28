@@ -263,6 +263,17 @@ class IntelligenceAccessTest extends TestCase
             $txDashboard->assertDontSee($title);
         }
 
+        $pcIntelligence = $this->actingAs($pcDirector)->get(route('intelligence'));
+        $pcIntelligence->assertOk();
+        $pcIntelligence->assertSee('Inteligencia de Dirección de Programación y Continuidad');
+        $pcIntelligence->assertSee('DIRECCIÓN DE PROGRAMACIÓN Y CONTINUIDAD');
+        foreach ($pcAgencyLoads as [$agencyName, $title]) {
+            $pcIntelligence->assertSee($title);
+        }
+        foreach ($txAgencyLoads as [$agencyName, $title]) {
+            $pcIntelligence->assertDontSee($title);
+        }
+
         $pcDashboard = $this->actingAs($pcDirector)->get(route('dashboard'));
         $pcDashboard->assertOk();
         foreach ($pcAgencyLoads as [$agencyName, $title]) {
