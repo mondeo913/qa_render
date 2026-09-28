@@ -51,7 +51,13 @@ final class LoadBoardService
 
     private function availableAgencies(User $user,array $filters=[]):Collection
     {
+        $role=$user->role?->code;
         $query=ContractingAgency::query()->select(['id','code','name','metadata'])->where('active',true);
+
+        if(in_array($role,[RoleCode::ADMINISTRADOR->value,RoleCode::DIRECTOR_GENERAL->value],true)){
+            return $query->orderBy('name')->get();
+        }
+
         $loads=$this->access->scopeLoads(ScheduledLoad::query(),$user);
         if(!empty($filters['agency_id']))$loads->where('contracting_agency_id',(int)$filters['agency_id']);
         if(!empty($filters['unit_id'])){
@@ -59,10 +65,10 @@ final class LoadBoardService
             if($unitIds)$loads->whereHas('deliverables',fn(Builder $d)=>$d->whereIn('organizational_unit_id',$unitIds));
         }
         if(!empty($filters['pauta_id']))$loads->where('calendar_import_id',(int)$filters['pauta_id']);
-        $ids=(clone $loads)->distinct()->pluck('contracting_agency_id')->map(fn($id)=>(int)$id)->all();
+
+        $ids=(clone $loads)->whereNotNull('contracting_agency_id')->distinct()->pluck('contracting_agency_id')->map(fn($id)=>(int)$id)->all();
         return $ids?$query->whereIn('id',$ids)->orderBy('name')->get():$query->whereRaw('1=0')->get();
     }
-
     private function availableUnits(User $user,?int $agencyId=null,?int $pautaId=null):Collection
     {
         $role=$user->role?->code;
