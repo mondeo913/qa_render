@@ -52,8 +52,8 @@ class K2VisualFunctionalIntegrationTest extends TestCase {
         }
 
         $template = file_get_contents(resource_path('views/dashboard/executive.blade.php'));
-        $this->assertStringContainsString('agency-ipab.svg', $template);
-        $this->assertStringContainsString('agency-imss.svg', $template);
+        $this->assertStringContainsString('agency-ipab-official.png', $template);
+        $this->assertStringContainsString('agency-imss-official.png', $template);
     }
 
     public function test_global_dashboard_filters_include_new_agencies_without_loads(): void {
