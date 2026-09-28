@@ -51,6 +51,8 @@
 @endforeach
 </div>
 
+</div>
+
 <div class="card siget-card mb-4">
 <div class="card-header"><div><h2>Catálogo de dependencias</h2><p>Seleccione una dependencia para ver solamente sus cargas dentro del alcance autorizado.</p></div><span class="badge text-bg-light">Cumplimiento promedio: {{ $summary['completion'] }}%</span></div>
 <div class="card-body">
