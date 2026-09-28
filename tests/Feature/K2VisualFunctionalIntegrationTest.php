@@ -42,8 +42,18 @@ class K2VisualFunctionalIntegrationTest extends TestCase {
                 ->get(route('dashboard'))
                 ->assertOk()
                 ->assertSee('Dashboard ejecutivo')
-                ->assertSee($label.' · cumplimiento institucional de evidencias');
+                ->assertSee($label.' · cumplimiento institucional de evidencias')
+                ->assertSee('Comparativo por dirección')
+                ->assertSee('tres barras por dirección')
+                ->assertSee('"label":"Esperadas"', false)
+                ->assertSee('"label":"Recibidas"', false)
+                ->assertSee('"label":"Validadas"', false)
+                ->assertSee('exec-comparison-card', false);
         }
+
+        $template = file_get_contents(resource_path('views/dashboard/executive.blade.php'));
+        $this->assertStringContainsString('agency-ipab.svg', $template);
+        $this->assertStringContainsString('agency-imss.svg', $template);
     }
 
     public function test_global_dashboard_filters_include_new_agencies_without_loads(): void {

@@ -121,7 +121,7 @@ final class DashboardAnalyticsService
         $evidenceDeliverablesQuery = ScheduledLoadDeliverable::query();
         $this->access->scopeDeliverables($evidenceDeliverablesQuery, $user);
         $evidenceDeliverables = $evidenceDeliverablesQuery
-            ->with(['evidences:id,deliverable_id,status,submitted_at,validated_at', 'organizationalUnit:id,name', 'responsibleUser:id,name', 'scheduledLoad:id,title'])
+            ->with(['evidences:id,deliverable_id,status,submitted_at,validated_at', 'organizationalUnit:id,name,code,unit_type', 'responsibleUser:id,name', 'scheduledLoad:id,title'])
             ->whereIn('scheduled_load_id', $accessibleLoadIds)
             ->whereNotIn('status', ['CANCELADA'])
             ->get();
@@ -148,6 +148,15 @@ final class DashboardAnalyticsService
             $validated = $rows->filter(fn ($d) => $d->evidences->contains(fn ($e) => in_array($e->status?->value ?? (string) $e->status, ['VALIDADO', 'CERRADO'], true)))->count();
             return ['unit' => $unit, 'expected' => $expected, 'received' => $received, 'validated' => $validated, 'pending' => max(0, $expected - $received), 'percentage' => $expected ? round(100 * $received / $expected, 1) : 0];
         })->sortBy('percentage')->values()->all();
+        $evidenceByDirection = $evidenceDeliverables
+            ->filter(fn ($d) => in_array($d->organizationalUnit?->code, ['DIR_A', 'DIR_B'], true))
+            ->groupBy(fn ($d) => $d->organizationalUnit?->name ?: 'Sin dirección')
+            ->map(function ($rows, $unit) {
+                $expected = $rows->count();
+                $received = $rows->filter(fn ($d) => $d->evidences->isNotEmpty())->count();
+                $validated = $rows->filter(fn ($d) => $d->evidences->contains(fn ($e) => in_array($e->status?->value ?? (string) $e->status, ['VALIDADO', 'CERRADO'], true)))->count();
+                return ['unit' => $unit, 'expected' => $expected, 'received' => $received, 'validated' => $validated, 'pending' => max(0, $expected - $received), 'percentage' => $expected ? round(100 * $received / $expected, 1) : 0];
+            })->sortBy('unit')->values()->all();
         $evidenceTrend = $evidenceDeliverables->groupBy(fn ($d) => $d->due_at?->format('Y-m') ?: 'Sin fecha')->sortKeys()->take(-6)->map(function ($rows, $period) {
             $expected = $rows->count();
             $received = $rows->filter(fn ($d) => $d->evidences->isNotEmpty())->count();
@@ -302,6 +311,7 @@ final class DashboardAnalyticsService
             'evidence_funnel' => $evidenceFunnel,
             'evidence_summary' => $evidenceSummary,
             'evidence_by_unit' => $evidenceByUnit,
+            'evidence_by_direction' => $evidenceByDirection,
             'evidence_trend' => $evidenceTrend,
             'pending_by_due' => $pendingByDue,
             'evidence_by_campaign' => $evidenceByCampaign,
