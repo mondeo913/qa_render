@@ -40,6 +40,11 @@ html[data-bs-theme=dark] .exec{background:#0b1017;color:#edf4fa}html[data-bs-the
 .agency-mark img{display:block;width:100%;height:100%;max-width:100%;max-height:100%;object-fit:contain;object-position:center;background:#fff}
 .agency-name{min-width:0;overflow-wrap:anywhere}
 @media(max-width:700px){.agency-mark{width:68px;flex-basis:68px;height:42px}.exec-table td:first-child{min-width:145px}.exec-grid>.exec-card>.exec-chart{min-height:250px}}
+
+/* KPI labels remain readable over the dark executive dashboard. */
+.exec-kpi label{font-weight:700;letter-spacing:.01em;color:#d7e2ec;text-shadow:0 1px 1px rgba(0,0,0,.22)}
+html[data-bs-theme=dark] .exec-kpi label{color:#e8f1f7}
+.exec-kpi strong{font-weight:800}
 </style>
 <div class="exec">
 <div class="exec-top"><div></div><div class="exec-actions"><a class="btn btn-primary" href="{{ route('reports.pdf',request()->query()) }}"><i class="bi bi-download export-icon"></i>Exportar resumen</a></div></div>
