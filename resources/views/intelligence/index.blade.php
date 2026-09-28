@@ -47,6 +47,35 @@
 .direction-intelligence .di-quality{max-height:260px;overflow:auto}
 @media(max-width:1399px){.direction-intelligence .compact-role-kpis{grid-template-columns:repeat(4,minmax(0,1fr))}}
 @media(max-width:700px){.direction-intelligence{padding:10px}.direction-intelligence .compact-role-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+/* Normalización ejecutiva: misma geometría de KPIs y módulos que Dirección General. */
+.direction-intelligence .compact-role-kpis{grid-template-columns:repeat(6,minmax(0,1fr));gap:12px;margin:0 0 16px}
+.direction-intelligence .role-kpi-card{min-height:108px;height:108px;padding:16px;grid-template-columns:34px 1fr;column-gap:10px;border-radius:14px}
+.direction-intelligence .role-kpi-icon{width:34px;height:34px;border-radius:9px;font-size:.9rem}
+.direction-intelligence .role-kpi-card small{font-size:.72rem;line-height:1.15}
+.direction-intelligence .role-kpi-card strong{font-size:1.55rem;line-height:1.1}
+.direction-intelligence .di-filters{padding:12px 14px;margin-bottom:16px}
+.direction-intelligence .di-filters label{font-size:.68rem;line-height:1.1;margin-bottom:3px}
+.direction-intelligence .di-filters select,.direction-intelligence .di-filters input{height:32px;min-height:32px;padding:.34rem .55rem;font-size:.76rem}
+.direction-intelligence .di-filters .btn{height:32px;min-height:32px;padding:.34rem .55rem;font-size:.76rem}
+.direction-intelligence .di-chart-grid{display:grid;gap:12px;margin:0 0 12px}
+.direction-intelligence .di-chart-grid>[class*="col-"]{width:auto!important;max-width:none!important;padding:0;min-width:0}
+.direction-intelligence .di-chart-grid-primary{grid-template-columns:5fr 3fr 4fr}
+.direction-intelligence .di-chart-grid-secondary{grid-template-columns:1fr 1fr}
+.direction-intelligence .di-chart-grid-tertiary{grid-template-columns:7fr 5fr}
+.direction-intelligence .di-panel{border-radius:15px;display:flex;flex-direction:column;min-height:300px}
+.direction-intelligence .di-head{padding:15px 17px}
+.direction-intelligence .di-head h3{font-size:.95rem}
+.direction-intelligence .di-head p{font-size:.67rem;margin-top:4px}
+.direction-intelligence .di-chart{height:300px;min-height:300px;padding:10px 14px 12px;flex:1}
+.direction-intelligence .di-table{font-size:.72rem}
+.direction-intelligence .di-table th{font-size:.61rem}
+.direction-intelligence .di-table td,.direction-intelligence .di-table th{padding:9px 10px}
+.direction-intelligence .di-badge{font-size:.58rem;padding:4px 6px;border-radius:7px}
+.direction-intelligence .di-empty{padding:24px;font-size:.72rem}
+.direction-intelligence .di-quality{max-height:none;overflow:auto;flex:1}
+@media(max-width:1200px){.direction-intelligence .compact-role-kpis{grid-template-columns:repeat(3,minmax(0,1fr))}.direction-intelligence .di-chart-grid-primary{grid-template-columns:1fr 1fr}.direction-intelligence .di-chart-grid-primary>[class*="col-"]:last-child{grid-column:1/-1}.direction-intelligence .di-chart-grid-secondary,.direction-intelligence .di-chart-grid-tertiary{grid-template-columns:1fr 1fr}}
+@media(max-width:700px){.direction-intelligence .compact-role-kpis{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.direction-intelligence .di-chart-grid,.direction-intelligence .di-chart-grid-primary,.direction-intelligence .di-chart-grid-secondary,.direction-intelligence .di-chart-grid-tertiary{grid-template-columns:1fr}.direction-intelligence .di-chart-grid-primary>[class*="col-"]:last-child{grid-column:auto}.direction-intelligence .di-chart{height:250px;min-height:250px}.direction-intelligence .role-kpi-card{height:104px;min-height:104px;padding:10px}}
+
 </style>
 
 @if($isDirectionDirector)
@@ -124,7 +153,7 @@
         @endforeach
     </div>
 
-    <div class="row g-3 mb-3">
+    <div class="row g-3 mb-3 di-chart-grid di-chart-grid-primary">
         <div class="col-xl-5">
             <div class="di-panel">
                 <div class="di-head"><h3>Ritmo de operación</h3><p>Entradas, cierres y cumplimiento de la Dirección.</p></div>
@@ -145,7 +174,7 @@
         </div>
     </div>
 
-    <div class="row g-3 mb-3">
+    <div class="row g-3 mb-3 di-chart-grid di-chart-grid-secondary">
         <div class="col-xl-6">
             <div class="di-panel">
                 <div class="di-head"><h3>Por responsable operativo</h3><p>Evidencias esperadas frente a evidencias enviadas.</p></div>
@@ -178,7 +207,7 @@
         </div>
     </div>
 
-    <div class="row g-3">
+    <div class="row g-3 di-chart-grid di-chart-grid-tertiary">
         <div class="col-xl-7">
             <div class="di-panel">
                 <div class="di-head"><h3>Atención prioritaria</h3><p>Vencimientos, observaciones y pendientes dentro de la Dirección.</p></div>
