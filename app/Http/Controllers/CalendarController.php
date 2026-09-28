@@ -23,13 +23,26 @@ class CalendarController extends Controller
             ->get();
 
         return view('calendario.index', [
-            'agencies' => ContractingAgency::query()
-                ->where('active', true)
-                ->orderBy('name')
-                ->get(),
+            'agencies' => $this->accessibleAgencies($request->user(), $access),
             'canImport' => $request->user()->hasPermission('calendar.import'),
             'upcoming' => $upcoming,
         ]);
+    }
+
+    private function accessibleAgencies($user, AccessScopeService $access)
+    {
+        $loadIds = $access->scopeLoads(ScheduledLoad::query(), $user)->select('scheduled_loads.id');
+
+        return ContractingAgency::query()
+            ->where('active', true)
+            ->whereIn('id', ScheduledLoad::query()
+                ->whereIn('id', $loadIds)
+                ->whereNotNull('contracting_agency_id')
+                ->select('contracting_agency_id')
+                ->distinct()
+            )
+            ->orderBy('name')
+            ->get();
     }
 
     public function events(
