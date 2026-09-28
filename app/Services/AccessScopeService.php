@@ -153,14 +153,27 @@ final class AccessScopeService
     {
         $role = $user->role?->code;
 
-        // Un Director de Dirección queda estrictamente contenido en la
-        // dependencia asociada a su Dirección, aunque existan scopes adicionales.
+        // Un Director de Dirección consolida todas las dependencias que
+        // tengan cargada la misma Dirección (DIR_A o DIR_B), sin acceder
+        // nunca a la otra Dirección.
         if (RoleCode::isDirectionDirector($role) && $user->organizational_unit_id) {
-            $unitAgencyId = OrganizationalUnit::query()
+            $directionCode = OrganizationalUnit::query()
                 ->where('organizational_units.id', (int) $user->organizational_unit_id)
-                ->value('contracting_agency_id');
+                ->value('code');
 
-            return $unitAgencyId ? [(int) $unitAgencyId] : [];
+            if ($directionCode) {
+                return OrganizationalUnit::query()
+                    ->where('active', true)
+                    ->where('unit_type', 'DIRECTION')
+                    ->where('code', $directionCode)
+                    ->whereNotNull('contracting_agency_id')
+                    ->distinct()
+                    ->pluck('contracting_agency_id')
+                    ->map(fn ($id) => (int) $id)
+                    ->all();
+            }
+
+            return [];
         }
 
         $agencyIds = $user->scopes()
@@ -195,21 +208,37 @@ final class AccessScopeService
         $role = $user->role?->code;
 
         if (RoleCode::isDirectionDirector($role) && $user->organizational_unit_id) {
-            $rootUnitId = (int) $user->organizational_unit_id;
-            $unitIds = [$rootUnitId];
-            $pending = [$rootUnitId];
+            $root = OrganizationalUnit::query()
+                ->where('organizational_units.id', (int) $user->organizational_unit_id)
+                ->first();
 
-            // La Dirección incluye todas sus áreas/coordinaciones descendientes,
-            // pero nunca unidades de otra rama o de otra dependencia.
+            if (!$root) {
+                return [];
+            }
+
+            // Una Dirección es una unidad estructural replicada por dependencia.
+            // El Director consolida todas las raíces con el mismo código y sus
+            // descendientes, pero nunca cruza hacia DIR_A <-> DIR_B.
+            $rootUnits = OrganizationalUnit::query()
+                ->where('active', true)
+                ->where('unit_type', 'DIRECTION')
+                ->where('code', $root->code)
+                ->get(['id', 'contracting_agency_id']);
+
+            $unitIds = $rootUnits->pluck('id')->map(fn ($id) => (int) $id)->all();
+            $pending = $unitIds;
+            $agencyIds = $rootUnits->pluck('contracting_agency_id')
+                ->filter()
+                ->map(fn ($id) => (int) $id)
+                ->unique()
+                ->values()
+                ->all();
+
             while ($pending !== []) {
                 $children = OrganizationalUnit::query()
                     ->whereIn('parent_id', $pending)
-                    ->where('contracting_agency_id', function ($query) use ($rootUnitId) {
-                        $query->select('contracting_agency_id')
-                            ->from('organizational_units')
-                            ->where('organizational_units.id', $rootUnitId)
-                            ->limit(1);
-                    })
+                    ->whereIn('contracting_agency_id', $agencyIds)
+                    ->where('active', true)
                     ->pluck('id')
                     ->map(fn ($id) => (int) $id)
                     ->all();
