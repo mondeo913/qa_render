@@ -13,6 +13,7 @@ final class LoadBoardController extends Controller
         $filters = $request->validate([
             'agency_id' => ['nullable', 'integer', 'min:1'],
             'unit_id' => ['nullable', 'string', 'max:500', 'regex:/^\d+(,\d+)*$/'],
+            'pauta_id' => ['nullable', 'integer', 'min:1'],
             'from' => ['nullable', 'date_format:Y-m'],
             'to' => ['nullable', 'date_format:Y-m'],
             'q' => ['nullable', 'string', 'max:180'],
