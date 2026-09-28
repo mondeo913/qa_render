@@ -19,8 +19,9 @@ final class LoadBoardService
     /** @param array{agency_id?: int|null,unit_id?: string|int|null,from?: string|null,to?: string|null,q?: string|null,mine?: bool|null} $filters */
     public function forUser(User $user,array $filters=[]): array
     {
-        $normalized=['agency_id'=>isset($filters['agency_id'])&&$filters['agency_id']!==''?(int)$filters['agency_id']:null,'unit_id'=>trim((string)($filters['unit_id']??''))?:null,'from'=>trim((string)($filters['from']??''))?:null,'to'=>trim((string)($filters['to']??''))?:null,'q'=>trim((string)($filters['q']??''))?:null,'mine'=>(bool)($filters['mine']??false)];
-        $availableAgencies=$this->availableAgencies($user); $availableUnits=$this->availableUnits($user,$normalized['agency_id']);
+        $normalized=['pauta_id'=>isset($filters['pauta_id'])&&$filters['pauta_id']!==''?(int)$filters['pauta_id']:null,'agency_id'=>isset($filters['agency_id'])&&$filters['agency_id']!==''?(int)$filters['agency_id']:null,'unit_id'=>trim((string)($filters['unit_id']??''))?:null,'from'=>trim((string)($filters['from']??''))?:null,'to'=>trim((string)($filters['to']??''))?:null,'q'=>trim((string)($filters['q']??''))?:null,'mine'=>(bool)($filters['mine']??false)];
+        $availableAgencies=$this->availableAgencies($user,$normalized);
+        $availableUnits=$this->availableUnits($user,$normalized['agency_id']);
         if($normalized['agency_id']!==null&&!$availableAgencies->contains('id',$normalized['agency_id']))$normalized['agency_id']=null;
         $selectedUnitIds=$this->parseIds($normalized['unit_id']);
         $allowedUnitIds=$availableUnits->flatMap(fn($unit)=>(array)($unit->filter_unit_ids??[$unit->id]))->map(fn($id)=>(int)$id)->unique()->values()->all();
@@ -39,32 +40,40 @@ final class LoadBoardService
     {
         $query=$this->access->scopeLoads(ScheduledLoad::query(),$user); $unitIds=$this->parseIds($filters['unit_id']??null);
         $query->with(['agency:id,code,name,metadata','deliverables'=>function($deliverables)use($user,$filters,$unitIds){$this->access->scopeDeliverables($deliverables,$user);if($unitIds)$deliverables->whereIn('organizational_unit_id',$unitIds);if($filters['mine']&&RoleCode::isOperator($user->role?->code))$deliverables->where('responsible_user_id',$user->id);$deliverables->with(['organizationalUnit:id,code,name','responsibleUser:id,name','evidences:id,deliverable_id,status']);}]);
+        if($filters['pauta_id'])$query->where('calendar_import_id',$filters['pauta_id']);
         if($includeAgencyFilter&&$filters['agency_id'])$query->where('contracting_agency_id',$filters['agency_id']);
         if($unitIds)$query->whereHas('deliverables',fn(Builder $d)=>$d->whereIn('organizational_unit_id',$unitIds));
         if($filters['mine']&&RoleCode::isOperator($user->role?->code))$query->whereHas('deliverables',fn(Builder $d)=>$d->where('responsible_user_id',$user->id));
         $this->applyMonthRange($query,$filters['from'],$filters['to']);
-        if($filters['q']){$term='%'.str_replace(['%','_'],['\\%','\\_'],$filters['q']).'%';$query->where(fn(Builder $search)=>$search->where('title','like',$term)->orWhere('period_label','like',$term)->orWhereHas('agency',fn(Builder $agency)=>$agency->where('name','like',$term)->orWhere('code','like',$term)));}
+        if($filters['q']){$term='%'.str_replace(['%','_'],['\\%','\\_'],$filters['q']).'%';$query->where(fn(Builder $search)=>$search->where('title','like',$term)->orWhere('period_label','like',$term)->orWhereHas('agency',fn(Builder $agency)=>$agency->where('name','like',$term)->orWhere('code','like',$term))->orWhereHas('calendarImport',fn(Builder $import)=>$import->where('original_filename','like',$term)));}
         return $query;
     }
 
-    private function availableAgencies(User $user):Collection
+    private function availableAgencies(User $user,array $filters=[]):Collection
     {
-        $role=$user->role?->code;
         $query=ContractingAgency::query()->select(['id','code','name','metadata'])->where('active',true);
-        if(in_array($role,[RoleCode::ADMINISTRADOR->value,RoleCode::DIRECTOR_GENERAL->value],true))return $query->orderBy('name')->get();
-        if(in_array($role,[RoleCode::ENLACE_INSTITUCIONAL->value,RoleCode::DIRECTOR_TRANSMISION->value,RoleCode::DIRECTOR_PROGRAMACION_CONTINUIDAD->value],true)){
-            $ids=$user->scopes()->where('can_read',true)->whereNotNull('contracting_agency_id')->pluck('contracting_agency_id')->map(fn($id)=>(int)$id)->all();
-            if($user->contracting_agency_id)$ids[]=(int)$user->contracting_agency_id;
-            $ids=array_values(array_unique($ids));
-            return $ids?$query->whereIn('id',$ids)->orderBy('name')->get():$query->whereHas('scheduledLoads',fn(Builder $loads)=>$this->access->scopeLoads($loads,$user))->orderBy('name')->get();
+        $loads=$this->access->scopeLoads(ScheduledLoad::query(),$user);
+        if(!empty($filters['unit_id'])){
+            $unitIds=$this->parseIds($filters['unit_id']);
+            if($unitIds)$loads->whereHas('deliverables',fn(Builder $d)=>$d->whereIn('organizational_unit_id',$unitIds));
         }
-        return $query->whereHas('scheduledLoads',fn(Builder $loads)=>$this->access->scopeLoads($loads,$user))->orderBy('name')->get();
+        if(!empty($filters['pauta_id']))$loads->where('calendar_import_id',(int)$filters['pauta_id']);
+        $ids=(clone $loads)->distinct()->pluck('contracting_agency_id')->map(fn($id)=>(int)$id)->all();
+        return $ids?$query->whereIn('id',$ids)->orderBy('name')->get():$query->whereRaw('1=0')->get();
     }
 
     private function availableUnits(User $user,?int $agencyId=null):Collection
     {
-        $unitIds=$this->access->accessibleUnitIds($user); $query=OrganizationalUnit::query()->select(['id','contracting_agency_id','code','name'])->where('active',true);
-        if($unitIds!==[])$query->whereIn('id',$unitIds);else$query->whereHas('deliverables.scheduledLoad',fn(Builder $loads)=>$this->access->scopeLoads($loads,$user));
+        $role=$user->role?->code;
+        $query=OrganizationalUnit::query()->select(['id','contracting_agency_id','code','name'])->where('active',true);
+        if(RoleCode::isDirectionDirector($role)){
+            $root=$user->organizationalUnit;
+            $rootCode=$root?->code;
+            $query->where('unit_type','DIRECTION')->when($rootCode,fn($q)=>$q->where('code',$rootCode));
+        } else {
+            $unitIds=$this->access->accessibleUnitIds($user);
+            if($unitIds!==[])$query->whereIn('id',$unitIds);else$query->whereHas('deliverables.scheduledLoad',fn(Builder $loads)=>$this->access->scopeLoads($loads,$user));
+        }
         if($agencyId)$query->where('contracting_agency_id',$agencyId);
         $units=$query->orderBy('name')->get();
         return $units->groupBy(fn($unit)=>mb_strtolower(preg_replace('/\s+/u',' ',trim((string)$unit->name))))->map(function(Collection $group){$unit=$group->first();$unit->name=preg_replace('/\s+/u',' ',trim((string)$unit->name));$unit->filter_unit_ids=$group->pluck('id')->map(fn($id)=>(int)$id)->unique()->values()->all();return $unit;})->sortBy(fn($unit)=>mb_strtolower($unit->name))->values();
@@ -72,13 +81,13 @@ final class LoadBoardService
 
     private function availablePeriods(User $user,array $filters=[]):Collection
     {
-        $query=$this->access->scopeLoads(ScheduledLoad::query(),$user); if(!empty($filters['agency_id']))$query->where('contracting_agency_id',(int)$filters['agency_id']); $unitIds=$this->parseIds($filters['unit_id']??null); if($unitIds)$query->whereHas('deliverables',fn(Builder $d)=>$d->whereIn('organizational_unit_id',$unitIds));
+        $query=$this->access->scopeLoads(ScheduledLoad::query(),$user); if(!empty($filters['pauta_id']))$query->where('calendar_import_id',(int)$filters['pauta_id']); if(!empty($filters['agency_id']))$query->where('contracting_agency_id',(int)$filters['agency_id']); $unitIds=$this->parseIds($filters['unit_id']??null); if($unitIds)$query->whereHas('deliverables',fn(Builder $d)=>$d->whereIn('organizational_unit_id',$unitIds));
         return $query->whereNotNull('effective_open_at')->whereNotNull('effective_close_at')->select(['effective_open_at','effective_close_at'])->get()->flatMap(function($load){$start=$load->effective_open_at->copy()->startOfMonth();$end=$load->effective_close_at->copy()->startOfMonth();$months=collect();for($cursor=$start->copy();$cursor->lte($end);$cursor->addMonth())$months->push($cursor->format('Y-m'));return $months;})->unique()->sortDesc()->values();
     }
 
     private function periodBounds(User $user,array $filters=[]):array
     {
-        $query=$this->access->scopeLoads(ScheduledLoad::query(),$user); if(!empty($filters['agency_id']))$query->where('contracting_agency_id',(int)$filters['agency_id']); $unitIds=$this->parseIds($filters['unit_id']??null); if($unitIds)$query->whereHas('deliverables',fn(Builder $d)=>$d->whereIn('organizational_unit_id',$unitIds)); $dates=$query->whereNotNull('effective_open_at')->whereNotNull('effective_close_at')->select(['effective_open_at','effective_close_at'])->get(); if($dates->isEmpty())return['min'=>null,'max'=>null]; return['min'=>$dates->min('effective_open_at')->copy()->startOfMonth()->format('Y-m'),'max'=>$dates->max('effective_close_at')->copy()->startOfMonth()->format('Y-m')];
+        $query=$this->access->scopeLoads(ScheduledLoad::query(),$user); if(!empty($filters['pauta_id']))$query->where('calendar_import_id',(int)$filters['pauta_id']); if(!empty($filters['agency_id']))$query->where('contracting_agency_id',(int)$filters['agency_id']); $unitIds=$this->parseIds($filters['unit_id']??null); if($unitIds)$query->whereHas('deliverables',fn(Builder $d)=>$d->whereIn('organizational_unit_id',$unitIds)); $dates=$query->whereNotNull('effective_open_at')->whereNotNull('effective_close_at')->select(['effective_open_at','effective_close_at'])->get(); if($dates->isEmpty())return['min'=>null,'max'=>null]; return['min'=>$dates->min('effective_open_at')->copy()->startOfMonth()->format('Y-m'),'max'=>$dates->max('effective_close_at')->copy()->startOfMonth()->format('Y-m')];
     }
 
     private function applyMonthRange(Builder $query,?string $from,?string $to):void
