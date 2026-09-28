@@ -269,6 +269,8 @@ final class IntelligenceAnalyticsService
         // consolidando las cargas de sus unidades descendientes.
         if ($directionContext) {
             $row = (clone $base())
+                ->join('scheduled_load_deliverables','scheduled_load_deliverables.scheduled_load_id','=','scheduled_loads.id')
+                ->whereIn('scheduled_load_deliverables.organizational_unit_id', $directionContext['unit_ids'])
                 ->where('scheduled_loads.status', '!=', 'CANCELADA')
                 ->selectRaw('COUNT(DISTINCT scheduled_loads.id) AS total')
                 ->selectRaw("COUNT(DISTINCT CASE WHEN scheduled_loads.status='VALIDADO_Y_CERRADO' THEN scheduled_loads.id END) AS closed")
