@@ -21,6 +21,25 @@
     $stability = max(0, round(100 - ($total ? 100*$reprogrammed/$total : 0),1));
     $selectedIndicator = $filters['indicator'] ?? 'cumplimiento';
     $frequency = $filters['frequency'] ?? 'mensual';
+    $labels = $monthly->pluck('period')->values()->all();
+    $trendCompliance = $monthly->pluck('compliance')->map(fn($v) => (float) $v)->values()->all();
+    $trendLoads = $monthly->pluck('total')->map(fn($v) => (int) $v)->values()->all();
+    $trendClosed = $monthly->pluck('closed')->map(fn($v) => (int) $v)->values()->all();
+    $unitLabels = $units->pluck('unit')->values()->all();
+    $unitPct = $units->pluck('percentage')->map(fn($v) => (float) $v)->values()->all();
+    $unitTotal = $units->pluck('total')->map(fn($v) => (int) $v)->values()->all();
+    $agencyLabels = $agencies->pluck('agency')->values()->all();
+    $agencyPct = $agencies->pluck('percentage')->map(fn($v) => (float) $v)->values()->all();
+    $statusLabels = $status->keys()->values()->all();
+    $statusValues = $status->values()->map(fn($v) => (int) $v)->values()->all();
+
+    $indicatorRows = [
+        ['Cumplimiento institucional','Porcentaje de cargas cerradas respecto del universo seleccionado.','Mensual',$compliance,'≥ 90%',$compliance - 90],
+        ['Cierre efectivo','Porcentaje de cargas que llegan a cierre validado.','Mensual',$closure,'≥ 85%',$closure - 85],
+        ['Presión de riesgo','Porcentaje de cargas vencidas sobre el universo.','Semanal',$risk,'≤ 10%',$risk - 10],
+        ['Estabilidad operativa','Relación inversa de reprogramaciones sobre el universo.','Mensual',$stability,'≥ 90%',$stability - 90],
+        ['Reprogramaciones','Total de cargas reprogramadas en el periodo.','Mensual',$reprogrammed,'Referencia',$reprogrammed],
+    ];
 
     $isDirectionDirector = in_array(
         auth()->user()?->role?->code,
