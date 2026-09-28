@@ -157,7 +157,7 @@ final class AccessScopeService
         // dependencia asociada a su Dirección, aunque existan scopes adicionales.
         if (RoleCode::isDirectionDirector($role) && $user->organizational_unit_id) {
             $unitAgencyId = OrganizationalUnit::query()
-                ->whereKey($user->organizational_unit_id)
+                ->where('organizational_units.id', (int) $user->organizational_unit_id)
                 ->value('contracting_agency_id');
 
             return $unitAgencyId ? [(int) $unitAgencyId] : [];
@@ -207,7 +207,7 @@ final class AccessScopeService
                     ->where('contracting_agency_id', function ($query) use ($rootUnitId) {
                         $query->select('contracting_agency_id')
                             ->from('organizational_units')
-                            ->whereKey($rootUnitId)
+                            ->where('organizational_units.id', $rootUnitId)
                             ->limit(1);
                     })
                     ->pluck('id')
