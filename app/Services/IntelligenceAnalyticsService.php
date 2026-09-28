@@ -125,13 +125,21 @@ final class IntelligenceAnalyticsService
         // de su universo, pero no deben presentarse como Direcciones adicionales.
         $directionContext = $this->directionContext($user);
         if ($directionContext) {
-            $root = OrganizationalUnit::query()
-                ->whereKey($directionContext['id'])
+            $rootIds = $directionContext['root_unit_ids'] ?? [$directionContext['id']];
+            $units = OrganizationalUnit::query()
                 ->where('active', true)
-                ->first();
-            $units = $root
-                ? collect([$root->setAttribute('filter_unit_ids', [(int) $root->id])])
-                : collect();
+                ->whereIn('id', $rootIds)
+                ->orderBy('name')
+                ->get()
+                ->groupBy(fn ($unit) => mb_strtolower(preg_replace('/\\s+/u', ' ', trim((string) $unit->name))))
+                ->map(function (Collection $group) {
+                    $unit = $group->first();
+                    $unit->name = preg_replace('/\\s+/u', ' ', trim((string) $unit->name));
+                    $unit->filter_unit_ids = $group->pluck('id')->map(fn ($id) => (int) $id)->values()->all();
+                    return $unit;
+                })
+                ->sortBy(fn ($unit) => mb_strtolower((string) $unit->name))
+                ->values();
         }
 
         $pautas = (clone $loadQuery)
@@ -275,10 +283,20 @@ final class IntelligenceAnalyticsService
             return null;
         }
 
+        $directionRoots = OrganizationalUnit::query()
+            ->where('active', true)
+            ->where('unit_type', 'DIRECTION')
+            ->where('code', $unit->code)
+            ->orderBy('id')
+            ->get(['id', 'contracting_agency_id']);
+
         return [
             'id' => (int) $unit->id,
             'name' => preg_replace('/\\s+/u', ' ', trim((string) $unit->name)),
+            'code' => (string) $unit->code,
             'agency_id' => (int) $unit->contracting_agency_id,
+            'root_unit_ids' => $directionRoots->pluck('id')->map(fn ($id) => (int) $id)->values()->all(),
+            'agency_ids' => $directionRoots->pluck('contracting_agency_id')->filter()->map(fn ($id) => (int) $id)->unique()->values()->all(),
             'unit_ids' => $this->access->accessibleUnitIds($user),
         ];
     }
