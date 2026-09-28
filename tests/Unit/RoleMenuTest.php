@@ -18,9 +18,9 @@ class RoleMenuTest extends TestCase
 
         $this->assertTrue($admin->contains('intelligence'));
         $this->assertTrue($admin->contains('admin.templates'));
-        $this->assertTrue($directorTx->contains('indicators.index'));
+        $this->assertSame($directorTx->all(), $directorPc->all());
         $this->assertTrue($directorTx->contains('loads.board'));
-        $this->assertTrue($directorPc->contains('repository.index'));
+        $this->assertTrue($directorTx->contains('repository.index'));
         $this->assertTrue($operatorTx->contains('calendar.index'));
         $this->assertTrue($operatorTx->contains('loads.mine'));
         $this->assertTrue($operatorTx->contains('loads.board'));
