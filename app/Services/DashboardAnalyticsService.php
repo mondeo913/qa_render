@@ -359,7 +359,21 @@ final class DashboardAnalyticsService
         }
 
         if (!empty($filters['campaign'])) {
-            $query->where('scheduled_loads.title', (string) $filters['campaign']);
+            // El selector envía agencia::pauta para distinguir pautas homónimas
+            // entre dependencias; se conserva compatibilidad con títulos antiguos.
+            $campaignFilter = explode('::', (string) $filters['campaign'], 2);
+            $campaignAgencyId = isset($campaignFilter[1]) && ctype_digit($campaignFilter[0])
+                ? (int) $campaignFilter[0]
+                : null;
+            $campaignTitle = $campaignAgencyId !== null
+                ? (string) $campaignFilter[1]
+                : (string) $filters['campaign'];
+
+            if ($campaignAgencyId !== null && $campaignAgencyId > 0) {
+                $query->where('scheduled_loads.contracting_agency_id', $campaignAgencyId);
+            }
+
+            $query->where('scheduled_loads.title', $campaignTitle);
         }
 
         if (!empty($filters['status'])) {
