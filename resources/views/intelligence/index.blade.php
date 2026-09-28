@@ -220,7 +220,7 @@
                                 <td><span class="di-badge {{ $item['level']==='CRÍTICO'?'bg-danger':'bg-warning text-dark' }}">{{ $item['level'] }}</span></td>
                                 <td><strong>{{ $item['title'] }}</strong><small class="d-block text-muted">{{ $item['detail'] }}</small></td>
                                 <td>{{ $item['description'] }}</td>
-                                <td>{{ !empty($item['date']) ? IlluminateSupportCarbon::parse($item['date'])->format('d/m/Y') : '—' }}</td>
+                                <td>{{ !empty($item['date']) ? \Illuminate\Support\Carbon::parse($item['date'])->format('d/m/Y') : '—' }}</td>
                                 <td class="text-end">@if(!empty($item['load_id']))<a href="{{ route('loads.show',$item['load_id']) }}" class="btn btn-sm btn-outline-primary py-0">Ver</a>@endif</td>
                             </tr>
                         @empty
