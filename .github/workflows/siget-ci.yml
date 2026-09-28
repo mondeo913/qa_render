@@ -1,0 +1,251 @@
+name: SIGET CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  php-tests:
+    name: PHP tests + app smoke
+    needs: frontend
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_DB: siget_ci
+          POSTGRES_USER: siget
+          POSTGRES_PASSWORD: siget_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U siget -d siget_ci"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP 8.3
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mbstring, bcmath, intl, gd, pdo_sqlite, pdo_pgsql, pgsql, zip
+          coverage: none
+          tools: composer:v2
+
+      - name: Composer install
+        run: composer install --no-interaction --no-progress --prefer-dist
+
+      - name: Download compiled assets
+        uses: actions/download-artifact@v4
+        with:
+          name: vite-build-${{ github.sha }}
+          path: public/build
+
+      - name: Prepare application
+        run: |
+          cp .env.example .env
+          php artisan key:generate --force
+          php artisan config:clear
+          php artisan migrate:fresh --force
+        env:
+          DB_CONNECTION: pgsql
+          DB_HOST: 127.0.0.1
+          DB_PORT: 5432
+          DB_DATABASE: siget_ci
+          DB_USERNAME: siget
+          DB_PASSWORD: siget_ci
+          SESSION_DRIVER: array
+          CACHE_STORE: array
+          QUEUE_CONNECTION: sync
+
+      - name: PHP syntax check
+        shell: bash
+        run: |
+          set -euo pipefail
+          find app config database routes tests -type f -name '*.php' -print0 | xargs -0 -n1 php -l
+
+      - name: Route and application smoke
+        run: |
+          php artisan route:list >/tmp/routes.txt
+          grep -q "intelligence" /tmp/routes.txt
+          php artisan about >/tmp/about.txt
+
+      - name: Intelligence focused tests
+        run: php artisan test --filter=IntelligenceAccessTest
+
+      - name: PHPUnit / Laravel tests
+        run: php artisan test --colors=always
+
+      - name: Start application
+        env:
+          DB_CONNECTION: pgsql
+          DB_HOST: 127.0.0.1
+          DB_PORT: 5432
+          DB_DATABASE: siget_ci
+          DB_USERNAME: siget
+          DB_PASSWORD: siget_ci
+          SESSION_DRIVER: array
+          CACHE_STORE: array
+          QUEUE_CONNECTION: sync
+        run: |
+          nohup php artisan serve --host=127.0.0.1 --port=8000 >/tmp/siget-server.log 2>&1 &
+          for i in $(seq 1 30); do
+            code="$(curl -sS -o /tmp/siget-home.html -w '%{http_code}' http://127.0.0.1:8000/ || true)"
+            if [ "$code" = "200" ] || [ "$code" = "302" ] || [ "$code" = "303" ]; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/siget-server.log
+          exit 1
+
+      - name: Validate Intelligence permissions
+        run: |
+          php artisan tinker --execute='echo App\Models\Permission::query()->where("code","intelligence.view")->exists() ? "intelligence.view OK" : "intelligence.view MISSING";'
+        env:
+          DB_CONNECTION: pgsql
+          DB_HOST: 127.0.0.1
+          DB_PORT: 5432
+          DB_DATABASE: siget_ci
+          DB_USERNAME: siget
+          DB_PASSWORD: siget_ci
+          SESSION_DRIVER: array
+          CACHE_STORE: array
+          QUEUE_CONNECTION: sync
+
+      - name: Source artifact
+        run: |
+          git archive --format=tar.gz --output=siget-source.tar.gz HEAD
+
+      - name: Upload source artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: siget-source-${{ github.sha }}
+          path: siget-source.tar.gz
+          if-no-files-found: error
+
+      - name: Download Node runtime
+        uses: actions/download-artifact@v4
+        with:
+          name: node-modules-${{ github.sha }}
+          path: /tmp/siget-runtime
+
+      - name: Build runtime bundle
+        run: |
+          tar -xzf /tmp/siget-runtime/node-modules-${{ github.sha }}.tar.gz -C /tmp/siget-runtime
+          tar -czf siget-runtime.tar.gz vendor public/build -C /tmp/siget-runtime node_modules
+
+      - name: Upload runtime bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: siget-runtime-${{ github.sha }}
+          path: siget-runtime.tar.gz
+          if-no-files-found: error
+
+  frontend:
+    name: Vite build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: npm ci
+        run: npm ci
+
+      - name: npm build
+        run: npm run build
+
+      - name: Upload compiled assets
+        uses: actions/upload-artifact@v4
+        with:
+          name: vite-build-${{ github.sha }}
+          path: public/build
+          if-no-files-found: error
+
+      - name: Package Node runtime
+        run: tar -czf node-modules-${{ github.sha }}.tar.gz node_modules
+
+      - name: Upload Node runtime
+        uses: actions/upload-artifact@v4
+        with:
+          name: node-modules-${{ github.sha }}
+          path: node-modules-${{ github.sha }}.tar.gz
+          if-no-files-found: error
+
+  postgres-smoke:
+    name: PostgreSQL migration smoke
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_DB: siget_ci
+          POSTGRES_USER: siget
+          POSTGRES_PASSWORD: siget_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U siget -d siget_ci"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP 8.3
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mbstring, bcmath, intl, gd, pdo_pgsql, pgsql, zip
+          coverage: none
+          tools: composer:v2
+
+      - name: Composer install
+        run: composer install --no-interaction --no-progress --prefer-dist
+
+      - name: Prepare application
+        run: |
+          cp .env.example .env
+          php artisan key:generate --force
+          php artisan config:clear
+          php artisan migrate:fresh --force
+        env:
+          DB_CONNECTION: pgsql
+          DB_HOST: 127.0.0.1
+          DB_PORT: 5432
+          DB_DATABASE: siget_ci
+          DB_USERNAME: siget
+          DB_PASSWORD: siget_ci
+          SESSION_DRIVER: array
+          CACHE_STORE: array
+          QUEUE_CONNECTION: sync
+
+      - name: Verify migration status
+        run: php artisan migrate:status
+        env:
+          DB_CONNECTION: pgsql
+          DB_HOST: 127.0.0.1
+          DB_PORT: 5432
+          DB_DATABASE: siget_ci
+          DB_USERNAME: siget
+          DB_PASSWORD: siget_ci
+          SESSION_DRIVER: array
+          CACHE_STORE: array
+          QUEUE_CONNECTION: sync

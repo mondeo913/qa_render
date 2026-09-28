@@ -2,141 +2,67 @@
 
 namespace App\Http\Controllers;
 
-use App\Enums\RoleCode;
 use App\Enums\ScheduledLoadStatus;
-use App\Models\ContractingAgency;
-use App\Models\OrganizationalUnit;
-use App\Models\ScheduledLoad;
-use App\Services\AccessScopeService;
-use App\Services\DashboardAnalyticsService;
+use App\Models\User;
+use App\Services\IntelligenceAnalyticsService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class IntelligenceController extends Controller
 {
-    public function __invoke(
-        Request $request,
-        DashboardAnalyticsService $analytics,
-        AccessScopeService $access
-    ): View {
-        abort_unless($request->user()->hasPermission('intelligence.view'), 403);
+    public function __invoke(Request $request, IntelligenceAnalyticsService $analytics): View
+    {
+        $user = $request->user();
+        abort_unless($user->hasPermission('intelligence.view'), 403);
 
         $filters = $request->validate([
             'agency_id' => ['nullable', 'integer'],
             'organizational_unit_id' => ['nullable', 'string', 'max:500'],
-            'status' => ['nullable', 'string', 'max:60'],
-            'from' => ['nullable', 'date_format:Y-m'],
-            'to' => ['nullable', 'date_format:Y-m', 'after_or_equal:from'],
+            'status' => ['nullable', 'string', Rule::in(array_map(fn ($case) => $case->value, ScheduledLoadStatus::cases()))],
+            'from' => ['nullable', 'date'],
+            'to' => ['nullable', 'date', 'after_or_equal:from'],
         ]);
 
-        $agencies = ContractingAgency::query()
-            ->where('active', true)
-            ->orderBy('name')
-            ->get();
+        $options = $analytics->filterOptions($user);
+        $code = $user->role?->code;
 
-        $units = OrganizationalUnit::query()
-            ->where('active', true)
-            ->when(
-                !empty($filters['agency_id']),
-                fn ($q) => $q->where('contracting_agency_id', (int) $filters['agency_id'])
-            )
-            ->orderBy('name')
-            ->get()
-            ->groupBy(function ($unit) {
-                $name = preg_replace('/\s+/u', ' ', trim((string) $unit->name));
-                return mb_strtolower($name);
-            })
-            ->map(function ($group) {
-                $unit = $group->first();
-                $unit->name = preg_replace('/\s+/u', ' ', trim((string) $unit->name));
-                $unit->filter_unit_ids = $group->pluck('id')
-                    ->map(fn ($id) => (int) $id)
-                    ->values()
-                    ->all();
-                return $unit;
-            })
-            ->sortBy(fn ($unit) => mb_strtolower(trim((string) $unit->name)))
-            ->values();
+        $rolePayload = match ($code) {
+            'ADMINISTRADOR' => ['code'=>'ADMINISTRADOR','title'=>'Inteligencia de administración','subtitle'=>'Salud del sistema, riesgos de operación y calidad de datos.'],
+            'DIRECTOR_GENERAL' => ['code'=>'DIRECTOR_GENERAL','title'=>'Radar institucional','subtitle'=>'Riesgos, prioridades y comportamiento de las cargas a nivel institucional.'],
+            'ENLACE_INSTITUCIONAL' => ['code'=>'ENLACE_INSTITUCIONAL','title'=>'Inteligencia de revisión institucional','subtitle'=>'Pendientes de revisión, inconsistencias y expedientes que requieren atención.'],
+            'DIRECTOR','DIRECTOR_TRANSMISION','DIRECTOR_PROGRAMACION_CONTINUIDAD' => ['code'=>'DIRECTOR','title'=>'Inteligencia de dirección','subtitle'=>'Riesgos y pendientes de las cargas visibles para su Dirección.'],
+            'OPERADOR','OPERADOR_TRANSMISION','OPERADOR_PROGRAMACION_CONTINUIDAD' => ['code'=>'OPERADOR','title'=>'Inteligencia operativa','subtitle'=>'Prioridades de sus cargas, vencimientos y evidencias que requieren acción.'],
+            'FISCALIZADOR' => ['code'=>'FISCALIZADOR','title'=>'Inteligencia de fiscalización','subtitle'=>'Asignaciones, observaciones y cargas que requieren revisión.'],
+            default => ['code'=>'GENERAL','title'=>'Centro de Inteligencia','subtitle'=>'Lectura operativa de la información disponible para su perfil.'],
+        };
 
-        $periodQuery = $access->scopeLoads(
-            ScheduledLoad::query(),
-            $request->user()
-        );
-
-        if (!empty($filters['agency_id'])) {
-            $periodQuery->where('contracting_agency_id', (int) $filters['agency_id']);
+        $systemHealth = null;
+        if ($code === 'ADMINISTRADOR') {
+            $systemHealth = [
+                'active_users' => User::query()->where('status','ACTIVE')->count(),
+                'active_agencies' => $options['agencies']->count(),
+                'active_units' => $options['units']->count(),
+                'users_without_scope' => User::query()
+                    ->where('status','ACTIVE')
+                    ->whereNotIn('role_id', function ($q) {
+                        $q->select('id')->from('roles')->whereIn('code',['ADMINISTRADOR','DIRECTOR_GENERAL']);
+                    })
+                    ->whereNull('contracting_agency_id')
+                    ->whereNull('organizational_unit_id')
+                    ->count(),
+            ];
         }
 
-        $unitIds = collect(explode(',', (string) ($filters['organizational_unit_id'] ?? '')))
-            ->map(fn ($id) => (int) trim($id))
-            ->filter(fn ($id) => $id > 0)
-            ->unique()
-            ->values()
-            ->all();
-
-        if ($unitIds) {
-            $periodQuery->whereHas(
-                'deliverables',
-                fn ($deliverables) => $deliverables->whereIn('organizational_unit_id', $unitIds)
-            );
-        }
-
-        $periodDates = $periodQuery
-            ->whereNotNull('effective_open_at')
-            ->whereNotNull('effective_close_at')
-            ->select(['effective_open_at', 'effective_close_at'])
-            ->get();
-
-        $periodMin = $periodDates->isEmpty()
-            ? null
-            : $periodDates->min('effective_open_at')->copy()->startOfMonth()->format('Y-m');
-        $periodMax = $periodDates->isEmpty()
-            ? null
-            : $periodDates->max('effective_close_at')->copy()->startOfMonth()->format('Y-m');
-
-        // Inteligencia utiliza los mismos estados ejecutivos que los demás menús de seguimiento.
-        $visibleStatuses = [
-            ScheduledLoadStatus::PROGRAMADA->value,
-            ScheduledLoadStatus::REPROGRAMADA->value,
-            ScheduledLoadStatus::VALIDADO_Y_CERRADO->value,
-            ScheduledLoadStatus::VENCIDA->value,
-        ];
-
-        $role = $request->user()->role?->code;
-        $statuses = collect($visibleStatuses)
-            ->map(fn (string $status) => [
-                'code' => $status,
-                'label' => $this->statusLabel($status),
-            ])
-            ->when(
-                RoleCode::isDirectionDirector($role),
-                fn ($collection) => $collection->filter(
-                    fn (array $status) => in_array($status['code'], $visibleStatuses, true)
-                )
-            )
-            ->values();
+        $payload = $analytics->forUser($user, $filters);
+        $payload['role'] = $rolePayload;
+        $payload['system_health'] = $systemHealth;
 
         return view('intelligence.index', [
-            'analytics' => $analytics->forUser($request->user(), $filters),
-            'agencies' => $agencies,
-            'units' => $units,
-            'filterAgencies' => $agencies,
-            'filterUnits' => $units,
+            'analytics' => $payload,
+            'agencies' => $options['agencies'],
+            'units' => $options['units'],
             'filters' => $filters,
-            'statuses' => $statuses,
-            'periodMin' => $periodMin,
-            'periodMax' => $periodMax,
         ]);
-    }
-
-    private function statusLabel(string $status): string
-    {
-        return match ($status) {
-            'PROGRAMADA' => 'Programado',
-            'REPROGRAMADA' => 'Reprogramado',
-            'VALIDADO_Y_CERRADO' => 'Validado y cerrado',
-            'VENCIDA' => 'Vencido',
-            default => str($status)->replace('_', ' ')->lower()->ucfirst()->toString(),
-        };
     }
 }

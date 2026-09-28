@@ -92,20 +92,21 @@ class RolePermissionSeeder extends Seeder
                 'scheduled_load.review','scheduled_load.verify','scheduled_load.signature_package',
                 'scheduled_load.upload_signed','scheduled_load.close','scheduled_load.reopen',
             ],
-            'DIRECTOR' => $directorPermissions,
-            'DIRECTOR_TRANSMISION' => $directorPermissions,
-            'DIRECTOR_PROGRAMACION_CONTINUIDAD' => $directorPermissions,
+            'DIRECTOR' => array_values(array_unique([...$directorPermissions,'intelligence.view'])),
+            'DIRECTOR_TRANSMISION' => array_values(array_unique([...$directorPermissions,'intelligence.view'])),
+            'DIRECTOR_PROGRAMACION_CONTINUIDAD' => array_values(array_unique([...$directorPermissions,'intelligence.view'])),
             'ENLACE_INSTITUCIONAL' => [
+                'intelligence.view',
                 'dashboard.view','calendar.view','calendar.import','calendar.confirm','calendar.reschedule','scheduled_load.board',
                 'templates.manage','evidence.review','repository.view','repository.download',
                 'scheduled_load.review','scheduled_load.verify','scheduled_load.signature_package',
                 'scheduled_load.upload_signed','scheduled_load.close','scheduled_load.reopen','reports.view','reports.export',
                 'alerts.view','indicators.view','operations.view','backups.view',
             ],
-            'OPERADOR' => $operatorPermissions,
-            'OPERADOR_TRANSMISION' => $operatorPermissions,
-            'OPERADOR_PROGRAMACION_CONTINUIDAD' => $operatorPermissions,
-            'FISCALIZADOR' => ['repository.view','repository.download','reports.view','reports.export','evidence.review'],
+            'OPERADOR' => array_values(array_unique([...$operatorPermissions,'intelligence.view'])),
+            'OPERADOR_TRANSMISION' => array_values(array_unique([...$operatorPermissions,'intelligence.view'])),
+            'OPERADOR_PROGRAMACION_CONTINUIDAD' => array_values(array_unique([...$operatorPermissions,'intelligence.view'])),
+            'FISCALIZADOR' => ['repository.view','repository.download','reports.view','reports.export','evidence.review','intelligence.view'],
         ];
 
         $allPermissionIds = Permission::query()->pluck('id')->all();
