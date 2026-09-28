@@ -5,7 +5,7 @@
 @section('content')
 @php
 $summary=$analytics['evidence_summary']??['expected'=>0,'received'=>0,'validated'=>0,'pending'=>0,'observed'=>0,'review'=>0,'delivery_percentage'=>0,'validation_percentage'=>0,'observation_percentage'=>0];
-    $pauta=$analytics['pauta_summary']??[];$units=collect($analytics['evidence_by_unit']??[]);$directions=collect($analytics['evidence_by_direction']??[]);$trend=collect($analytics['evidence_trend']??[]);$due=collect($analytics['pending_by_due']??[]);$campaigns=collect($analytics['evidence_by_campaign']??[]);$filterCampaigns=collect($filterCampaigns??[]);$alerts=collect($analytics['risk_items']??[])->take(10);
+    $pauta=$analytics['pauta_summary']??[];$units=collect($analytics['evidence_by_unit']??[]);$directions=collect($analytics['evidence_by_direction']??[]);$trend=collect($analytics['evidence_trend']??[]);$due=collect($analytics['pending_by_due']??[]);$campaigns=collect($analytics['evidence_by_campaign']??[]);$alerts=collect($analytics['risk_items']??[])->take(10);
 $statuses=[['label'=>'Validadas','value'=>$summary['validated'],'color'=>'#35a866'],['label'=>'En revisión','value'=>$summary['review'],'color'=>'#e5a817'],['label'=>'Observadas','value'=>$summary['observed'],'color'=>'#ed7b20'],['label'=>'Pendientes','value'=>$summary['pending'],'color'=>'#d52e2e']];
 @endphp
 <style>
