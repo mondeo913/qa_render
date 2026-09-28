@@ -39,7 +39,6 @@ class RolePermissionSeeder extends Seeder
             ['settings.manage','Administrar configuración','administration'],
             ['logs.view','Consultar logs','audit'],
             ['intelligence.view','Ver Centro de Inteligencia','intelligence'],
-            ['indicators.view','Ver indicadores','indicators'],
             ['direction.dashboard','Ver dashboard de dirección','direction'],
             ['direction.repository','Ver repositorio de su dirección','repository'],
             ['calendar.view','Ver calendario','calendar'],
@@ -75,7 +74,7 @@ class RolePermissionSeeder extends Seeder
         }
 
         $directorPermissions = [
-            'direction.dashboard','direction.repository','indicators.view','reports.view',
+            'direction.dashboard','direction.repository','reports.view',
             'repository.view','repository.download','calendar.view','alerts.view','scheduled_load.board',
             'evidence.review','scheduled_load.review','scheduled_load.verify','scheduled_load.signature_package',
             'scheduled_load.upload_signed','scheduled_load.close','scheduled_load.reopen',
@@ -87,7 +86,7 @@ class RolePermissionSeeder extends Seeder
 
         $map = [
             'DIRECTOR_GENERAL' => [
-                'dashboard.view','intelligence.view','indicators.view','reports.view','reports.export',
+                'dashboard.view','intelligence.view','reports.view','reports.export',
                 'repository.view','repository.download','scheduled_load.board','evidence.review',
                 'scheduled_load.review','scheduled_load.verify','scheduled_load.signature_package',
                 'scheduled_load.upload_signed','scheduled_load.close','scheduled_load.reopen',
@@ -101,13 +100,20 @@ class RolePermissionSeeder extends Seeder
                 'templates.manage','evidence.review','repository.view','repository.download',
                 'scheduled_load.review','scheduled_load.verify','scheduled_load.signature_package',
                 'scheduled_load.upload_signed','scheduled_load.close','scheduled_load.reopen','reports.view','reports.export',
-                'alerts.view','indicators.view','operations.view','backups.view',
+                'alerts.view','operations.view','backups.view',
             ],
             'OPERADOR' => array_values(array_unique([...$operatorPermissions,'intelligence.view'])),
             'OPERADOR_TRANSMISION' => array_values(array_unique([...$operatorPermissions,'intelligence.view'])),
             'OPERADOR_PROGRAMACION_CONTINUIDAD' => array_values(array_unique([...$operatorPermissions,'intelligence.view'])),
             'FISCALIZADOR' => ['repository.view','repository.download','reports.view','reports.export','evidence.review','intelligence.view'],
         ];
+
+        // Retirar definitivamente el módulo Indicadores de instalaciones QA existentes.
+        $obsoleteIndicatorPermission = Permission::query()->where('code', 'indicators.view')->first();
+        if ($obsoleteIndicatorPermission) {
+            $obsoleteIndicatorPermission->roles()->detach();
+            $obsoleteIndicatorPermission->delete();
+        }
 
         $allPermissionIds = Permission::query()->pluck('id')->all();
         Role::query()->where('code', 'ADMINISTRADOR')->firstOrFail()
