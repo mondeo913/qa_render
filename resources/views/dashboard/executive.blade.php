@@ -23,6 +23,23 @@ html[data-bs-theme=dark] .exec{background:#0b1017;color:#edf4fa}html[data-bs-the
 .agency-name{display:inline-flex;align-items:center;min-width:70px}
 @media(max-width:1200px){.exec-kpis{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:700px){.exec-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.exec-kpi{height:104px;min-height:104px}.agency-mark{width:62px;flex-basis:62px}}
+
+/* Final visual normalization: logos never crop and every indicator card is centered. */
+.exec-kpis{align-items:stretch}
+.exec-kpi{align-items:center;justify-content:center;text-align:center;overflow:hidden}
+.exec-kpi-top{align-items:center;justify-content:center;text-align:center}
+.exec-kpi label{white-space:normal;overflow-wrap:anywhere}
+.exec-grid{align-items:stretch}
+.exec-grid>.exec-card{height:100%;display:flex;flex-direction:column}
+.exec-grid>.exec-card>h3,.exec-grid>.exec-card>.card-sub{flex:0 0 auto}
+.exec-grid>.exec-card>.exec-bars{flex:1;align-content:center;justify-content:center}
+.exec-grid>.exec-card>.exec-chart{flex:1;min-height:230px}
+.exec-grid>.exec-card:has(.exec-status-row){justify-content:center}
+.exec-table td:first-child{display:flex;align-items:center;gap:8px;min-width:170px}
+.agency-mark{width:78px;height:46px;flex:0 0 78px;display:flex;align-items:center;justify-content:center;overflow:visible;padding:3px;background:#fff}
+.agency-mark img{display:block;width:100%;height:100%;max-width:100%;max-height:100%;object-fit:contain;object-position:center;background:#fff}
+.agency-name{min-width:0;overflow-wrap:anywhere}
+@media(max-width:700px){.agency-mark{width:68px;flex-basis:68px;height:42px}.exec-table td:first-child{min-width:145px}.exec-grid>.exec-card>.exec-chart{min-height:250px}}
 </style>
 <div class="exec">
 <div class="exec-top"><div></div><div class="exec-actions"><a class="btn btn-primary" href="{{ route('reports.pdf',request()->query()) }}"><i class="bi bi-download export-icon"></i>Exportar resumen</a></div></div>
