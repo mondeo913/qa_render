@@ -16,7 +16,7 @@ final class LoadBoardService
     public const COLUMN_TODO='todo'; public const COLUMN_PROGRESS='progress'; public const COLUMN_REVIEW='review'; public const COLUMN_DONE='done';
     public function __construct(private readonly AccessScopeService $access) {}
 
-    /** @param array{agency_id?: int|null,unit_id?: string|int|null,from?: string|null,to?: string|null,q?: string|null,mine?: bool|null} $filters */
+    /** @param array{pauta_id?: int|null,agency_id?: int|null,unit_id?: string|int|null,from?: string|null,to?: string|null,q?: string|null,mine?: bool|null} $filters */
     public function forUser(User $user,array $filters=[]): array
     {
         $normalized=['pauta_id'=>isset($filters['pauta_id'])&&$filters['pauta_id']!==''?(int)$filters['pauta_id']:null,'agency_id'=>isset($filters['agency_id'])&&$filters['agency_id']!==''?(int)$filters['agency_id']:null,'unit_id'=>trim((string)($filters['unit_id']??''))?:null,'from'=>trim((string)($filters['from']??''))?:null,'to'=>trim((string)($filters['to']??''))?:null,'q'=>trim((string)($filters['q']??''))?:null,'mine'=>(bool)($filters['mine']??false)];
