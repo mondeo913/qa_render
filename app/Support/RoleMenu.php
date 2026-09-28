@@ -80,8 +80,8 @@ final class RoleMenu
     private static function directorDashboardLabel(string $roleCode): string
     {
         return match ($roleCode) {
-            'DIRECTOR_TRANSMISION' => 'Dashboard de Transmisión',
-            'DIRECTOR_PROGRAMACION_CONTINUIDAD' => 'Dashboard de Programación y Continuidad',
+            'DIRECTOR_TRANSMISION' => 'Dashboard de Dirección de Transmisión',
+            'DIRECTOR_PROGRAMACION_CONTINUIDAD' => 'Dashboard de Dirección de Programación y Continuidad',
             default => 'Dashboard de dirección',
         };
     }
