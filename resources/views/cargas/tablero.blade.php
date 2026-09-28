@@ -53,7 +53,7 @@
 </div>
 
 <div class="card siget-card mb-4">
-<div class="card-header"><div><h2>Catálogo de dependencias</h2><p>Seleccione una dependencia para ver solamente sus cargas dentro del alcance autorizado.</p></div><span class="badge text-bg-light">Cumplimiento promedio: {{ $summary['completion'] }}%</span></div>
+<div class="card-header"><div><h2>Catálogo de dependencias</h2><p>Solo aparecen dependencias con cargas pertenecientes al alcance autorizado. La Pauta identifica el archivo Excel importado por Enlace Institucional.</p></div><span class="badge text-bg-light">Cumplimiento promedio: {{ $summary['completion'] }}%</span></div>
 <div class="card-body">
 @if($dependencyCards->isEmpty())<div class="text-center py-4 text-secondary">No existen dependencias con cargas dentro de su alcance.</div>
 @else<div class="siget-dependency-grid">@foreach($dependencyCards as $card)@php $agency=$card['agency']; $selected=(int)($filters['agency_id']??0)===(int)$agency->id; $url=request()->fullUrlWithQuery(['agency_id'=>$selected?null:$agency->id]); @endphp
@@ -65,9 +65,9 @@
 <div class="card-body">
 <div class="row g-3 align-items-end">
 <div class="col-lg-3"><label class="form-label">Buscar cargas</label><div class="input-group"><span class="input-group-text"><i class="bi bi-search"></i></span><input class="form-control" name="q" value="{{ $filters['q']??'' }}" placeholder="Título, periodo o dependencia"></div></div>
-<div class="col-md-4 col-lg-2"><label class="form-label">Dirección</label><select name="unit_id" class="form-select"><option value="">Todas autorizadas</option>@foreach($units as $unit)@php $unitIds=$unit->filter_unit_ids??[(int)$unit->id]; $unitValue=implode(',',array_map('intval',$unitIds)); @endphp<option value="{{ $unitValue }}" @selected((string)($filters['unit_id']??'')===$unitValue)>{{ $unit->name }}</option>@endforeach</select></div>
-<div class="col-md-4 col-lg-2"><label class="form-label">Dependencia</label><select name="agency_id" class="form-select" id="boardAgency"><option value="">Todas</option>@foreach($agencies as $agency)<option value="{{ $agency->id }}" @selected((int)($filters['agency_id']??0)===(int)$agency->id)>{{ $agency->name }}</option>@endforeach</select></div>
-<div class="col-md-4 col-lg-3"><label class="form-label">Periodo contratado</label><div class="input-group"><span class="input-group-text"><i class="bi bi-calendar3"></i></span><input type="month" name="from" id="boardFrom" class="form-control" value="{{ $filters['from']??'' }}" min="{{ $periodBounds['min']??'' }}" max="{{ $periodBounds['max']??'' }}" title="Mes inicial"><span class="input-group-text">a</span><input type="month" name="to" id="boardTo" class="form-control" value="{{ $filters['to']??'' }}" min="{{ $periodBounds['min']??'' }}" max="{{ $periodBounds['max']??'' }}" title="Mes final"></div><div class="form-text">Seleccione un rango de meses conforme a los periodos contratados de la pauta.</div></div>
+<div class="col-md-4 col-lg-2"><label class="form-label">Pauta (Excel)</label><select name="pauta_id" class="form-select" id="boardPauta"><option value="">Todas las pautas visibles</option>@foreach(($pautas ?? []) as $pauta)<option value="{{ $pauta['id'] }}" data-agency-id="{{ $pauta['agency_id'] }}" @selected((int)($filters['pauta_id']??0)===(int)$pauta['id'])>{{ $pauta['name'] }} · {{ $pauta['agency'] }}</option>@endforeach</select></div><div class="col-md-4 col-lg-2"><label class="form-label">Dirección</label><select name="unit_id" class="form-select"><option value="">Todas autorizadas</option>@foreach($units as $unit)@php $unitIds=$unit->filter_unit_ids??[(int)$unit->id]; $unitValue=implode(',',array_map('intval',$unitIds)); @endphp<option value="{{ $unitValue }}" @selected((string)($filters['unit_id']??'')===$unitValue)>{{ $unit->name }}</option>@endforeach</select></div>
+<div class="col-md-4 col-lg-2"><label class="form-label">Dependencia</label><select name="agency_id" class="form-select" id="boardAgency"><option value="">Todas las dependencias visibles</option>@foreach($agencies as $agency)<option value="{{ $agency->id }}" @selected((int)($filters['agency_id']??0)===(int)$agency->id)>{{ $agency->name }}</option>@endforeach</select></div>
+<div class="col-md-4 col-lg-3"><label class="form-label">Periodo contratado según pauta</label><div class="input-group"><span class="input-group-text"><i class="bi bi-calendar3"></i></span><input type="month" name="from" id="boardFrom" class="form-control" value="{{ $filters['from']??'' }}" min="{{ $periodBounds['min']??'' }}" max="{{ $periodBounds['max']??'' }}" title="Mes inicial"><span class="input-group-text">a</span><input type="month" name="to" id="boardTo" class="form-control" value="{{ $filters['to']??'' }}" min="{{ $periodBounds['min']??'' }}" max="{{ $periodBounds['max']??'' }}" title="Mes final"></div><div class="form-text">El rango se limita a los meses contratados disponibles para la pauta, dependencia y Dirección seleccionadas.</div></div>
 @if($canUseMineFilter)<div class="col-md-4 col-lg-1"><div class="form-check form-switch mb-2"><input type="hidden" name="mine" value="0"><input class="form-check-input" type="checkbox" name="mine" value="1" id="mineFilter" @checked($filters['mine']??false)><label class="form-check-label" for="mineFilter">Mías</label></div></div>@endif
 <div class="col-md-4 col-lg-1 d-grid"><button class="btn btn-primary" title="Aplicar filtros"><i class="bi bi-funnel"></i></button></div>
 <div class="col-md-4 col-lg-1 d-grid"><a href="{{ route('loads.board') }}" class="btn btn-outline-secondary" title="Restablecer"><i class="bi bi-x-lg"></i></a></div>
@@ -83,10 +83,63 @@
 
 <script>
 document.addEventListener('DOMContentLoaded',function(){
+ const form=document.getElementById('loadBoardFilters');
+ const agency=document.getElementById('boardAgency');
+ const pauta=document.getElementById('boardPauta');
  const from=document.getElementById('boardFrom'),to=document.getElementById('boardTo');
- if(!from||!to)return;
- const sync=()=>{if(from.value)to.min=from.value;else to.min=from.min||'';if(to.value)from.max=to.value;else from.max=from.max||'';if(from.value&&to.value&&from.value>to.value)to.value=from.value;};
- from.addEventListener('change',sync);to.addEventListener('change',sync);sync();
+ const min='{{ $periodBounds['min'] ?? '' }}',max='{{ $periodBounds['max'] ?? '' }}';
+
+ const syncPautas=()=>{
+   if(!agency||!pauta)return;
+   const agencyId=agency.value;
+   Array.from(pauta.options).forEach(option=>{
+     if(!option.value)return;
+     option.hidden=!!agencyId && option.dataset.agencyId && option.dataset.agencyId!==agencyId;
+   });
+   const selected=pauta.selectedOptions[0];
+   if(agencyId && selected?.dataset.agencyId && selected.dataset.agencyId!==agencyId)pauta.value='';
+ };
+
+ const syncMonths=()=>{
+   if(!from||!to)return;
+   from.min=min; from.max=max; to.min=min; to.max=max;
+   if(from.value)to.min=from.value;
+   if(to.value)from.max=to.value;
+   if(from.value&&to.value&&from.value>to.value)to.value=from.value;
+ };
+
+ const submitRange=(start,end)=>{
+   if(!form||!from||!to)return;
+   from.value=start; to.value=end;
+   syncMonths();
+   form.submit();
+ };
+
+ document.querySelectorAll('[data-board-range]').forEach(button=>{
+   button.addEventListener('click',()=>{
+     const now=new Date();
+     const year=now.getFullYear();
+     const month=String(now.getMonth()+1).padStart(2,'0');
+     let start=year+'-'+month;
+     let end=start;
+     const range=button.dataset.boardRange;
+     if(range==='quarter'){
+       const quarterStart=Math.floor(now.getMonth()/3)*3;
+       start=year+'-'+String(quarterStart+1).padStart(2,'0');
+     }
+     if(range==='week'||range==='today'){
+       start=year+'-'+month;
+     }
+     if(range==='custom')return;
+     submitRange(start,end);
+   });
+ });
+
+ agency?.addEventListener('change',()=>{syncPautas();});
+ from?.addEventListener('change',syncMonths);
+ to?.addEventListener('change',syncMonths);
+ syncPautas();
+ syncMonths();
 });
 </script>
 @endsection
