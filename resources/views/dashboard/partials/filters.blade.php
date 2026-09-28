@@ -2,6 +2,7 @@
 @php
     $filterAgencies = $filterAgencies ?? [];
     $filterUnits = $filterUnits ?? [];
+    $filterPautas = $filterPautas ?? [];
     $periodMin = $periodMin ?? null;
     $periodMax = $periodMax ?? null;
     $selectedFrom = $filters['from'] ?? '';
@@ -58,7 +59,7 @@
 <div class="card-body row g-2 align-items-end filter-primary-row">
 <div class="col-xxl-2 col-xl-3 col-md-6"><label class="form-label">Dependencia</label><select name="agency_id" id="siget-agency-filter" class="form-select"><option value="">Todas las dependencias</option>@foreach($filterAgencies as $agency)@php $agencyId=data_get($agency,'id'); $agencyName=data_get($agency,'name',''); @endphp<option value="{{ $agencyId }}" @selected((string)($filters['agency_id'] ?? '') === (string)$agencyId)>{{ $agencyName }}</option>@endforeach</select></div>
 <div class="col-xxl-2 col-xl-3 col-md-6"><label class="form-label">Dirección / unidad</label><select name="organizational_unit_id" class="form-select"><option value="">Todas las direcciones / unidades</option>@foreach($filterUnits as $unit)@php $unitId=data_get($unit,'id'); $unitName=data_get($unit,'name',''); $filterIds=data_get($unit,'filter_unit_ids'); $filterIds=is_array($filterIds) ? $filterIds : [$unitId]; $filterIds=implode(',',array_map('strval',$filterIds)); @endphp<option value="{{ $filterIds }}" @selected((string)($filters['organizational_unit_id'] ?? '') === $filterIds)>{{ $unitName }}</option>@endforeach</select></div>
-<div class="col-xxl-2 col-xl-3 col-md-6"><label class="form-label">Pauta</label><select name="campaign" id="siget-campaign-filter" class="form-select"><option value="">Todas las pautas visibles</option>@foreach(($filterCampaigns ?? []) as $campaign)@php $campaignValue=data_get($campaign,'value',$campaign); $campaignLabel=data_get($campaign,'label',$campaignValue); @endphp<option value="{{ $campaignValue }}" data-agency-id="{{ data_get($campaign,'agency_id','') }}" @selected(($filters['campaign'] ?? '') === $campaignValue)>{{ $campaignLabel }}</option>@endforeach</select></div>
+<div class="col-xxl-2 col-xl-3 col-md-6"><label class="form-label">Pauta</label><select name="pauta_id" id="siget-pauta-filter" class="form-select"><option value="">Todas las pautas visibles</option>@foreach(($filterPautas ?? []) as $pauta)<option value="{{ data_get($pauta,'value','') }}" data-agency-id="{{ data_get($pauta,'agency_id','') }}" @selected((string)($filters['pauta_id'] ?? '') === (string)data_get($pauta,'value',''))>{{ data_get($pauta,'label','Pauta sin nombre') }}</option>@endforeach</select></div>
 <div class="col-xxl-2 col-xl-3 col-md-6"><label class="form-label">Responsable operativo</label><select name="responsible_id" class="form-select"><option value="">Todos los responsables</option>@foreach(($filterResponsibles ?? []) as $responsible)<option value="{{ $responsible->id }}" @selected((string)($filters['responsible_id'] ?? '') === (string)$responsible->id)>{{ $responsible->name }}</option>@endforeach</select></div>
 <div class="col-xxl-1 col-xl-2 col-md-4"><label class="form-label">Estado de carga</label><select name="status" class="form-select"><option value="">Todos los estados relevantes</option>@foreach($availableStatuses as $status => $label)<option value="{{ $status }}" @selected(($filters['status'] ?? null) === $status)>{{ $label }}</option>@endforeach</select></div>
 <div class="col-xxl-1 col-xl-2 col-md-4"><label class="form-label">Fecha contratada desde</label><input type="month" name="from" id="siget-period-from" value="{{ $selectedFrom }}" min="{{ $periodMin ?? '' }}" max="{{ $periodMax ?? '' }}" class="form-control"></div>
@@ -72,18 +73,18 @@
 (function(){
  const form=document.getElementById('siget-dashboard-filters');
  const agency=document.getElementById('siget-agency-filter');
- const campaign=document.getElementById('siget-campaign-filter');
+ const pauta=document.getElementById('siget-pauta-filter');
  const from=document.getElementById('siget-period-from'),to=document.getElementById('siget-period-to'),summary=document.getElementById('siget-period-summary');
 
  const syncCampaigns=()=>{
-   if(!agency||!campaign)return;
+   if(!agency||!pauta)return;
    const agencyId=agency.value;
-   Array.from(campaign.options).forEach(option=>{
+   Array.from(pauta.options).forEach(option=>{
      if(!option.value)return;
      option.hidden=!!agencyId && option.dataset.agencyId && option.dataset.agencyId!==agencyId;
    });
-   const selected=campaign.selectedOptions[0];
-   if(agencyId && selected?.dataset.agencyId && selected.dataset.agencyId!==agencyId)campaign.value='';
+   const selected=pauta.selectedOptions[0];
+   if(agencyId && selected?.dataset.agencyId && selected.dataset.agencyId!==agencyId)pauta.value='';
  };
 
  const update=()=>{if(!from||!to)return;if(from.value)to.min=from.value;if(to.value)from.max=to.value;if(from.value&&to.value)summary.textContent=from.value+' → '+to.value;else if(from.value)summary.textContent=from.value+' → Selecciona mes final';else if(to.value)summary.textContent='Selecciona mes inicial → '+to.value;};
