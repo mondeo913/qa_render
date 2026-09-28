@@ -11,6 +11,7 @@ use App\Models\ScheduledLoad;
 use App\Models\ScheduledLoadDeliverable;
 use App\Models\User;
 use App\Services\AccessScopeService;
+use App\Services\DashboardAnalyticsService;
 use Database\Seeders\AgencyTemplateSeeder;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -111,9 +112,51 @@ class AccessScopeIsolationTest extends TestCase
             'organizational_unit_id' => $production->id,
         ]);
 
+        $programmingUser = User::factory()->create([
+            'role_id' => Role::query()->where('code', 'OPERADOR_PROGRAMACION_CONTINUIDAD')->firstOrFail()->id,
+            'contracting_agency_id' => $agency->id,
+            'organizational_unit_id' => $production->id,
+            'name' => 'Enlace Operativo Programación',
+        ]);
+        $productionDeliverable->update(['responsible_user_id' => $programmingUser->id]);
+
+        $institutionalLink = User::factory()->create([
+            'role_id' => Role::query()->where('code', 'ENLACE_INSTITUCIONAL')->firstOrFail()->id,
+            'contracting_agency_id' => $agency->id,
+            'name' => 'Enlace Institucional IMSS',
+        ]);
+        $generalDirector = User::factory()->create([
+            'role_id' => Role::query()->where('code', 'DIRECTOR_GENERAL')->firstOrFail()->id,
+        ]);
+
+        $analytics = app(DashboardAnalyticsService::class);
+        $transmissionData = $analytics->forUser($monitoringUser);
+        $programmingData = $analytics->forUser($programmingUser);
+        $institutionalData = $analytics->forUser($institutionalLink);
+        $generalData = $analytics->forUser($generalDirector);
+        $adminData = $analytics->forUser($admin);
+
+        $this->assertSame(1, $transmissionData['evidence_summary']['expected']);
+        $this->assertSame(1, $programmingData['evidence_summary']['expected']);
+        $this->assertSame(2, $institutionalData['evidence_summary']['expected']);
+        $this->assertSame(2, $generalData['evidence_summary']['expected']);
+        $this->assertSame(2, $adminData['evidence_summary']['expected']);
+        $this->assertCount(2, $generalData['evidence_by_direction']);
+        $this->assertCount(2, $institutionalData['evidence_by_direction']);
+
         $this->actingAs($transmissionDirector)->get(route('dashboard'))
             ->assertOk()->assertSee($monitoring->name)->assertDontSee($production->name);
         $this->actingAs($programmingDirector)->get(route('dashboard'))
             ->assertOk()->assertSee($production->name)->assertDontSee($monitoring->name);
+        $this->actingAs($monitoringUser)->get(route('dashboard'))
+            ->assertOk()->assertSee($monitoringUser->name)->assertDontSee($programmingUser->name);
+        $this->actingAs($programmingUser)->get(route('dashboard'))
+            ->assertOk()->assertSee($programmingUser->name)->assertDontSee($monitoringUser->name);
+        $this->actingAs($institutionalLink)->get(route('dashboard'))
+            ->assertOk()->assertSee('Alertas directivas');
+        $this->actingAs($generalDirector)->get(route('dashboard'))
+            ->assertOk()->assertSee('Dashboard ejecutivo');
+        $this->actingAs($admin)->get(route('dashboard'))
+            ->assertOk()->assertSee('Dashboard ejecutivo');
     }
 }

@@ -119,6 +119,7 @@ class DashboardController extends Controller
             ->where('users.status', 'ACTIVE')
             ->select('users.id', 'users.name')
             ->distinct();
+        $access->scopeDeliverables($responsibleQuery, $user);
         if (!empty($filters['organizational_unit_id'])) {
             $unitIds = collect(explode(',', (string) $filters['organizational_unit_id']))
                 ->map(fn ($id) => (int) trim($id))->filter()->unique()->values()->all();

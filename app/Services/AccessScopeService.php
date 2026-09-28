@@ -227,7 +227,16 @@ final class AccessScopeService
         }
 
         if (RoleCode::isOperator($role) && $user->organizational_unit_id) {
-            return [(int) $user->organizational_unit_id];
+            $unitIds = $user->scopes()
+                ->where('can_read', true)
+                ->whereNotNull('organizational_unit_id')
+                ->pluck('organizational_unit_id')
+                ->map(fn ($id) => (int) $id)
+                ->all();
+
+            $unitIds[] = (int) $user->organizational_unit_id;
+
+            return array_values(array_unique($unitIds));
         }
 
         $unitIds = $user->scopes()
