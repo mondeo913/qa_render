@@ -21,7 +21,7 @@ final class LoadBoardService
     {
         $normalized=['pauta_id'=>isset($filters['pauta_id'])&&$filters['pauta_id']!==''?(int)$filters['pauta_id']:null,'agency_id'=>isset($filters['agency_id'])&&$filters['agency_id']!==''?(int)$filters['agency_id']:null,'unit_id'=>trim((string)($filters['unit_id']??''))?:null,'from'=>trim((string)($filters['from']??''))?:null,'to'=>trim((string)($filters['to']??''))?:null,'q'=>trim((string)($filters['q']??''))?:null,'mine'=>(bool)($filters['mine']??false)];
         $availableAgencies=$this->availableAgencies($user,$normalized);
-        $availableUnits=$this->availableUnits($user,$normalized['agency_id']);
+        $availableUnits=$this->availableUnits($user,$normalized['agency_id'],$normalized['pauta_id']);
         if($normalized['agency_id']!==null&&!$availableAgencies->contains('id',$normalized['agency_id']))$normalized['agency_id']=null;
         $selectedUnitIds=$this->parseIds($normalized['unit_id']);
         $allowedUnitIds=$availableUnits->flatMap(fn($unit)=>(array)($unit->filter_unit_ids??[$unit->id]))->map(fn($id)=>(int)$id)->unique()->values()->all();
@@ -30,7 +30,7 @@ final class LoadBoardService
         $boardLoads=$this->baseQuery($user,$normalized,true)->orderByRaw('CASE WHEN effective_close_at IS NULL THEN 1 ELSE 0 END')->orderBy('effective_close_at')->orderByDesc('priority')->get();
         $this->decorateLoads($catalogLoads); $this->decorateLoads($boardLoads);
         $columns=collect($this->columnDefinitions())->mapWithKeys(fn(array $definition,string $key)=>[$key=>$definition+['loads'=>$boardLoads->where('board_column',$key)->values()]]);
-        return ['filters'=>$normalized,'columns'=>$columns,'summary'=>$this->summarize($boardLoads),'dependencyCards'=>$this->dependencyCards($catalogLoads),'agencies'=>$availableAgencies,'units'=>$availableUnits,'periods'=>$this->availablePeriods($user,$normalized),'periodBounds'=>$this->periodBounds($user,$normalized),'scopeLabel'=>$this->scopeLabel($user,$normalized['unit_id'],$availableUnits),'canUseMineFilter'=>RoleCode::isOperator($user->role?->code)];
+        return ['filters'=>$normalized,'columns'=>$columns,'summary'=>$this->summarize($boardLoads),'dependencyCards'=>$this->dependencyCards($catalogLoads),'agencies'=>$availableAgencies,'units'=>$availableUnits,'pautas'=>$this->availablePautas($user,$normalized),'periods'=>$this->availablePeriods($user,$normalized),'periodBounds'=>$this->periodBounds($user,$normalized),'scopeLabel'=>$this->scopeLabel($user,$normalized['unit_id'],$availableUnits),'canUseMineFilter'=>RoleCode::isOperator($user->role?->code)];
     }
 
     public static function columnForStatus(string $status,float $completion=0):string{return match(strtoupper($status)){'VALIDADA','VALIDADO_Y_CERRADO'=>self::COLUMN_DONE,'ENTREGADA','EN_REVISION_INSTITUCIONAL','REPROGRAMADA_ENTREGADA','LISTA_PARA_FIRMA','PENDIENTE_DOCUMENTO_FIRMADO'=>self::COLUMN_REVIEW,'EN_CAPTURA','PARCIALMENTE_ENTREGADA','OBSERVADA','REABIERTA'=>self::COLUMN_PROGRESS,'VENCIDA'=>$completion>0?self::COLUMN_PROGRESS:self::COLUMN_TODO,default=>self::COLUMN_TODO};}
@@ -53,6 +53,7 @@ final class LoadBoardService
     {
         $query=ContractingAgency::query()->select(['id','code','name','metadata'])->where('active',true);
         $loads=$this->access->scopeLoads(ScheduledLoad::query(),$user);
+        if(!empty($filters['agency_id']))$loads->where('contracting_agency_id',(int)$filters['agency_id']);
         if(!empty($filters['unit_id'])){
             $unitIds=$this->parseIds($filters['unit_id']);
             if($unitIds)$loads->whereHas('deliverables',fn(Builder $d)=>$d->whereIn('organizational_unit_id',$unitIds));
@@ -62,7 +63,7 @@ final class LoadBoardService
         return $ids?$query->whereIn('id',$ids)->orderBy('name')->get():$query->whereRaw('1=0')->get();
     }
 
-    private function availableUnits(User $user,?int $agencyId=null):Collection
+    private function availableUnits(User $user,?int $agencyId=null,?int $pautaId=null):Collection
     {
         $role=$user->role?->code;
         $query=OrganizationalUnit::query()->select(['id','contracting_agency_id','code','name'])->where('active',true);
@@ -75,8 +76,38 @@ final class LoadBoardService
             if($unitIds!==[])$query->whereIn('id',$unitIds);else$query->whereHas('deliverables.scheduledLoad',fn(Builder $loads)=>$this->access->scopeLoads($loads,$user));
         }
         if($agencyId)$query->where('contracting_agency_id',$agencyId);
+        if($pautaId){
+            $query->whereHas('deliverables.scheduledLoad',fn(Builder $loads)=>$loads->where('calendar_import_id',$pautaId)->where(fn($scoped)=>$this->access->scopeLoads($scoped,$user)));
+        }
         $units=$query->orderBy('name')->get();
         return $units->groupBy(fn($unit)=>mb_strtolower(preg_replace('/\s+/u',' ',trim((string)$unit->name))))->map(function(Collection $group){$unit=$group->first();$unit->name=preg_replace('/\s+/u',' ',trim((string)$unit->name));$unit->filter_unit_ids=$group->pluck('id')->map(fn($id)=>(int)$id)->unique()->values()->all();return $unit;})->sortBy(fn($unit)=>mb_strtolower($unit->name))->values();
+    }
+
+    private function availablePautas(User $user,array $filters=[]):Collection
+    {
+        $loads=$this->access->scopeLoads(ScheduledLoad::query(),$user)
+            ->where('scheduled_loads.status','!=','CANCELADA');
+
+        if(!empty($filters['agency_id']))$loads->where('contracting_agency_id',(int)$filters['agency_id']);
+        $unitIds=$this->parseIds($filters['unit_id']??null);
+        if($unitIds)$loads->whereHas('deliverables',fn(Builder $d)=>$d->whereIn('organizational_unit_id',$unitIds));
+
+        return $loads
+            ->join('calendar_imports','calendar_imports.id','=','scheduled_loads.calendar_import_id')
+            ->join('contracting_agencies','contracting_agencies.id','=','scheduled_loads.contracting_agency_id')
+            ->select('calendar_imports.id as id','calendar_imports.original_filename','contracting_agencies.id as agency_id','contracting_agencies.name as agency_name')
+            ->selectRaw('COUNT(DISTINCT scheduled_loads.id) AS load_count')
+            ->groupBy('calendar_imports.id','calendar_imports.original_filename','contracting_agencies.id','contracting_agencies.name')
+            ->orderBy('contracting_agencies.name')
+            ->orderByDesc('calendar_imports.id')
+            ->get()
+            ->map(fn($row)=>[
+                'id'=>(int)$row->id,
+                'name'=>(string)($row->original_filename ?: 'Pauta sin nombre'),
+                'agency_id'=>(int)$row->agency_id,
+                'agency'=>(string)$row->agency_name,
+                'load_count'=>(int)$row->load_count,
+            ])->values();
     }
 
     private function availablePeriods(User $user,array $filters=[]):Collection
