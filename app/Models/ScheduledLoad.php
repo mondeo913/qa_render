@@ -16,6 +16,7 @@ class ScheduledLoad extends Model {
         'status'=>ScheduledLoadStatus::class,'traffic_light'=>TrafficLight::class,'metadata'=>'array','completion_percentage'=>'decimal:2','accounting_notified_at'=>'datetime'
     ];
     public function agency(): BelongsTo { return $this->belongsTo(ContractingAgency::class,'contracting_agency_id'); }
+    public function calendarImport(): BelongsTo { return $this->belongsTo(CalendarImport::class,'calendar_import_id'); }
     public function template(): BelongsTo { return $this->belongsTo(EvidenceTemplate::class,'template_id'); }
     public function deliverables(): HasMany { return $this->hasMany(ScheduledLoadDeliverable::class); }
     public function reschedules(): HasMany { return $this->hasMany(LoadReschedule::class); }
