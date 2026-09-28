@@ -2,18 +2,53 @@
 @section('title', 'Tablero de cargas')
 @section('page-title', 'Tablero de cargas por dependencia')
 @section('content')
-<div class="siget-board-heading mb-4">
-    <div>
-        <p class="mb-1 text-secondary">{{ $scopeLabel }}</p>
-        <h2 class="h4 mb-1">Seguimiento operativo conectado con pauta y calendario</h2>
-        <p class="mb-0 text-secondary small">Las tarjetas representan cargas reales de SIGET y cambian de columna al ejecutar el flujo autorizado.</p>
+<div class="board-direction-compact">
+
+<style>
+/* Estándar compacto del tablero para Directores: misma geometría de KPI que el dashboard. */
+.board-direction-compact{padding-top:0}
+.board-direction-compact .board-kpis{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px;margin:0 0 16px}
+.board-direction-compact .board-kpis>[class*="col-"]{width:auto!important;max-width:none!important;padding-left:0;padding-right:0}
+.board-direction-compact .board-kpi{min-height:72px;height:72px;padding:8px 9px;display:grid;grid-template-columns:28px 1fr;grid-template-rows:auto 1fr;column-gap:8px;align-items:center;background:#121b24;border:1px solid rgba(255,255,255,.08);border-radius:12px;color:#fff}
+.board-direction-compact .board-kpi .board-kpi-icon{grid-row:1 / span 2;width:28px;height:28px;border-radius:8px;display:grid;place-items:center;font-size:.82rem}
+.board-direction-compact .board-kpi small{font-size:.62rem;line-height:1.05;color:#91a5b7;white-space:normal;overflow-wrap:anywhere}
+.board-direction-compact .board-kpi strong{font-size:1.05rem;line-height:1;color:#fff}
+.board-direction-compact .board-heading{margin-bottom:12px!important}
+.board-direction-compact .board-heading .scope-label{font-size:.65rem;color:#91a5b7}
+.board-direction-compact .board-heading h2{font-size:1rem;color:#fff;margin-bottom:2px!important}
+.board-direction-compact .board-heading p{font-size:.68rem;color:#91a5b7}
+.board-direction-compact .board-heading .btn{height:30px;padding:.25rem .55rem;font-size:.68rem}
+@media(max-width:1200px){.board-direction-compact .board-kpis{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:700px){.board-direction-compact .board-kpis{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.board-direction-compact .board-kpi{height:68px;min-height:68px}}
+</style>
+
+<div class="siget-board-heading board-heading d-flex justify-content-between align-items-start gap-3">
+    <div class="min-w-0">
+        <p class="scope-label mb-1">{{ $scopeLabel }}</p>
+        <h2 class="mb-1">Tablero de Dirección</h2>
+        <p class="mb-0">Seguimiento compacto de cargas, evidencias, fechas y avance dentro del alcance autorizado.</p>
     </div>
-    <a href="{{ route('calendar.index') }}" class="btn btn-outline-primary"><i class="bi bi-calendar3 me-1"></i> Ver calendario inteligente</a>
+    <a href="{{ route('calendar.index') }}" class="btn btn-outline-primary flex-shrink-0"><i class="bi bi-calendar3 me-1"></i> Calendario</a>
 </div>
 
+<div class="row g-2 mb-3 board-kpis">
+
 <div class="row g-3 mb-4">
-@php $kpis=[['label'=>'Total','value'=>$summary['total'],'icon'=>'bi-collection'],['label'=>'Por hacer','value'=>$summary['todo'],'icon'=>'bi-list-check'],['label'=>'En progreso','value'=>$summary['progress'],'icon'=>'bi-hourglass-split'],['label'=>'En revisión','value'=>$summary['review'],'icon'=>'bi-search'],['label'=>'Cerradas','value'=>$summary['done'],'icon'=>'bi-check2-circle'],['label'=>'Vencidas','value'=>$summary['overdue'],'icon'=>'bi-exclamation-triangle']]; @endphp
-@foreach($kpis as $kpi)<div class="col-6 col-md-4 col-xl-2"><div class="siget-kpi siget-board-kpi h-100"><span class="siget-kpi-icon"><i class="bi {{ $kpi['icon'] }}"></i></span><div><small>{{ $kpi['label'] }}</small><strong>{{ $kpi['value'] }}</strong></div></div></div>@endforeach
+@php $kpis=[
+    ['label'=>'Total','value'=>$summary['total'],'icon'=>'bi-collection','type'=>'info'],
+    ['label'=>'Por hacer','value'=>$summary['todo'],'icon'=>'bi-list-check','type'=>'primary'],
+    ['label'=>'En progreso','value'=>$summary['progress'],'icon'=>'bi-hourglass-split','type'=>'warning'],
+    ['label'=>'En revisión','value'=>$summary['review'],'icon'=>'bi-clipboard-check','type'=>'warning'],
+    ['label'=>'Cerradas','value'=>$summary['done'],'icon'=>'bi-check2-circle','type'=>'success'],
+    ['label'=>'Vencidas','value'=>$summary['overdue'],'icon'=>'bi-calendar-x','type'=>'danger']
+]; @endphp
+@foreach($kpis as $kpi)
+<div><div class="board-kpi">
+    <span class="board-kpi-icon text-bg-{{ $kpi['type'] }}"><i class="bi {{ $kpi['icon'] }}"></i></span>
+    <small>{{ $kpi['label'] }}</small>
+    <strong>{{ $kpi['value'] }}</strong>
+</div></div>
+@endforeach
 </div>
 
 <div class="card siget-card mb-4">
