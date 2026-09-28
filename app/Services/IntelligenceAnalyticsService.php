@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\RoleCode;
 use App\Models\ContractingAgency;
 use App\Models\OrganizationalUnit;
 use App\Models\ScheduledLoad;
@@ -258,6 +259,28 @@ final class IntelligenceAnalyticsService
             ->get()
             ->map(fn ($row) => $this->riskRow((int) $row->id,$row->name,(int) $row->total,(int) $row->closed,(int) $row->overdue,(int) $row->due_soon))
             ->all();
+    }
+
+    private function directionContext(User $user): ?array
+    {
+        if (!RoleCode::isDirectionDirector($user->role?->code) || !$user->organizational_unit_id) {
+            return null;
+        }
+
+        $unit = OrganizationalUnit::query()
+            ->where('organizational_units.id', (int) $user->organizational_unit_id)
+            ->first();
+
+        if (!$unit) {
+            return null;
+        }
+
+        return [
+            'id' => (int) $unit->id,
+            'name' => preg_replace('/\\s+/u', ' ', trim((string) $unit->name)),
+            'agency_id' => (int) $unit->contracting_agency_id,
+            'unit_ids' => $this->access->accessibleUnitIds($user),
+        ];
     }
 
     private function directionPerformance(callable $base, ?array $directionContext = null): array
