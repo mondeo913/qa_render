@@ -27,7 +27,6 @@ final class RoleMenu
             'DIRECTOR_GENERAL' => [
                 ['label' => 'Dashboard ejecutivo', 'route' => 'dashboard', 'icon' => 'bi-speedometer2'],
                 ['label' => 'Centro de Inteligencia', 'route' => 'intelligence', 'icon' => 'bi-speedometer2'],
-                ['label' => 'Indicadores', 'route' => 'indicators.index', 'icon' => 'bi-bar-chart'],
                 ['label' => 'Tablero institucional', 'route' => 'loads.board', 'icon' => 'bi-kanban'],
                 ['label' => 'Repositorio institucional', 'route' => 'repository.index', 'icon' => 'bi-folder2-open'],
                 ['label' => 'Reportes', 'route' => 'reports.index', 'icon' => 'bi-file-bar-graph'],
