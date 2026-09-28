@@ -65,12 +65,29 @@
 <div class="card-body">
 <div class="row g-3 align-items-end">
 <div class="col-lg-3"><label class="form-label">Buscar cargas</label><div class="input-group"><span class="input-group-text"><i class="bi bi-search"></i></span><input class="form-control" name="q" value="{{ $filters['q']??'' }}" placeholder="Título, periodo o dependencia"></div></div>
-<div class="col-md-4 col-lg-2"><label class="form-label">Pauta (Excel)</label><select name="pauta_id" class="form-select" id="boardPauta"><option value="">Todas las pautas visibles</option>@foreach(($pautas ?? []) as $pauta)<option value="{{ $pauta['id'] }}" data-agency-id="{{ $pauta['agency_id'] }}" @selected((int)($filters['pauta_id']??0)===(int)$pauta['id'])>{{ $pauta['name'] }} · {{ $pauta['agency'] }}</option>@endforeach</select></div><div class="col-md-4 col-lg-2"><label class="form-label">Dirección</label><select name="unit_id" class="form-select"><option value="">Todas autorizadas</option>@foreach($units as $unit)@php $unitIds=$unit->filter_unit_ids??[(int)$unit->id]; $unitValue=implode(',',array_map('intval',$unitIds)); @endphp<option value="{{ $unitValue }}" @selected((string)($filters['unit_id']??'')===$unitValue)>{{ $unit->name }}</option>@endforeach</select></div>
+<div class="col-md-4 col-lg-2"><label class="form-label">Pauta (Excel)</label><select name="pauta_id" class="form-select" id="boardPauta"><option value="">Todas las pautas visibles</option>@foreach(($pautas ?? []) as $pauta)<option value="{{ $pauta['id'] }}" data-agency-id="{{ $pauta['agency_id'] }}" @selected((int)($filters['pauta_id']??0)===(int)$pauta['id'])>{{ $pauta['name'] }} · {{ $pauta['agency'] }}</option>@endforeach</select></div><div class="col-md-4 col-lg-2"><label class="form-label">Dirección</label><select name="unit_id" class="form-select"><option value="">{{ in_array(auth()->user()?->role?->code, ['DIRECTOR_TRANSMISION','DIRECTOR_PROGRAMACION_CONTINUIDAD'], true) ? 'Toda mi Dirección' : 'Todas las autorizadas' }}</option>@foreach($units as $unit)@php $unitIds=$unit->filter_unit_ids??[(int)$unit->id]; $unitValue=implode(',',array_map('intval',$unitIds)); @endphp<option value="{{ $unitValue }}" @selected((string)($filters['unit_id']??'')===$unitValue)>{{ $unit->name }}</option>@endforeach</select></div>
 <div class="col-md-4 col-lg-2"><label class="form-label">Dependencia</label><select name="agency_id" class="form-select" id="boardAgency"><option value="">Todas las dependencias visibles</option>@foreach($agencies as $agency)<option value="{{ $agency->id }}" @selected((int)($filters['agency_id']??0)===(int)$agency->id)>{{ $agency->name }}</option>@endforeach</select></div>
 <div class="col-md-4 col-lg-3"><label class="form-label">Periodo contratado según pauta</label><div class="input-group"><span class="input-group-text"><i class="bi bi-calendar3"></i></span><input type="month" name="from" id="boardFrom" class="form-control" value="{{ $filters['from']??'' }}" min="{{ $periodBounds['min']??'' }}" max="{{ $periodBounds['max']??'' }}" title="Mes inicial"><span class="input-group-text">a</span><input type="month" name="to" id="boardTo" class="form-control" value="{{ $filters['to']??'' }}" min="{{ $periodBounds['min']??'' }}" max="{{ $periodBounds['max']??'' }}" title="Mes final"></div><div class="form-text">El rango se limita a los meses contratados disponibles para la pauta, dependencia y Dirección seleccionadas.</div></div>
 @if($canUseMineFilter)<div class="col-md-4 col-lg-1"><div class="form-check form-switch mb-2"><input type="hidden" name="mine" value="0"><input class="form-check-input" type="checkbox" name="mine" value="1" id="mineFilter" @checked($filters['mine']??false)><label class="form-check-label" for="mineFilter">Mías</label></div></div>@endif
 <div class="col-md-4 col-lg-1 d-grid"><button class="btn btn-primary" title="Aplicar filtros"><i class="bi bi-funnel"></i></button></div>
 <div class="col-md-4 col-lg-1 d-grid"><a href="{{ route('loads.board') }}" class="btn btn-outline-secondary" title="Restablecer"><i class="bi bi-x-lg"></i></a></div>
+</div></div>
+<div class="board-period-segmented mt-2">
+    <div class="d-flex flex-wrap align-items-center gap-2">
+        <strong class="small">Rango segmentado:</strong>
+        <button type="button" class="btn btn-sm btn-outline-secondary board-range-btn" data-board-range="today">Hoy</button>
+        <button type="button" class="btn btn-sm btn-outline-secondary board-range-btn" data-board-range="week">Semana actual</button>
+        <button type="button" class="btn btn-sm btn-outline-secondary board-range-btn" data-board-range="month">Mes actual</button>
+        <button type="button" class="btn btn-sm btn-outline-secondary board-range-btn" data-board-range="quarter">Trimestre actual</button>
+        <button type="button" class="btn btn-sm btn-outline-secondary board-range-btn" data-board-range="custom">Personalizado</button>
+        <span class="small text-muted ms-auto" id="boardPeriodSummary">{{ ($filters['from']??'')&&($filters['to']??'') ? $filters['from'].' → '.$filters['to'] : (($periodBounds['min']??null)&&($periodBounds['max']??null) ? $periodBounds['min'].' → '.$periodBounds['max'] : 'Periodo completo de la pauta seleccionada') }}</span>
+    </div>
+    <div class="row g-2 mt-2 d-none" id="boardCustomRange">
+        <div class="col-md-3"><label class="form-label">Desde</label><input type="month" name="from" value="{{ $filters['from']??'' }}" class="form-control form-control-sm board-custom-from"></div>
+        <div class="col-md-3"><label class="form-label">Hasta</label><input type="month" name="to" value="{{ $filters['to']??'' }}" class="form-control form-control-sm board-custom-to"></div>
+        <div class="col-md-2 d-grid"><button type="submit" class="btn btn-primary btn-sm mt-auto">Aplicar rango</button></div>
+    </div>
+</div>
 </div></div></form>
 
 <div class="siget-kanban" aria-label="Tablero Kanban de cargas">
@@ -86,18 +103,20 @@ document.addEventListener('DOMContentLoaded',function(){
  const form=document.getElementById('loadBoardFilters');
  const agency=document.getElementById('boardAgency');
  const pauta=document.getElementById('boardPauta');
- const from=document.getElementById('boardFrom'),to=document.getElementById('boardTo');
+ const from=form?.querySelector('[name="from"]'),to=form?.querySelector('[name="to"]');
+ const custom=document.getElementById('boardCustomRange');
+ const summary=document.getElementById('boardPeriodSummary');
  const min='{{ $periodBounds['min'] ?? '' }}',max='{{ $periodBounds['max'] ?? '' }}';
 
  const syncPautas=()=>{
    if(!agency||!pauta)return;
    const agencyId=agency.value;
    Array.from(pauta.options).forEach(option=>{
-     if(!option.value)return;
-     option.hidden=!!agencyId && option.dataset.agencyId && option.dataset.agencyId!==agencyId;
+      if(!option.value)return;
+      option.hidden=!!agencyId && option.dataset.agencyId && option.dataset.agencyId!==agencyId;
    });
    const selected=pauta.selectedOptions[0];
-   if(agencyId && selected?.dataset.agencyId && selected.dataset.agencyId!==agencyId)pauta.value='';
+   if(agencyId&&selected?.dataset.agencyId&&selected.dataset.agencyId!==agencyId)pauta.value='';
  };
 
  const syncMonths=()=>{
@@ -106,40 +125,41 @@ document.addEventListener('DOMContentLoaded',function(){
    if(from.value)to.min=from.value;
    if(to.value)from.max=to.value;
    if(from.value&&to.value&&from.value>to.value)to.value=from.value;
+   if(summary)summary.textContent=from.value&&to.value ? from.value+' → '+to.value : (min&&max ? min+' → '+max : 'Periodo completo de la pauta seleccionada');
  };
 
- const submitRange=(start,end)=>{
-   if(!form||!from||!to)return;
-   from.value=start; to.value=end;
+ const applyPreset=(range)=>{
+   const now=new Date(), year=now.getFullYear();
+   let start=now.getMonth()+1, end=start;
+   if(range==='quarter') start=Math.floor(now.getMonth()/3)*3+1;
+   const startValue=year+'-'+String(start).padStart(2,'0');
+   const endValue=year+'-'+String(end).padStart(2,'0');
+   if(from)from.value=startValue;
+   if(to)to.value=endValue;
+   custom?.classList.add('d-none');
    syncMonths();
-   form.submit();
+   form?.submit();
  };
 
- document.querySelectorAll('[data-board-range]').forEach(button=>{
+ document.querySelectorAll('.board-range-btn').forEach(button=>{
    button.addEventListener('click',()=>{
-     const now=new Date();
-     const year=now.getFullYear();
-     const month=String(now.getMonth()+1).padStart(2,'0');
-     let start=year+'-'+month;
-     let end=start;
-     const range=button.dataset.boardRange;
-     if(range==='quarter'){
-       const quarterStart=Math.floor(now.getMonth()/3)*3;
-       start=year+'-'+String(quarterStart+1).padStart(2,'0');
+     document.querySelectorAll('.board-range-btn').forEach(x=>x.classList.remove('active'));
+     button.classList.add('active');
+     if(button.dataset.boardRange==='custom'){
+       custom?.classList.remove('d-none');
+       return;
      }
-     if(range==='week'||range==='today'){
-       start=year+'-'+month;
-     }
-     if(range==='custom')return;
-     submitRange(start,end);
+     applyPreset(button.dataset.boardRange);
    });
  });
 
- agency?.addEventListener('change',()=>{syncPautas();});
+ agency?.addEventListener('change',syncPautas);
+ pauta?.addEventListener('change',()=>custom?.classList.remove('d-none'));
  from?.addEventListener('change',syncMonths);
  to?.addEventListener('change',syncMonths);
  syncPautas();
  syncMonths();
+ if(from?.value||to?.value)custom?.classList.remove('d-none');
 });
 </script>
 @endsection
