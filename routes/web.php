@@ -8,7 +8,6 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EvidenceController;
 use App\Http\Controllers\EvidenceWorkflowController;
 use App\Http\Controllers\HistoryController;
-use App\Http\Controllers\IndicatorController;
 use App\Http\Controllers\InstitutionalClosureController;
 use App\Http\Controllers\LoadBoardController;
 use App\Http\Controllers\IntelligenceController;
@@ -44,7 +43,6 @@ Route::middleware(['auth', 'no-cache-auth'])->group(function () {
     Route::post('/cargas/{load}/documento-firmado', [InstitutionalClosureController::class, 'signedDocument'])->middleware('permission:scheduled_load.upload_signed')->name('loads.signed-document');
     Route::post('/cargas/{load}/cerrar', [InstitutionalClosureController::class, 'close'])->middleware('permission:scheduled_load.close')->name('loads.close');
     Route::post('/cargas/{load}/fiscalizador', [ReviewAssignmentController::class, 'store'])->name('loads.assign-fiscalizador');
-    Route::get('/indicadores', [IndicatorController::class, 'index'])->middleware('permission:indicators.view')->name('indicators.index');
     Route::get('/inteligencia', IntelligenceController::class)->middleware('permission:intelligence.view')->name('intelligence');
     Route::get('/reportes', [ReportController::class, 'index'])->middleware('permission:reports.view')->name('reports.index');
     Route::get('/reportes/plantillas', function () {
