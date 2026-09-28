@@ -70,7 +70,7 @@ $monthlyLabels = $monthly->pluck('period')->values();
 $roleCards = match($role) {
     'ENLACE_INSTITUCIONAL' => [
         ['Entregables',$total,'bi-layers','info'],['En operación',$active,'bi-activity','primary'],['Por revisar',$k['review_pending']??0,'bi-clipboard-check','warning'],
-        ['Observados',$k['observed']??0,'bi-exclamation-triangle','danger'],['Reprogramados',$reprogrammed,'bi-arrow-repeat','purple'],['Cierre',$closureRate.'%','bi-patch-check','success']
+        ['Observados',$k['observed']??0,'bi-exclamation-triangle','danger'],['Reprogramados',$reprogrammed,'bi-arrow-repeat','secondary'],['Cierre',$closureRate.'%','bi-patch-check','success']
     ],
     'ADMINISTRADOR' => [
         ['Cargas registradas',$total,'bi-layers','info'],['Activas',$active,'bi-activity','primary'],['Cerradas',$closed,'bi-check2-circle','success'],
