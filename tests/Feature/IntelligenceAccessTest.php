@@ -10,6 +10,7 @@ use App\Models\Role;
 use App\Models\ScheduledLoad;
 use App\Models\ScheduledLoadDeliverable;
 use App\Models\User;
+use App\Services\IntelligenceAnalyticsService;
 use Database\Seeders\AgencyTemplateSeeder;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -75,6 +76,77 @@ class IntelligenceAccessTest extends TestCase
         $response->assertSee('Radar y alertas');
         $response->assertSee('Carga Inteligencia Transmisión');
         $response->assertDontSee('Carga Inteligencia Programación');
+    }
+
+    public function test_director_transmision_ve_unicamente_su_direccion_en_todos_los_kpis(): void
+    {
+        $this->seed([RolePermissionSeeder::class, AgencyTemplateSeeder::class]);
+
+        $agency = ContractingAgency::query()->where('code', 'IMSS')->firstOrFail();
+        $tx = $agency->units()->where('code', 'DIR_A')->firstOrFail();
+        $pc = $agency->units()->where('code', 'DIR_B')->firstOrFail();
+
+        $director = User::factory()->create([
+            'role_id' => Role::query()->where('code', 'DIRECTOR_TRANSMISION')->firstOrFail()->id,
+            'contracting_agency_id' => $agency->id,
+            'organizational_unit_id' => $tx->id,
+        ]);
+        $admin = User::factory()->create([
+            'role_id' => Role::query()->where('code', 'ADMINISTRADOR')->firstOrFail()->id,
+            'contracting_agency_id' => $agency->id,
+        ]);
+
+        $import = CalendarImport::factory()->create([
+            'contracting_agency_id' => $agency->id,
+            'uploaded_by' => $admin->id,
+            'original_filename' => 'Pauta Dirección Septiembre 2026.xlsx',
+        ]);
+        $row = CalendarImportRow::factory()->create(['calendar_import_id' => $import->id]);
+        $template = EvidenceTemplate::query()
+            ->where('contracting_agency_id', $agency->id)
+            ->where('code', 'PAUTA_MENSUAL')
+            ->firstOrFail();
+
+        $txLoad = $this->createLoad($agency, $import, $row, $template, 'Carga exclusiva Transmisión');
+        $txLoad->update(['status' => 'VENCIDA']);
+
+        $pcLoad = $this->createLoad($agency, $import, $row, $template, 'Carga exclusiva Programación');
+        $pcLoad->update(['status' => 'VALIDADO_Y_CERRADO']);
+
+        $txRequirement = $template->requirements()->where('responsible_unit_id', $tx->id)->firstOrFail();
+        $pcRequirement = $template->requirements()->where('responsible_unit_id', $pc->id)->firstOrFail();
+
+        ScheduledLoadDeliverable::query()->create([
+            'scheduled_load_id' => $txLoad->id,
+            'template_requirement_id' => $txRequirement->id,
+            'organizational_unit_id' => $tx->id,
+            'responsible_user_id' => $director->id,
+            'status' => 'PENDIENTE',
+            'due_at' => now()->subDay(),
+        ]);
+
+        ScheduledLoadDeliverable::query()->create([
+            'scheduled_load_id' => $pcLoad->id,
+            'template_requirement_id' => $pcRequirement->id,
+            'organizational_unit_id' => $pc->id,
+            'status' => 'CERRADO',
+            'due_at' => now()->subDay(),
+        ]);
+
+        $payload = app(IntelligenceAnalyticsService::class)->forUser($director);
+        $this->assertCount(1, $payload['direction_performance']);
+        $this->assertSame('DIRECCIÓN DE TRANSMISIÓN', $payload['direction_performance'][0]['name']);
+        $this->assertSame(1, $payload['kpis']['total']);
+        $this->assertSame(1, $payload['kpis']['overdue']);
+
+        $response = $this->actingAs($director)->get(route('intelligence'));
+
+        $response->assertOk();
+        $response->assertSee('DIRECCIÓN DE TRANSMISIÓN');
+        $response->assertSee('Carga exclusiva Transmisión');
+        $response->assertDontSee('DIRECCIÓN DE PROGRAMACIÓN Y CONTINUIDAD');
+        $response->assertDontSee('Carga exclusiva Programación');
+        $response->assertDontSee('Riesgo por Dependencia');
     }
 
     public function test_ejecutivos_ven_solo_estados_principales_y_clasificacion_por_pauta(): void
