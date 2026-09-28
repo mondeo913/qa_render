@@ -44,6 +44,7 @@ $indicatorStatusLabels = [
     'VALIDADO_Y_CERRADO' => 'VALIDADO Y CERRADO',
     'VENCIDA' => 'VENCIDO',
 ];
+@endphp
 
 <div class="siget-indicators">
     <div class="hero">
