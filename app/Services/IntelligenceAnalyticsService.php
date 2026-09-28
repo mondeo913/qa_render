@@ -32,6 +32,7 @@ final class IntelligenceAnalyticsService
 
     public function forUser(User $user, array $filters = []): array
     {
+        $directionContext = $this->directionContext($user);
         $analytics = $this->dashboard->forUser($user, $filters);
         $base = fn (): Builder => $this->filteredBase($user, $filters);
         $accessibleLoadIds = (clone $base())->select('scheduled_loads.id');
@@ -67,6 +68,7 @@ final class IntelligenceAnalyticsService
         $analytics['agency_performance'] = $agencyPerformance;
         $analytics['direction_performance'] = $directionPerformance;
         $analytics['pauta_performance'] = $pautaPerformance;
+        $analytics['direction_scope'] = $directionContext;
         $analytics['radar_summary'] = $radar;
         $analytics['attention_items'] = $attention;
         $analytics['quality_items'] = $quality;
@@ -116,6 +118,20 @@ final class IntelligenceAnalyticsService
             })
             ->sortBy(fn ($unit) => mb_strtolower((string) $unit->name))
             ->values();
+
+        // Para un Director de Dirección, el selector de Dirección debe mostrar
+        // únicamente su Dirección raíz; las unidades descendientes forman parte
+        // de su universo, pero no deben presentarse como Direcciones adicionales.
+        $directionContext = $this->directionContext($user);
+        if ($directionContext) {
+            $root = OrganizationalUnit::query()
+                ->whereKey($directionContext['id'])
+                ->where('active', true)
+                ->first();
+            $units = $root
+                ? collect([$root->setAttribute('filter_unit_ids', [(int) $root->id])])
+                : collect();
+        }
 
         $pautas = (clone $loadQuery)
             ->where('scheduled_loads.status', '!=', 'CANCELADA')
@@ -249,6 +265,34 @@ final class IntelligenceAnalyticsService
         $now = now();
         $until = $now->copy()->addDays(3);
 
+        // Un Director de Dirección debe ver una sola fila: su Dirección,
+        // consolidando sus unidades descendientes sin mezclar la otra Dirección.
+        $rootDirection = $this->directionContextFromBase($base);
+        if ($rootDirection) {
+            $row = (clone $base())
+                ->where('scheduled_loads.status', '!=', 'CANCELADA')
+                ->selectRaw('COUNT(DISTINCT scheduled_loads.id) AS total')
+                ->selectRaw("COUNT(DISTINCT CASE WHEN scheduled_loads.status='VALIDADO_Y_CERRADO' THEN scheduled_loads.id END) AS closed")
+                ->selectRaw("COUNT(DISTINCT CASE WHEN scheduled_loads.status='VENCIDA' THEN scheduled_loads.id END) AS overdue")
+                ->selectRaw(
+                    "COUNT(DISTINCT CASE WHEN scheduled_loads.effective_close_at BETWEEN ? AND ? AND scheduled_loads.status NOT IN ('VALIDADO_Y_CERRADO','CANCELADA','VENCIDA') THEN scheduled_loads.id END) AS due_soon",
+                    [$now, $until]
+                )
+                ->first();
+
+            return [[
+                'id' => (int) $rootDirection['id'],
+                'name' => $rootDirection['name'],
+                'total' => (int) ($row->total ?? 0),
+                'closed' => (int) ($row->closed ?? 0),
+                'overdue' => (int) ($row->overdue ?? 0),
+                'due_soon' => (int) ($row->due_soon ?? 0),
+                'percentage' => (int) ($row->total ?? 0) === 0
+                    ? 0
+                    : round(100 * (int) $row->closed / (int) $row->total, 1),
+            ]];
+        }
+
         return (clone $base())
             ->join('scheduled_load_deliverables','scheduled_load_deliverables.scheduled_load_id','=','scheduled_loads.id')
             ->join('organizational_units','organizational_units.id','=','scheduled_load_deliverables.organizational_unit_id')
@@ -267,6 +311,51 @@ final class IntelligenceAnalyticsService
             ->get()
             ->map(fn ($row) => $this->riskRow((int) $row->id,$row->name,(int) $row->total,(int) $row->closed,(int) $row->overdue,(int) $row->due_soon))
             ->all();
+    }
+
+    private function directionContext(User $user): ?array
+    {
+        if (!AppEnumsRoleCode::isDirectionDirector($user->role?->code) || !$user->organizational_unit_id) {
+            return null;
+        }
+
+        $unit = OrganizationalUnit::query()->find((int) $user->organizational_unit_id);
+        if (!$unit) {
+            return null;
+        }
+
+        return [
+            'id' => (int) $unit->id,
+            'name' => preg_replace('/\\s+/u', ' ', trim((string) $unit->name)),
+            'agency_id' => (int) $unit->contracting_agency_id,
+            'unit_ids' => $this->access->accessibleUnitIds($user),
+        ];
+    }
+
+    private function directionContextFromBase(callable $base): ?array
+    {
+        // No requiere una consulta adicional al usuario: si el universo queda
+        // asociado a una sola Dirección raíz, se detecta por sus unidades raíz.
+        $rows = (clone $base())
+            ->join('scheduled_load_deliverables','scheduled_load_deliverables.scheduled_load_id','=','scheduled_loads.id')
+            ->join('organizational_units','organizational_units.id','=','scheduled_load_deliverables.organizational_unit_id')
+            ->whereNotNull('organizational_units.parent_id')
+            ->select('organizational_units.id','organizational_units.name','organizational_units.parent_id')
+            ->distinct()
+            ->limit(2)
+            ->get();
+
+        if ($rows->count() !== 1) {
+            return null;
+        }
+
+        $rootId = $rows->first()->parent_id;
+        $root = OrganizationalUnit::query()->find($rootId);
+
+        return $root ? [
+            'id' => (int) $root->id,
+            'name' => preg_replace('/\\s+/u', ' ', trim((string) $root->name)),
+        ] : null;
     }
 
     private function riskRow(int $id, string $name, int $total, int $closed, int $overdue, int $dueSoon): array
