@@ -24,7 +24,7 @@
         <div>
             <span class="badge text-bg-primary mb-2">{{ $analytics['role']['code'] ?? 'SIGET' }}</span>
             <h2 class="mb-1">Radar y alertas</h2>
-            <p class="mb-0">Esta vista no modifica cargas, evidencias ni estados. Lee el mismo universo autorizado y organiza la información por pauta, dependencia, revisión, validación, cierre y riesgo.</p>
+            <p class="mb-0">Esta vista no modifica cargas, evidencias ni estados. En una Dirección, toda la lectura queda restringida exclusivamente a la Dirección autorizada y a la información de sus unidades subordinadas.</p>
         </div>
         <div class="text-end"><small class="d-block text-muted">Actualizado</small><strong>{{ optional($analytics['generated_at'] ?? null)->format('d/m/Y H:i') }}</strong></div>
     </div>
@@ -82,7 +82,7 @@
 </div>
 
 <div class="card siget-card mb-4">
-    <div class="card-header"><div><h2>Clasificación ejecutiva por Pauta y Dependencia</h2><p>Consolidado institucional: <strong>programadas, reprogramadas, en revisión, validadas, cerradas y vencidas</strong>. La vista evita exponer estados internos de operación que no aportan a la lectura ejecutiva.</p></div></div>
+    <div class="card-header"><div><h2>{{ $isDirectionDirector ? "Clasificación ejecutiva por Pauta y Dirección" : "Clasificación ejecutiva por Pauta y Dependencia" }}</h2><p>Consolidado institucional: <strong>programadas, reprogramadas, en revisión, validadas, cerradas y vencidas</strong>. La vista evita exponer estados internos de operación que no aportan a la lectura ejecutiva.</p></div></div>
     <div class="table-responsive"><table class="table align-middle mb-0"><thead><tr><th>Pauta</th><th>Dependencia</th><th>Programadas</th><th>Reprogramadas</th><th>En revisión</th><th>Validadas</th><th>Cerradas</th><th>Vencidas</th></tr></thead><tbody>
     @forelse($pautaRows as $row)
         <tr>
@@ -102,7 +102,7 @@
 </div>
 
 <div class="row g-4 mb-4">
-    <div class="col-xl-7"><div class="card siget-card h-100"><div class="card-header"><div><h2>Riesgo por Dirección</h2><p>El riesgo se limita a las Direcciones que el usuario tiene autorizadas.</p></div></div><div class="table-responsive"><table class="table align-middle mb-0"><thead><tr><th>Dirección</th><th>Cargas</th><th>Cierre</th><th>Venc.</th><th>72 h</th><th>Estado</th></tr></thead><tbody>@forelse($directions->take(10) as $row)<tr><td><strong>{{ $row['name'] ?? 'Sin unidad' }}</strong></td><td>{{ $row['total'] }}</td><td>{{ $row['percentage'] }}%</td><td>{{ $row['overdue'] }}</td><td>{{ $row['due_soon'] ?? 0 }}</td><td><span class="badge {{ ($row['overdue']??0)>0?'text-bg-danger':(($row['percentage']??0)<80?'text-bg-warning':'text-bg-success') }}">{{ ($row['overdue']??0)>0?'CRÍTICO':(($row['percentage']??0)<80?'ATENCIÓN':'NORMAL') }}</span></td></tr>@empty<tr><td colspan="6" class="text-center py-4">Sin información.</td></tr>@endforelse</tbody></table></div></div></div>
+    <div class="col-xl-7"><div class="card siget-card h-100"><div class="card-header"><div><h2>Riesgo por Dirección</h2><p>{{ $isDirectionDirector ? "Solo ".$directionScope["name"].". Se consolidan únicamente sus unidades y entregables autorizados." : "El riesgo se limita a las Direcciones que el usuario tiene autorizadas." }}</p></div></div><div class="table-responsive"><table class="table align-middle mb-0"><thead><tr><th>Dirección</th><th>Cargas</th><th>Cierre</th><th>Venc.</th><th>72 h</th><th>Estado</th></tr></thead><tbody>@forelse($directions->take(10) as $row)<tr><td><strong>{{ $row['name'] ?? 'Sin unidad' }}</strong></td><td>{{ $row['total'] }}</td><td>{{ $row['percentage'] }}%</td><td>{{ $row['overdue'] }}</td><td>{{ $row['due_soon'] ?? 0 }}</td><td><span class="badge {{ ($row['overdue']??0)>0?'text-bg-danger':(($row['percentage']??0)<80?'text-bg-warning':'text-bg-success') }}">{{ ($row['overdue']??0)>0?'CRÍTICO':(($row['percentage']??0)<80?'ATENCIÓN':'NORMAL') }}</span></td></tr>@empty<tr><td colspan="6" class="text-center py-4">Sin información.</td></tr>@endforelse</tbody></table></div></div></div>
 @unless($isDirectionDirector)
     <div class="col-xl-5"><div class="card siget-card h-100"><div class="card-header"><div><h2>Riesgo por Dependencia</h2><p>Concentración de vencimientos y avance.</p></div></div><div class="table-responsive"><table class="table align-middle mb-0"><thead><tr><th>Dependencia</th><th>Cierre</th><th>Venc.</th><th>72 h</th><th></th></tr></thead><tbody>@forelse($agencyRows->take(8) as $row)<tr><td><strong>{{ $row['name'] ?? 'Sin dependencia' }}</strong></td><td>{{ $row['percentage'] }}%</td><td>{{ $row['overdue'] }}</td><td>{{ $row['due_soon'] ?? 0 }}</td><td><span class="badge {{ ($row['overdue']??0)>0?'text-bg-danger':(($row['percentage']??0)<80?'text-bg-warning':'text-bg-success') }}">{{ ($row['overdue']??0)>0?'CRÍTICO':(($row['percentage']??0)<80?'ATENCIÓN':'NORMAL') }}</span></td></tr>@empty<tr><td colspan="5" class="text-center py-4">Sin información.</td></tr>@endforelse</tbody></table></div></div></div>
 @endunless
