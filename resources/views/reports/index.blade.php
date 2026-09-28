@@ -38,18 +38,27 @@ html[data-bs-theme="dark"] .report-shell{background:#111827;color:#e5e7eb}html[d
     <div class="report-hero">
         <div class="report-eyebrow">SIGET · Centro de reportes · Formato institucional</div>
         <h2>{{ $reportLinks[$report] ?? 'Centro de reportes' }}</h2>
-        <p>Consulta, previsualiza y exporta información agrupada por dependencia, dirección, unidad, campaña y evidencia.</p>
+        <p>Consulta, previsualiza y exporta información agrupada por dependencia, Dirección, Pauta (Excel), carga y evidencia dentro de tu alcance autorizado.</p>
     </div>
 
     <form method="GET" action="{{ route('reports.index') }}" class="report-box report-toolbar">
         <input type="hidden" name="report" value="{{ $report }}">
-        <div class="row g-3 align-items-end">
+        <div class="row g-3 align-items-end"><div class="col-lg-2"><label>Pauta (Excel)</label><select name="pauta_id" class="form-select form-select-sm"><option value="">Todas las pautas visibles</option>@foreach(($pautas ?? []) as $pauta)<option value="{{ $pauta['id'] }}" @selected((string)($filters['pauta_id'] ?? '') === (string)$pauta['id'])>{{ $pauta['name'] }} · {{ $pauta['agency'] }}</option>@endforeach</select></div>
+            
             <div class="col-lg-2"><label>Dependencia</label><select name="agency_id" class="form-select form-select-sm"><option value="">Todas las autorizadas</option>@foreach($agencies as $a)<option value="{{ $a->id }}" @selected(($filters['agency_id'] ?? '') == $a->id)>{{ $a->name }}</option>@endforeach</select></div>
             <div class="col-lg-3"><label>Dirección / Unidad</label><select name="organizational_unit_id" class="form-select form-select-sm"><option value="">Todas las autorizadas</option>@foreach($units as $u)<option value="{{ $u->id }}" @selected(($filters['organizational_unit_id'] ?? '') == $u->id)>{{ $u->name }}</option>@endforeach</select></div>
             <div class="col-lg-2"><label>Estado ejecutivo</label><select name="status" class="form-select form-select-sm"><option value="">Todos</option>@foreach($statuses as $code=>$label)<option value="{{ $code }}" @selected(($filters['status'] ?? '') === $code)>{{ $statusLabels[$code] ?? $label }}</option>@endforeach</select></div>
             <div class="col-lg-2"><label>Desde</label><input type="month" name="from" value="{{ $filters['from'] ?? '' }}" class="form-control form-control-sm"></div>
             <div class="col-lg-2"><label>Hasta</label><input type="month" name="to" value="{{ $filters['to'] ?? '' }}" class="form-control form-control-sm"></div>
             <div class="col-lg-1"><button class="btn btn-primary btn-sm w-100">Aplicar</button></div>
+        </div>
+        <div class="report-period-segmented mt-2">
+            <strong class="small">Rango segmentado:</strong>
+            <button type="button" class="btn btn-outline-secondary btn-sm" data-report-range="today">Hoy</button>
+            <button type="button" class="btn btn-outline-secondary btn-sm" data-report-range="week">Semana actual</button>
+            <button type="button" class="btn btn-outline-secondary btn-sm" data-report-range="month">Mes actual</button>
+            <button type="button" class="btn btn-outline-secondary btn-sm" data-report-range="quarter">Trimestre actual</button>
+            <button type="button" class="btn btn-outline-secondary btn-sm" data-report-range="custom">Personalizado</button>
         </div>
         <div class="report-actions">
             <a class="btn btn-outline-secondary btn-sm" href="{{ route('reports.index') }}">Limpiar</a>
@@ -102,7 +111,27 @@ html[data-bs-theme="dark"] .report-shell{background:#111827;color:#e5e7eb}html[d
         </div>
         <script>
         (()=>{const labels={agency:'Dependencia',unit:'Dirección / Unidad',title:'Campaña o carga',responsible:'Responsable',expected:'Evidencias esperadas',received:'Evidencias recibidas',validated:'Evidencias validadas',pending:'Pendientes',observed:'Observadas',close:'Fecha límite',status:'Estado',risk:'Riesgo',progress:'Avance'};const filterLabels={agency:'Dependencia seleccionada',organizational_unit:'Dirección o unidad',campaign:'Campaña o periodo',status:'Estado de la evidencia',responsible:'Responsable operativo',date:'Rango de fechas'};const type=document.getElementById('builderReportType'),group=document.getElementById('builderGrouping'),format=document.getElementById('builderFormat'),title=document.getElementById('builderPreviewTitle'),meta=document.getElementById('builderPreviewMeta'),cols=document.getElementById('builderPreviewColumns'),filters=document.getElementById('builderPreviewFilters');function refresh(){title.textContent=type.options[type.selectedIndex].text;meta.textContent=group.value+' · '+format.value;cols.innerHTML=[...document.querySelectorAll('.builder-column:checked')].map(x=>'<li>'+labels[x.value]+'</li>').join('')||'<li>Sin columnas seleccionadas</li>';filters.innerHTML=[...document.querySelectorAll('.builder-filter:checked')].map(x=>'<li>'+filterLabels[x.value]+'</li>').join('')||'<li>Sin filtros seleccionados</li>';if(document.getElementById('builderSubtotals').checked)filters.innerHTML+='<li>Subtotales y total institucional</li>'}function preset(name){document.querySelectorAll('.builder-column').forEach(x=>x.checked=name==='executive'||(name==='pending'&&['agency','unit','title','responsible','pending','observed','close','status','risk'].includes(x.value))||(name==='audit'&&['agency','unit','title','responsible','status','close'].includes(x.value)));document.querySelectorAll('.builder-filter').forEach(x=>x.checked=true);type.value=name==='pending'?'pending':name==='audit'?'audit':'executive';group.value=name==='audit'?'Estado → Fecha límite':name==='pending'?'Dependencia → Campaña':'Dependencia → Dirección → Unidad';format.value='PDF institucional';refresh()}document.getElementById('builderPreview').addEventListener('click',refresh);document.querySelectorAll('.builder-column,.builder-filter,#builderSubtotals').forEach(x=>x.addEventListener('change',refresh));document.querySelectorAll('[data-preset]').forEach(x=>x.addEventListener('click',()=>preset(x.dataset.preset)));document.getElementById('builderUse').addEventListener('click',()=>{const target=type.value;window.location.href='{{ route('reports.index') }}?report='+target});refresh()})();
-        </script>
+        <script>
+document.addEventListener('DOMContentLoaded',function(){
+ const form=document.querySelector('.report-toolbar');
+ const from=form?.querySelector('[name="from"]'),to=form?.querySelector('[name="to"]');
+ if(!form||!from||!to)return;
+ const setRange=(kind)=>{
+   const now=new Date(); let start=new Date(now), end=new Date(now);
+   if(kind==='week'){const day=(now.getDay()+6)%7;start.setDate(now.getDate()-day);}
+   if(kind==='month')start=new Date(now.getFullYear(),now.getMonth(),1);
+   if(kind==='quarter'){const qm=Math.floor(now.getMonth()/3)*3;start=new Date(now.getFullYear(),qm,1);}
+   const fmt=d=>d.toISOString().slice(0,7);
+   if(kind!=='today' || kind==='today'){from.value=fmt(start);to.value=fmt(end);}
+   form.submit();
+ };
+ document.querySelectorAll('[data-report-range]').forEach(btn=>btn.addEventListener('click',()=>{
+   const kind=btn.dataset.reportRange;
+   if(kind==='custom'){from.focus();return;}
+   setRange(kind);
+ }));
+});
+</script></script>
     @elseif($report === 'executive')
         <div class="report-kpis">
             <div class="report-kpi"><small>Evidencias esperadas</small><strong>{{ number_format($summary['expected']) }}</strong><em>obligación del periodo</em></div>
