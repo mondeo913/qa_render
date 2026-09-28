@@ -348,6 +348,17 @@ class ReportController extends Controller
             ->sortBy('name')
             ->values();
 
+        $pautas = $loads
+            ->loadMissing('calendarImport')
+            ->groupBy('calendar_import_id')
+            ->map(fn ($group) => [
+                'id' => (int) $group->first()->calendar_import_id,
+                'name' => (string) ($group->first()->calendarImport?->original_filename ?: 'Pauta sin nombre'),
+                'agency_id' => (int) $group->first()->contracting_agency_id,
+                'agency' => (string) ($group->first()->agency?->name ?: 'Sin dependencia'),
+            ])
+            ->values();
+
         return view('reports.index', [
             'analytics' => $analyticsData,
             'evidenceSummary' => $evidenceSummary,
@@ -360,6 +371,7 @@ class ReportController extends Controller
             'units' => $units,
             'statuses' => $statuses,
             'users' => $users,
+            'pautas' => $pautas,
             'role' => $role,
             'canBuildReports' => $role === RoleCode::ADMINISTRADOR->value,
             'canExport' => $request->user()->hasPermission('reports.export'),
