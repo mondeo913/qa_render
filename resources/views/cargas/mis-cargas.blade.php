@@ -58,7 +58,7 @@
                             <label class="form-label fw-semibold" for="pauta_id">Pauta (Excel)</label>
                             <select id="pauta_id" name="pauta_id" class="form-select form-select-lg">
                                 <option value="">Todas las pautas</option>
-                                @foreach($pautas as $pauta)<option value="{{ $pauta->id }}" @if((string) request('pauta_id') === (string) $pauta->id) selected @endif>{{ $pauta->name }}</option>@endforeach
+                                @foreach($pautas as $pauta)<option value="{{ $pauta->id }}" @if((string) request('pauta_id') === (string) $pauta->id) selected @endif>{{ $pauta->agency_name }} · {{ $pauta->name }} · {{ $pauta->load_count }} programación(es)</option>@endforeach
                             </select>
                             <div class="form-text">Corresponde al archivo Excel confirmado por Enlace Institucional.</div>
                         </div>
@@ -90,7 +90,7 @@
                             <div class="date-group">
                                 <div class="date-header d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
                                     <strong><i class="bi bi-calendar3 me-1"></i>{{ $date === 'sin-fecha' ? 'Fecha no definida' : \Carbon\Carbon::createFromFormat('Y-m-d', $date)->translatedFormat('d \d\e F \d\e Y') }}</strong>
-                                    <span class="small text-secondary">{{ $dateLoads->count() }} pauta(s)</span>
+                                    <span class="small text-secondary">{{ $dateLoads->count() }} carga(s) programada(s)</span>
                                 </div>
                                 <div class="loads-grid">
                                     @foreach($dateLoads as $load)
@@ -101,7 +101,7 @@
                                                     @php $evidence = $deliverable->evidences->sortByDesc('id')->first(); $direction = $deliverable->organizationalUnit; $requirement = $deliverable->templateRequirement; $minFiles = (int) (optional($requirement)->min_files ?: 1); $currentFiles = $evidence ? $evidence->files->where('version', $evidence->current_version)->count() : 0; $status = $evidence ? (is_object($evidence->status) && property_exists($evidence->status, 'value') ? $evidence->status->value : (string) $evidence->status) : ''; $closed = in_array($status, ['ENVIADO', 'VALIDADO', 'CERRADO'], true); @endphp
                                                     <div class="border rounded-3 p-3 deliverable-card d-flex flex-column"><div class="d-flex justify-content-between gap-2 flex-wrap"><span class="badge text-bg-light"><i class="bi bi-diagram-3 me-1"></i>{{ optional($direction)->name ?: 'Sin dirección' }}</span>@if($closed)<span class="badge text-bg-success"><i class="bi bi-check-circle me-1"></i>Cerrada</span>@elseif($evidence)<span class="badge text-bg-warning">{{ $currentFiles }}/{{ $minFiles }} archivo(s)</span>@else<span class="badge text-bg-secondary">Pendiente</span>@endif</div><h4 class="h6 mt-3 mb-1 deliverable-title">{{ optional($requirement)->name ?: 'Entregable programado' }}</h4>@if(optional($requirement)->description)<p class="small text-secondary mb-2">{{ $requirement->description }}</p>@endif
                                                         @if($evidence)<div class="small mb-3"><strong>{{ $evidence->title }}</strong><span class="text-secondary"> · {{ $evidence->files->count() }} archivo(s) total</span></div>@endif
-                                                        <div class="mt-auto">@if(!$evidence)<form action="{{ route('evidences.store') }}" method="POST" enctype="multipart/form-data">@csrf<input type="hidden" name="deliverable_id" value="{{ $deliverable->id }}"><input type="hidden" name="pauta_id" value="{{ optional($load->calendarImport)->id }}"><div class="mb-2"><input name="title" class="form-control" placeholder="Título de la evidencia programada" required></div><div class="input-group"><input name="file" type="file" class="form-control" accept=".xlsx,.xls,.pdf,.doc,.docx" required><button class="btn btn-primary" type="submit"><i class="bi bi-paperclip me-1"></i>Adjuntar</button></div><div class="form-text">Formatos permitidos para esta evidencia: XLSX, XLS, PDF, DOC y DOCX.</div></form>@elseif(!$closed)<div class="evidence-actions"><a href="{{ route('evidences.show', $evidence) }}" class="btn btn-sm btn-outline-primary"><i class="bi bi-folder2-open me-1"></i>Gestionar archivos</a><form action="{{ route('evidences.submit', $evidence) }}" method="POST">@csrf<button class="btn btn-sm btn-success" type="submit" @if($currentFiles < $minFiles) disabled @endif><i class="bi bi-send-check me-1"></i>Cerrar y enviar</button></form></div>@if($currentFiles < $minFiles)<div class="small text-danger mt-2">Debes adjuntar al menos {{ $minFiles }} archivo(s) antes de cerrar y enviar.</div>@endif @else<div class="evidence-actions"><a href="{{ route('evidences.show', $evidence) }}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-eye me-1"></i>Consultar</a><span class="small text-success"><i class="bi bi-check2-circle me-1"></i>Disponible para revisión institucional y por dirección.</span></div>@endif</div></div>
+                                                        <div class="mt-auto">@if(!$evidence)<form action="{{ route('evidences.store') }}" method="POST" enctype="multipart/form-data">@csrf<input type="hidden" name="deliverable_id" value="{{ $deliverable->id }}"><div class="mb-2"><input name="title" class="form-control" placeholder="Título de la evidencia programada" required></div><div class="input-group"><input name="file" type="file" class="form-control" accept=".xlsx,.xls,.pdf,.doc,.docx" required><button class="btn btn-primary" type="submit"><i class="bi bi-paperclip me-1"></i>Adjuntar</button></div><div class="form-text">Formatos permitidos para esta evidencia: XLSX, XLS, PDF, DOC y DOCX.</div></form>@elseif(!$closed)<div class="evidence-actions"><a href="{{ route('evidences.show', $evidence) }}" class="btn btn-sm btn-outline-primary"><i class="bi bi-folder2-open me-1"></i>Gestionar archivos</a><form action="{{ route('evidences.submit', $evidence) }}" method="POST">@csrf<button class="btn btn-sm btn-success" type="submit" @if($currentFiles < $minFiles) disabled @endif><i class="bi bi-send-check me-1"></i>Cerrar y enviar</button></form></div>@if($currentFiles < $minFiles)<div class="small text-danger mt-2">Debes adjuntar al menos {{ $minFiles }} archivo(s) antes de cerrar y enviar.</div>@endif @else<div class="evidence-actions"><a href="{{ route('evidences.show', $evidence) }}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-eye me-1"></i>Consultar</a><span class="small text-success"><i class="bi bi-check2-circle me-1"></i>Disponible para revisión institucional y por dirección.</span></div>@endif</div></div>
                                                 @empty<div class="col-12 text-secondary">No hay evidencias programadas dentro de esta carga para tu alcance.</div>@endforelse
                                             </div></div>
                                         </article>
@@ -119,23 +119,29 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-    const template = document.getElementById('template_id');
+    const pauta = document.getElementById('pauta_id');
+    const agency = document.getElementById('agency_id');
     const month = document.getElementById('month');
-    if (!template || !month) return;
+    if (!pauta || !agency || !month) return;
 
-    const monthsByTemplate = @json($monthsByTemplate ?? []);
+    const monthsByPauta = @json($monthsByPauta ?? []);
     const selectedMonth = @json(request('month'));
+    const selectedPauta = @json(request('pauta_id'));
 
     function rebuildMonths() {
-        const templateId = template.value;
-        const allowed = templateId && Object.prototype.hasOwnProperty.call(monthsByTemplate, templateId)
-            ? monthsByTemplate[templateId]
-            : Object.values(monthsByTemplate).flat().filter((value, index, values) => values.indexOf(value) === index).sort().reverse();
+        const pautaId = pauta.value;
+        const allowed = pautaId && Object.prototype.hasOwnProperty.call(monthsByPauta, pautaId)
+            ? monthsByPauta[pautaId]
+            : Object.values(monthsByPauta)
+                .flat()
+                .filter((value, index, values) => values.indexOf(value) === index)
+                .sort()
+                .reverse();
 
         month.innerHTML = '';
         const allOption = document.createElement('option');
         allOption.value = '';
-        allOption.textContent = templateId ? 'Todos los meses de esta pauta' : 'Todos los meses';
+        allOption.textContent = pautaId ? 'Todos los meses de esta Pauta' : 'Todos los meses disponibles';
         month.appendChild(allOption);
 
         allowed.forEach(function (value) {
@@ -151,8 +157,13 @@ document.addEventListener('DOMContentLoaded', function () {
         if (selectedMonth && !allowed.includes(selectedMonth)) month.value = '';
     }
 
-    template.addEventListener('change', rebuildMonths);
-    rebuildMonths();
+    pauta.addEventListener('change', rebuildMonths);
+    agency.addEventListener('change', function () {
+        // La dependencia cambia el universo de Pautas en el servidor al aplicar
+        // filtros; no se inventan Pautas ni meses del lado cliente.
+        if (!pauta.value) rebuildMonths();
+    });
+    if (selectedPauta) rebuildMonths();
 });
 </script>
 @endsection
