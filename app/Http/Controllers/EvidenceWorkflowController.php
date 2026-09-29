@@ -22,7 +22,7 @@ class EvidenceWorkflowController extends Controller
 
         return view('evidencias.show', [
             'evidence' => $evidence->load([
-                'scheduledLoad',
+                'scheduledLoad.calendarImport',
                 'deliverable.templateRequirement',
                 'deliverable.organizationalUnit',
                 'files',
