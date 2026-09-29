@@ -138,6 +138,88 @@ class LoadBoardAccessTest extends TestCase
         $response->assertSee('IPAB');
     }
 
+    public function test_programming_operator_sees_only_programming_pautas_and_keeps_same_dependency_orders_separate(): void
+    {
+        $this->seed([RolePermissionSeeder::class, AgencyTemplateSeeder::class]);
+
+        $agency = ContractingAgency::query()->where('code', 'IMSS')->firstOrFail();
+        $pc = $agency->units()->where('code', 'DIR_B')->firstOrFail();
+        $tx = $agency->units()->where('code', 'DIR_A')->firstOrFail();
+
+        $operator = User::factory()->create([
+            'role_id' => Role::query()->where('code', 'OPERADOR_PROGRAMACION_CONTINUIDAD')->firstOrFail()->id,
+            'contracting_agency_id' => $agency->id,
+            'organizational_unit_id' => $pc->id,
+        ]);
+
+        // Un alcance manipulado hacia Transmisión no debe ampliar el universo
+        // de un operativo de Programación y Continuidad.
+        UserScope::query()->create([
+            'user_id' => $operator->id,
+            'contracting_agency_id' => $agency->id,
+            'organizational_unit_id' => $tx->id,
+            'can_read' => true,
+            'can_write' => true,
+        ]);
+
+        $admin = User::factory()->create([
+            'role_id' => Role::query()->where('code', 'ADMINISTRADOR')->firstOrFail()->id,
+        ]);
+
+        $template = EvidenceTemplate::query()
+            ->where('contracting_agency_id', $agency->id)
+            ->where('code', 'PAUTA_MENSUAL')
+            ->firstOrFail();
+
+        $pautaA = CalendarImport::factory()->create([
+            'contracting_agency_id' => $agency->id,
+            'uploaded_by' => $admin->id,
+            'original_filename' => 'IMSS_OTV_065.xlsx',
+        ]);
+        $pautaB = CalendarImport::factory()->create([
+            'contracting_agency_id' => $agency->id,
+            'uploaded_by' => $admin->id,
+            'original_filename' => 'IMSS_OTV_071.xlsx',
+        ]);
+        $txPauta = CalendarImport::factory()->create([
+            'contracting_agency_id' => $agency->id,
+            'uploaded_by' => $admin->id,
+            'original_filename' => 'IMSS_OTV_TX.xlsx',
+        ]);
+
+        foreach ([
+            [$pautaA, $pc, 'Programación enero 01'],
+            [$pautaB, $pc, 'Programación marzo 01'],
+            [$txPauta, $tx, 'Transmisión no visible'],
+        ] as [$import, $unit, $title]) {
+            $row = CalendarImportRow::factory()->create(['calendar_import_id' => $import->id]);
+            $load = $this->createLoad($agency, $import, $row, $template, $title, 'PROGRAMADA');
+            $requirement = $template->requirements()->where('responsible_unit_id', $unit->id)->firstOrFail();
+
+            ScheduledLoadDeliverable::query()->create([
+                'scheduled_load_id' => $load->id,
+                'template_requirement_id' => $requirement->id,
+                'organizational_unit_id' => $unit->id,
+                'responsible_user_id' => $unit->id === $pc->id ? $operator->id : null,
+                'status' => 'PENDIENTE',
+            ]);
+        }
+
+        $response = $this->actingAs($operator)->get(route('loads.mine'));
+        $response->assertOk();
+        $response->assertSee('IMSS_OTV_065.xlsx');
+        $response->assertSee('IMSS_OTV_071.xlsx');
+        $response->assertDontSee('IMSS_OTV_TX.xlsx');
+
+        $filtered = $this->actingAs($operator)->get(route('loads.mine', [
+            'pauta_id' => $pautaA->id,
+        ]));
+        $filtered->assertOk();
+        $filtered->assertSee('IMSS_OTV_065.xlsx');
+        $filtered->assertDontSee('IMSS_OTV_071.xlsx');
+        $filtered->assertDontSee('IMSS_OTV_TX.xlsx');
+    }
+
     public function test_direction_directors_see_only_same_direction_pautas_and_can_filter_by_excel(): void
     {
         $this->seed([RolePermissionSeeder::class, AgencyTemplateSeeder::class]);
