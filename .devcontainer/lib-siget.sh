@@ -187,11 +187,16 @@ start_postgres() {
   if ! postgres_is_ready; then
     echo "Iniciando PostgreSQL..."
 
-    "${pg_bin}/pg_ctl" \
+    if ! "${pg_bin}/pg_ctl" \
       -D "${PGDATA}" \
       -l "${LOG_DIR}/postgres.log" \
       -o "-h 127.0.0.1 -p ${PGPORT} -k ${PGSOCKET}" \
-      start
+      -w -t 120 \
+      start; then
+      echo "PostgreSQL no pudo iniciar. Últimas líneas del log:" >&2
+      tail -n 120 "${LOG_DIR}/postgres.log" >&2 || true
+      return 1
+    fi
   fi
 
   for _ in $(seq 1 90); do
@@ -209,7 +214,8 @@ start_postgres() {
       -h 127.0.0.1 \
       -p "${PGPORT}" \
       -U "${PGUSER}" >/dev/null 2>&1; then
-    echo "PostgreSQL no inició. Revise ${LOG_DIR}/postgres.log" >&2
+    echo "PostgreSQL no inició. Últimas líneas del log:" >&2
+    tail -n 120 "${LOG_DIR}/postgres.log" >&2 || true
     return 1
   fi
 
