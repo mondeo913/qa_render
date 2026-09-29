@@ -18,6 +18,109 @@
 .board-direction-compact .board-heading h2{font-size:1rem;color:#fff;margin-bottom:2px!important}
 .board-direction-compact .board-heading p{font-size:.68rem;color:#91a5b7}
 .board-direction-compact .board-heading .btn{height:30px;padding:.25rem .55rem;font-size:.68rem}
+/* Kanban compacto universal: las cuatro etapas deben caber en una sola vista de escritorio. */
+.board-direction-compact .siget-kanban{
+    display:grid;
+    grid-template-columns:repeat(4,minmax(0,1fr));
+    gap:8px;
+    width:100%;
+    min-width:0;
+    align-items:start;
+}
+.board-direction-compact .siget-kanban-column{
+    min-width:0!important;
+    width:100%!important;
+    border-radius:10px;
+}
+.board-direction-compact .siget-kanban-column > header{
+    min-height:58px;
+    padding:8px 9px!important;
+}
+.board-direction-compact .siget-kanban-column > header h3{
+    font-size:.76rem!important;
+    line-height:1.08;
+    margin:0!important;
+    white-space:normal;
+}
+.board-direction-compact .siget-kanban-column > header p{
+    font-size:.58rem!important;
+    line-height:1.15;
+    margin:3px 0 0!important;
+}
+.board-direction-compact .siget-kanban-column > header > span{
+    min-width:24px;
+    height:24px;
+    padding:0 6px;
+    display:grid;
+    place-items:center;
+    font-size:.68rem;
+}
+.board-direction-compact .siget-kanban-stack{
+    padding:6px!important;
+    gap:6px!important;
+}
+.board-direction-compact .siget-load-card{
+    padding:7px!important;
+    border-radius:8px;
+    min-width:0;
+}
+.board-direction-compact .siget-load-card h4{
+    font-size:.68rem!important;
+    line-height:1.15;
+    margin:2px 0 0!important;
+    overflow-wrap:anywhere;
+}
+.board-direction-compact .siget-load-agency{
+    font-size:.56rem!important;
+    line-height:1.05;
+}
+.board-direction-compact .siget-load-card .badge{
+    font-size:.54rem!important;
+    padding:.2rem .32rem!important;
+}
+.board-direction-compact .siget-load-units,
+.board-direction-compact .siget-load-meta,
+.board-direction-compact .siget-assignees{
+    font-size:.55rem!important;
+    line-height:1.18;
+}
+.board-direction-compact .siget-load-meta{
+    gap:5px!important;
+    margin-top:5px!important;
+}
+.board-direction-compact .siget-load-card .small{
+    font-size:.56rem!important;
+}
+.board-direction-compact .siget-load-card .progress{
+    height:4px!important;
+}
+.board-direction-compact .siget-load-footer{
+    margin-top:6px!important;
+    gap:5px!important;
+}
+.board-direction-compact .siget-load-counters{
+    font-size:.55rem!important;
+    gap:6px!important;
+}
+.board-direction-compact .siget-load-footer .btn{
+    font-size:.56rem!important;
+    padding:.2rem .38rem!important;
+}
+.board-direction-compact .siget-kanban-empty{
+    padding:12px 7px!important;
+    font-size:.6rem!important;
+    text-align:center;
+}
+@media(max-width:1100px){
+    .board-direction-compact .siget-kanban{
+        grid-template-columns:repeat(2,minmax(0,1fr));
+    }
+}
+@media(max-width:650px){
+    .board-direction-compact .siget-kanban{
+        grid-template-columns:1fr;
+    }
+}
 @media(max-width:1200px){.board-direction-compact .board-kpis{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:700px){.board-direction-compact .board-kpis{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.board-direction-compact .board-kpi{height:68px;min-height:68px}}
 </style>
