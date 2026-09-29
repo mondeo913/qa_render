@@ -159,7 +159,7 @@ final class DashboardAnalyticsService
             })->sortBy('unit')->values()->all();
         $evidenceTrend = $evidenceDeliverables->groupBy(fn ($d) => $d->due_at?->format('Y-m') ?: 'Sin fecha')->sortKeys()->take(-6)->map(function ($rows, $period) {
             $expected = $rows->count();
-            $received = $rows->filter(fn ($d) => $d->evidences->isNotEmpty())->count();
+            $received = $rows->filter(fn ($d) => $d->evidences->contains(fn ($e) => $e->submitted_at !== null))->count();
             $validated = $rows->filter(fn ($d) => $d->evidences->contains(fn ($e) => in_array($e->status?->value ?? (string) $e->status, ['VALIDADO', 'CERRADO'], true)))->count();
             return ['period' => $period, 'expected' => $expected, 'received' => $received, 'validated' => $validated];
         })->values()->all();
@@ -174,7 +174,7 @@ final class DashboardAnalyticsService
                 $import = $rows->first()?->scheduledLoad?->calendarImport;
                 $pautaName = $import?->original_filename ?: ($rows->first()?->scheduledLoad?->title ?: 'Pauta sin nombre');
                 $expected = $rows->count();
-                $received = $rows->filter(fn ($d) => $d->evidences->isNotEmpty())->count();
+                $received = $rows->filter(fn ($d) => $d->evidences->contains(fn ($e) => $e->submitted_at !== null))->count();
                 return [
                     'campaign' => $pautaName,
                     'pauta' => $pautaName,
@@ -190,7 +190,7 @@ final class DashboardAnalyticsService
             ->groupBy(fn ($d) => $d->responsibleUser->name)
             ->map(function ($rows, $responsible) {
                 $expected = $rows->count();
-                $received = $rows->filter(fn ($d) => $d->evidences->isNotEmpty())->count();
+                $received = $rows->filter(fn ($d) => $d->evidences->contains(fn ($e) => $e->submitted_at !== null))->count();
                 return [
                     'responsible' => $responsible,
                     'expected' => $expected,
