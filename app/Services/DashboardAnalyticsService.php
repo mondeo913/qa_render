@@ -126,7 +126,7 @@ final class DashboardAnalyticsService
             ->whereNotIn('status', ['CANCELADA'])
             ->get();
         $expectedEvidence = $evidenceDeliverables->count();
-        $receivedEvidence = $evidenceDeliverables->filter(fn ($d) => $d->evidences->isNotEmpty())->count();
+        $receivedEvidence = $evidenceDeliverables->filter(fn ($d) => $d->evidences->contains(fn ($e) => $e->submitted_at !== null))->count();
         $validatedEvidence = $evidenceDeliverables->filter(fn ($d) => $d->evidences->contains(fn ($e) => in_array($e->status?->value ?? (string) $e->status, ['VALIDADO', 'CERRADO'], true)))->count();
         $observedEvidence = $evidenceDeliverables->filter(fn ($d) => $d->evidences->contains(fn ($e) => in_array($e->status?->value ?? (string) $e->status, ['OBSERVADO', 'RECHAZADO'], true)))->count();
         $reviewEvidence = $evidenceDeliverables->filter(fn ($d) => $d->evidences->contains(fn ($e) => in_array($e->status?->value ?? (string) $e->status, ['EN_REVISION', 'ENVIADO'], true)))->count();
@@ -144,7 +144,7 @@ final class DashboardAnalyticsService
         ];
         $evidenceByUnit = $evidenceDeliverables->groupBy(fn ($d) => $d->organizationalUnit?->name ?: 'Sin dirección')->map(function ($rows, $unit) {
             $expected = $rows->count();
-            $received = $rows->filter(fn ($d) => $d->evidences->isNotEmpty())->count();
+            $received = $rows->filter(fn ($d) => $d->evidences->contains(fn ($e) => $e->submitted_at !== null))->count();
             $validated = $rows->filter(fn ($d) => $d->evidences->contains(fn ($e) => in_array($e->status?->value ?? (string) $e->status, ['VALIDADO', 'CERRADO'], true)))->count();
             return ['unit' => $unit, 'expected' => $expected, 'received' => $received, 'validated' => $validated, 'pending' => max(0, $expected - $received), 'percentage' => $expected ? round(100 * $received / $expected, 1) : 0];
         })->sortBy('percentage')->values()->all();
@@ -153,7 +153,7 @@ final class DashboardAnalyticsService
             ->groupBy(fn ($d) => $d->organizationalUnit?->name ?: 'Sin dirección')
             ->map(function ($rows, $unit) {
                 $expected = $rows->count();
-                $received = $rows->filter(fn ($d) => $d->evidences->isNotEmpty())->count();
+                $received = $rows->filter(fn ($d) => $d->evidences->contains(fn ($e) => $e->submitted_at !== null))->count();
                 $validated = $rows->filter(fn ($d) => $d->evidences->contains(fn ($e) => in_array($e->status?->value ?? (string) $e->status, ['VALIDADO', 'CERRADO'], true)))->count();
                 return ['unit' => $unit, 'expected' => $expected, 'received' => $received, 'validated' => $validated, 'pending' => max(0, $expected - $received), 'percentage' => $expected ? round(100 * $received / $expected, 1) : 0];
             })->sortBy('unit')->values()->all();
