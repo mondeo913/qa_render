@@ -176,6 +176,48 @@ final class AccessScopeService
             return [];
         }
 
+        if (RoleCode::isOperator($role) && $user->organizational_unit_id) {
+            $root = OrganizationalUnit::query()
+                ->whereKey((int) $user->organizational_unit_id)
+                ->first();
+
+            if (!$root || !$root->code) {
+                return $user->contracting_agency_id
+                    ? [(int) $user->contracting_agency_id]
+                    : [];
+            }
+
+            // El rol operativo queda amarrado a la misma Dirección estructural
+            // (DIR_A o DIR_B). Los alcances adicionales sólo pueden sumar
+            // dependencias que tengan esa misma Dirección, nunca la contraria.
+            $matchingUnitIds = OrganizationalUnit::query()
+                ->where('active', true)
+                ->where('code', $root->code)
+                ->pluck('id')
+                ->map(fn ($id) => (int) $id)
+                ->all();
+
+            $agencyIds = $user->scopes()
+                ->where('can_read', true)
+                ->whereNotNull('organizational_unit_id')
+                ->whereIn('organizational_unit_id', $matchingUnitIds)
+                ->pluck('contracting_agency_id')
+                ->filter()
+                ->map(fn ($id) => (int) $id)
+                ->all();
+
+            if ($user->contracting_agency_id) {
+                $agencyIds[] = (int) $user->contracting_agency_id;
+            }
+
+            $rootAgencyId = (int) ($root->contracting_agency_id ?? 0);
+            if ($rootAgencyId > 0) {
+                $agencyIds[] = $rootAgencyId;
+            }
+
+            return array_values(array_unique(array_filter($agencyIds)));
+        }
+
         $agencyIds = $user->scopes()
             ->where('can_read', true)
             ->whereNotNull('contracting_agency_id')
@@ -256,16 +298,32 @@ final class AccessScopeService
         }
 
         if (RoleCode::isOperator($role) && $user->organizational_unit_id) {
-            $unitIds = $user->scopes()
+            $root = OrganizationalUnit::query()
+                ->whereKey((int) $user->organizational_unit_id)
+                ->first();
+
+            if (!$root || !$root->code) {
+                return [(int) $user->organizational_unit_id];
+            }
+
+            $matchingUnitIds = OrganizationalUnit::query()
+                ->where('active', true)
+                ->where('code', $root->code)
+                ->pluck('id')
+                ->map(fn ($id) => (int) $id)
+                ->all();
+
+            $scopedUnitIds = $user->scopes()
                 ->where('can_read', true)
                 ->whereNotNull('organizational_unit_id')
+                ->whereIn('organizational_unit_id', $matchingUnitIds)
                 ->pluck('organizational_unit_id')
                 ->map(fn ($id) => (int) $id)
                 ->all();
 
-            $unitIds[] = (int) $user->organizational_unit_id;
+            $scopedUnitIds[] = (int) $user->organizational_unit_id;
 
-            return array_values(array_unique($unitIds));
+            return array_values(array_unique($scopedUnitIds));
         }
 
         $unitIds = $user->scopes()
