@@ -130,14 +130,19 @@ class MyLoadsController extends Controller
             ? $filterLoads->where('contracting_agency_id', $selectedAgencyId)->values()
             : $filterLoads;
 
-        $pautas = $filterLoads
+        // La Pauta es cada Excel/orden cargado por Enlace Institucional.
+        // Se identifica por calendar_import_id, por lo que dos órdenes de la
+        // misma dependencia quedan separadas aunque pertenezcan al mismo mes.
+        $pautas = $agencyFilterLoads
             ->groupBy('calendar_import_id')
             ->map(function ($pautaLoads) {
                 $first = $pautaLoads->first();
+
                 return (object) [
                     'id' => (int) $first->calendar_import_id,
                     'name' => (string) ($first->calendarImport?->original_filename ?: 'Pauta sin nombre'),
                     'agency_id' => (int) $first->contracting_agency_id,
+                    'agency_name' => (string) ($first->agency?->name ?: 'Sin dependencia'),
                     'load_count' => $pautaLoads->count(),
                 ];
             })
@@ -150,7 +155,15 @@ class MyLoadsController extends Controller
             ? $agencyFilterLoads->where('template_id', $selectedTemplateId)->values()
             : $agencyFilterLoads;
 
-        $months = $templateFilterLoads
+        // El filtro de mes se acota a la Pauta seleccionada. Sin Pauta
+        // seleccionada se muestran únicamente los meses que existen dentro
+        // de las Pautas disponibles para la dependencia seleccionada.
+        $selectedPautaId = $request->filled('pauta_id') ? $request->integer('pauta_id') : null;
+        $pautaFilterLoads = $selectedPautaId !== null
+            ? $agencyFilterLoads->where('calendar_import_id', $selectedPautaId)->values()
+            : $agencyFilterLoads;
+
+        $months = $pautaFilterLoads
             ->pluck('effective_open_at')
             ->filter()
             ->map(fn ($date) => $date->format('Y-m'))
@@ -158,28 +171,20 @@ class MyLoadsController extends Controller
             ->sortDesc()
             ->values();
 
-        // Dependencia -> Pauta contratada -> Meses contratados.
-        // La vista usa esta estructura para no ofrecer meses de otra dependencia
-        // ni meses de otra pauta.
-        $monthsByAgencyTemplate = $filterLoads
-            ->groupBy('contracting_agency_id')
-            ->map(fn ($agencyLoads) => $agencyLoads
-                ->groupBy('template_id')
-                ->map(fn ($templateLoads) => $templateLoads
-                    ->pluck('effective_open_at')
-                    ->filter()
-                    ->map(fn ($date) => $date->format('Y-m'))
-                    ->unique()
-                    ->sortDesc()
-                    ->values()
-                    ->all()
-                )
+        $monthsByPauta = $agencyFilterLoads
+            ->groupBy('calendar_import_id')
+            ->map(fn ($pautaLoads) => $pautaLoads
+                ->pluck('effective_open_at')
+                ->filter()
+                ->map(fn ($date) => $date->format('Y-m'))
+                ->unique()
+                ->sortDesc()
+                ->values()
                 ->all()
             )
             ->all();
 
-        // Se conserva esta estructura por compatibilidad con la vista/URLs
-        // existentes, pero ahora los datos respetan dependencia y alcance.
+        // Se conserva esta estructura por compatibilidad con URLs antiguas.
         $monthsByTemplate = $templateFilterLoads
             ->groupBy('template_id')
             ->map(fn ($templateLoads) => $templateLoads
@@ -202,7 +207,7 @@ class MyLoadsController extends Controller
             'pautas',
             'months',
             'monthsByTemplate',
-            'monthsByAgencyTemplate',
+            'monthsByPauta',
             'filterUnits',
             'isDirectionLocked'
         ));
