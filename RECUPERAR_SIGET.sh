@@ -17,7 +17,43 @@ if postgres_is_ready; then
   echo "OK PostgreSQL ya está disponible en 127.0.0.1:${PGPORT}"
 else
   echo "PostgreSQL no responde; ejecutando recuperación segura..."
-  start_postgres
+
+  if [ -f "$PGDATA/postmaster.pid" ]; then
+    pid="$(head -n 1 "$PGDATA/postmaster.pid" 2>/dev/null || true)"
+    stale=1
+
+    if [[ "$pid" =~ ^[0-9]+$ ]] && kill -0 "$pid" >/dev/null 2>&1; then
+      cmd="$(ps -p "$pid" -o args= 2>/dev/null || true)"
+      if [[ "$cmd" == *postgres* ]] && [[ "$cmd" == *"$PGDATA"* ]]; then
+        stale=0
+        echo "PostgreSQL tiene un proceso activo (PID $pid); no se tocará el PID."
+      fi
+    fi
+
+    if [ "$stale" -eq 1 ]; then
+      echo "Eliminando postmaster.pid obsoleto..."
+      rm -f "$PGDATA/postmaster.pid"
+    fi
+  fi
+
+  if [ -d "$PGDATA" ]; then
+    chmod 700 "$PGDATA" >/dev/null 2>&1 || true
+    chown -R "$(id -u):$(id -g)" "$PGDATA" >/dev/null 2>&1 || true
+  fi
+
+  if command -v ss >/dev/null 2>&1 && ss -ltn "sport = :$PGPORT" | grep -q ":$PGPORT"; then
+    echo "ERROR: el puerto $PGPORT ya está ocupado por otro proceso." >&2
+    ss -ltnp "sport = :$PGPORT" 2>/dev/null || true
+    exit 20
+  fi
+
+  if ! start_postgres; then
+    echo >&2
+    echo "ERROR: PostgreSQL no pudo iniciar." >&2
+    echo "Últimas líneas de $LOG_DIR/postgres.log:" >&2
+    tail -n 100 "$LOG_DIR/postgres.log" 2>/dev/null || true
+    exit 21
+  fi
 fi
 
 echo
