@@ -78,6 +78,7 @@ class ReportController extends Controller
         return [
             'id' => $load->id,
             'agency' => $load->agency?->name ?: 'Sin dependencia',
+            'pauta' => $load->calendarImport?->original_filename ?: 'Pauta sin nombre',
             'unit' => $deliverables->map(fn ($d) => $d->organizationalUnit?->name)->filter()->unique()->implode(' / ') ?: 'Sin unidad',
             'responsible' => $deliverables->map(fn ($d) => $d->responsibleUser?->name)->filter()->unique()->implode(' / ') ?: 'Sin responsable',
             'title' => $load->title,
@@ -193,6 +194,7 @@ class ReportController extends Controller
         $query = $access->scopeLoads(
             ScheduledLoad::query()->with([
                 'agency',
+                'calendarImport',
                 'deliverables.organizationalUnit',
                 'deliverables.responsibleUser',
                 'deliverables.templateRequirement',
@@ -412,6 +414,7 @@ class ReportController extends Controller
             fputcsv($handle, [
                 'ID',
                 'Dependencia',
+                'Pauta (Excel)',
                 'Dirección/Unidad',
                 'Responsable',
                 'Título',
@@ -472,6 +475,7 @@ class ReportController extends Controller
                     fputcsv($handle, [
                         $load->id,
                         $load->agency?->name,
+                        $load->calendarImport?->original_filename ?: 'Pauta sin nombre',
                         $units,
                         $users,
                         $load->title,
@@ -514,6 +518,7 @@ class ReportController extends Controller
         $headers = [
             'ID',
             'Dependencia',
+            'Pauta (Excel)',
             'Dirección/Unidad',
             'Responsable',
             'Título',
@@ -579,6 +584,7 @@ class ReportController extends Controller
             $values = [
                 $load->id,
                 $load->agency?->name,
+                $load->calendarImport?->original_filename ?: 'Pauta sin nombre',
                 $units,
                 $users,
                 $load->title,
