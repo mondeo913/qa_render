@@ -5,7 +5,7 @@
 <div class="board-direction-compact">
 
 <style>
-/* Estándar compacto del tablero para Directores: misma geometría de KPI que el dashboard. */
+/* Estándar compacto universal del tablero para todos los roles. */
 .board-direction-compact{padding-top:0}
 .board-direction-compact .board-kpis{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px;margin:0 0 16px}
 .board-direction-compact .board-kpis>[class*="col-"]{width:auto!important;max-width:none!important;padding-left:0;padding-right:0}
