@@ -13,6 +13,7 @@ class MyLoadsController extends Controller
     public function __invoke(Request $request, AccessScopeService $access): View
     {
         $user = $request->user();
+        $validated = $request->validate(['pauta_id' => ['nullable', 'integer', 'min:1']]);
         $unitIds = $access->accessibleUnitIds($user);
         $operatorUnitId = RoleCode::isOperator($user->role?->code) && $user->organizational_unit_id
             ? (int) $user->organizational_unit_id
