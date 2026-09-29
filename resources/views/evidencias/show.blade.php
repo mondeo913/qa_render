@@ -6,7 +6,7 @@
 <div class="row g-4">
     <div class="col-xl-8">
         <div class="card siget-card">
-            <div class="card-header"><div><h2>{{ $evidence->title }}</h2><p>{{ $evidence->deliverable->organizationalUnit?->name }} · Versión {{ $evidence->current_version }}</p></div><span class="badge siget-status">{{ $status }}</span></div>
+            <div class="card-header"><div><h2>{{ $evidence->title }}</h2><p>{{ $evidence->deliverable->organizationalUnit?->name }} · Versión {{ $evidence->current_version }}</p><div class="small text-primary fw-semibold mt-1"><i class="bi bi-file-earmark-spreadsheet me-1"></i>Pauta: {{ $evidence->scheduledLoad?->calendarImport?->original_filename ?: 'Pauta sin nombre' }}</div></div><span class="badge siget-status">{{ $status }}</span></div>
             <div class="card-body">
                 <h3 class="h6">Archivos y versiones</h3>
                 <div class="table-responsive">
