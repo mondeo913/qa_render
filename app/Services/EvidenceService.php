@@ -35,6 +35,7 @@ final class EvidenceService
         }
 
         $load = $deliverable->scheduledLoad;
+        $load->loadMissing('calendarImport');
 
         if (!$this->availability->isEnabled($load, now())) {
             throw new RuntimeException('La fecha aún no está habilitada para carga.');
@@ -143,6 +144,9 @@ final class EvidenceService
                     'organizational_unit_id' => $deliverable->organizational_unit_id,
                     'repository_folder_id' => $folder->id,
                     'repository_path' => $folder->path_key,
+                    'calendar_import_id' => $load->calendar_import_id,
+                    'pauta_name' => $load->calendarImport?->original_filename,
+                    'scheduled_load_id' => $load->id,
                     'qa_upload' => app()->environment('local'),
                 ],
             ]);
@@ -167,6 +171,8 @@ final class EvidenceService
                     'organizational_unit_id' => $deliverable->organizational_unit_id,
                     'repository_folder_id' => $folder->id,
                     'repository_path' => $folder->path_key,
+                    'calendar_import_id' => $load->calendar_import_id,
+                    'pauta_name' => $load->calendarImport?->original_filename,
                 ]
             );
 
