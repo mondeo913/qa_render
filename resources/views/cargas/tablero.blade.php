@@ -45,24 +45,35 @@
     min-height:58px;
     padding:8px 9px!important;
 }
+.board-direction-compact .siget-kanban-column > header{
+    min-width:0;
+}
+.board-direction-compact .siget-kanban-column > header > div:first-child{
+    min-width:0;
+    flex:1 1 auto;
+}
 .board-direction-compact .siget-kanban-column > header h3{
     font-size:.76rem!important;
     line-height:1.08;
     margin:0!important;
     white-space:normal;
+    overflow-wrap:anywhere;
+    word-break:normal;
 }
 .board-direction-compact .siget-kanban-column > header p{
     font-size:.58rem!important;
     line-height:1.15;
     margin:3px 0 0!important;
+    overflow-wrap:anywhere;
 }
 .board-direction-compact .siget-kanban-column > header > span{
-    min-width:24px;
-    height:24px;
-    padding:0 6px;
+    flex:0 0 auto;
+    min-width:22px;
+    height:22px;
+    padding:0 5px;
     display:grid;
     place-items:center;
-    font-size:.68rem;
+    font-size:.64rem;
 }
 .board-direction-compact .siget-kanban-stack{
     padding:6px!important;
@@ -120,14 +131,27 @@
     font-size:.6rem!important;
     text-align:center;
 }
-@media(max-width:1100px){
+@media(max-width:980px){
     .board-direction-compact .siget-kanban{
-        grid-template-columns:repeat(2,minmax(0,1fr));
+        grid-template-columns:repeat(4,minmax(0,1fr))!important;
+        gap:6px!important;
+    }
+    .board-direction-compact .siget-kanban-column > header{
+        padding:7px 6px!important;
+    }
+    .board-direction-compact .siget-kanban-column > header h3{
+        font-size:.67rem!important;
     }
 }
-@media(max-width:650px){
+@media(max-width:760px){
     .board-direction-compact .siget-kanban{
-        grid-template-columns:1fr;
+        grid-template-columns:repeat(2,minmax(0,1fr))!important;
+        gap:7px!important;
+    }
+}
+@media(max-width:520px){
+    .board-direction-compact .siget-kanban{
+        grid-template-columns:1fr!important;
     }
 }
 @media(max-width:1200px){.board-direction-compact .board-kpis{grid-template-columns:repeat(3,minmax(0,1fr))}}
