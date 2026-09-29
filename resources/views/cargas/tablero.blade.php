@@ -20,12 +20,21 @@
 .board-direction-compact .board-heading .btn{height:30px;padding:.25rem .55rem;font-size:.68rem}
 /* Kanban compacto universal: las cuatro etapas deben caber en una sola vista de escritorio. */
 .board-direction-compact .siget-kanban{
-    display:grid;
-    grid-template-columns:repeat(4,minmax(0,1fr));
-    gap:8px;
-    width:100%;
-    min-width:0;
+    display:grid!important;
+    grid-template-columns:repeat(4,minmax(0,1fr))!important;
+    grid-auto-columns:minmax(0,1fr);
+    gap:8px!important;
+    width:100%!important;
+    min-width:0!important;
+    max-width:100%!important;
+    overflow:visible!important;
     align-items:start;
+}
+.board-direction-compact .siget-kanban > .siget-kanban-column{
+    width:100%!important;
+    min-width:0!important;
+    max-width:none!important;
+    margin:0!important;
 }
 .board-direction-compact .siget-kanban-column{
     min-width:0!important;
@@ -153,7 +162,7 @@
 @endforeach
 </div>
 
-</div>
+
 
 <div class="card siget-card mb-4">
 <div class="card-header"><div><h2>Catálogo de dependencias</h2><p>Solo aparecen dependencias con cargas pertenecientes al alcance autorizado. La Pauta identifica el archivo Excel importado por Enlace Institucional.</p></div><span class="badge text-bg-light">Cumplimiento promedio: {{ $summary['completion'] }}%</span></div>
@@ -272,4 +281,6 @@ document.addEventListener('DOMContentLoaded',function(){
  if(from?.value||to?.value)custom?.classList.remove('d-none');
 });
 </script>
+
+</div>
 @endsection
