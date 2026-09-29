@@ -23,6 +23,7 @@ class MyLoadsController extends Controller
                 ->with([
                     'agency',
                     'template',
+                    'calendarImport',
                     'deliverables' => function ($query) use ($access, $user, $unitIds) {
                         if ($unitIds !== []) {
                             $access->scopeDeliverables($query, $user);
@@ -37,7 +38,12 @@ class MyLoadsController extends Controller
             $user
         );
 
-        // Una pauta desaparece de Mis cargas cuando ya no existe ningún
+                if ($request->filled('pauta_id')) {
+            $pautaId = $request->integer('pauta_id');
+            $scopedQuery->where('calendar_import_id', $pautaId);
+        }
+
+// Una pauta desaparece de Mis cargas cuando ya no existe ningún
         // entregable pendiente dentro del alcance real del usuario. Esto evita
         // que una evidencia subida por otra dirección o por otro operador
         // oculte la pauta que todavía corresponde a esta dirección.
@@ -94,7 +100,7 @@ class MyLoadsController extends Controller
         // aplican template/month para poder construir dependencias dinámicas.
         $filterLoads = (clone $scopedQuery)
             ->without(['deliverables'])
-            ->with(['agency', 'template'])
+            ->with(['agency', 'template', 'calendarImport'])
             ->orderByDesc('effective_open_at')
             ->orderByDesc('id')
             ->get();
@@ -122,6 +128,20 @@ class MyLoadsController extends Controller
         $agencyFilterLoads = $selectedAgencyId !== null
             ? $filterLoads->where('contracting_agency_id', $selectedAgencyId)->values()
             : $filterLoads;
+
+        $pautas = $filterLoads
+            ->groupBy('calendar_import_id')
+            ->map(function ($pautaLoads) {
+                $first = $pautaLoads->first();
+                return (object) [
+                    'id' => (int) $first->calendar_import_id,
+                    'name' => (string) ($first->calendarImport?->original_filename ?: 'Pauta sin nombre'),
+                    'agency_id' => (int) $first->contracting_agency_id,
+                    'load_count' => $pautaLoads->count(),
+                ];
+            })
+            ->sortByDesc('id')
+            ->values();
 
         $templates = $agencyFilterLoads->pluck('template')->filter()->unique('id')->sortBy('name')->values();
         $selectedTemplateId = $request->filled('template_id') ? $request->integer('template_id') : null;
@@ -178,6 +198,7 @@ class MyLoadsController extends Controller
             'loads',
             'agencies',
             'templates',
+            'pautas',
             'months',
             'monthsByTemplate',
             'monthsByAgencyTemplate',
