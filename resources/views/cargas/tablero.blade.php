@@ -466,7 +466,7 @@
     .board-direction-compact .siget-kanban{grid-template-columns:1fr!important}
 }
 
-</style>
+.board-direction-compact .siget-kanban{grid-template-columns:repeat(4,220px)!important;width:fit-content!important;max-width:100%!important;gap:6px!important}.board-direction-compact .siget-kanban-column{width:220px!important;min-width:220px!important;max-width:220px!important}.board-direction-compact .siget-kanban-column>header{height:36px!important;min-height:36px!important;max-height:36px!important;padding:3px 6px!important}.board-direction-compact .siget-kanban-column>header h3{font-size:.58rem!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}.board-direction-compact .siget-kanban-stack{padding:4px!important;gap:4px!important;min-height:50px!important}.board-direction-compact .siget-load-card{width:100%!important;min-width:0!important;padding:5px!important;box-sizing:border-box!important}.board-direction-compact .siget-load-card *{max-width:100%!important;min-width:0!important;overflow-wrap:anywhere!important}@media(max-width:980px){.board-direction-compact .siget-kanban{grid-template-columns:repeat(2,220px)!important;width:446px!important}}@media(max-width:520px){.board-direction-compact .siget-kanban{grid-template-columns:220px!important;width:220px!important}}</style>
 
 <div class="siget-board-heading board-heading d-flex justify-content-between align-items-start gap-3">
     <div class="min-w-0">
