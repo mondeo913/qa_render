@@ -25,6 +25,23 @@
     @media (min-width: 1600px) { .mis-cargas-page .deliverables-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
     @media (max-width: 1100px) { .mis-cargas-page .loads-grid, .mis-cargas-page .deliverables-grid { grid-template-columns: 1fr; } }
     @media (max-width: 768px) { .mis-cargas-page { padding: 0 .5rem 1.5rem; } .mis-cargas-page .siget-file-section { padding: .75rem; } .mis-cargas-page .filter-card { position: static; } }
+
+/* Mis cargas: misma estructura y acciones con controles compactos. */
+.mis-cargas-page{padding:0 .5rem 1.25rem}
+.mis-cargas-page .siget-file-toolbar{padding:.75rem 1rem}
+.mis-cargas-page .siget-file-section{padding:1rem}
+.mis-cargas-page .filter-card{margin-bottom:10px!important}
+.mis-cargas-page .filter-card .card-header{padding:.55rem .75rem!important}
+.mis-cargas-page .filter-card .card-body{padding:.7rem .75rem}
+.mis-cargas-page .filter-card .row{row-gap:.5rem!important}
+.mis-cargas-page .filter-card .form-label{font-size:.67rem;margin-bottom:.2rem}
+.mis-cargas-page .filter-card .form-select-lg{height:31px;min-height:31px;padding:.25rem .45rem;font-size:.68rem}
+.mis-cargas-page .filter-card .btn-lg{height:31px;min-height:31px;padding:.25rem .55rem;font-size:.67rem}
+.mis-cargas-page .dependency-header{padding:.7rem .9rem}
+.mis-cargas-page .loads-grid{gap:.65rem}
+.mis-cargas-page .deliverables-grid{gap:.65rem}
+.mis-cargas-page .date-header{padding:.55rem .7rem}
+
 </style>
 
 <div class="mis-cargas-page">

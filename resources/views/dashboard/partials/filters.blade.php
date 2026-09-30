@@ -55,6 +55,13 @@
   #siget-dashboard-filters .filter-primary-row>[class*="col-"]{min-width:0}
   #siget-dashboard-filters .filter-primary-row{row-gap:.45rem!important}
 }
+
+/* Filtro compacto común para todos los roles del dashboard. */
+#siget-dashboard-filters{margin-bottom:10px!important}
+#siget-dashboard-filters .card-body{padding:.55rem .65rem}
+#siget-dashboard-filters .siget-period-segmenter{padding:.45rem .6rem!important}
+#siget-dashboard-filters .filter-primary-row{row-gap:.35rem!important}
+
 </style>
 <div class="card-body row g-2 align-items-end filter-primary-row">
 <div class="col-xxl-2 col-xl-3 col-md-6"><label class="form-label">Dependencia</label><select name="agency_id" id="siget-agency-filter" class="form-select"><option value="">Todas las dependencias</option>@foreach($filterAgencies as $agency)@php $agencyId=data_get($agency,'id'); $agencyName=data_get($agency,'name',''); @endphp<option value="{{ $agencyId }}" @selected((string)($filters['agency_id'] ?? '') === (string)$agencyId)>{{ $agencyName }}</option>@endforeach</select></div>

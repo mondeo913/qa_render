@@ -156,6 +156,38 @@
 }
 @media(max-width:1200px){.board-direction-compact .board-kpis{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:700px){.board-direction-compact .board-kpis{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.board-direction-compact .board-kpi{height:68px;min-height:68px}}
+
+/* Densidad visual del módulo Tablero: solo presentación; no cambia formularios, rutas ni datos. */
+.board-direction-compact .board-heading{margin-bottom:8px!important}
+.board-direction-compact .board-heading h2{font-size:.92rem}
+.board-direction-compact .board-heading p{font-size:.62rem}
+.board-direction-compact .board-heading .btn{height:28px;font-size:.64rem;padding:.2rem .45rem}
+.board-direction-compact .board-kpis{gap:6px!important;margin-bottom:10px!important}
+.board-direction-compact .board-kpi{min-height:64px;height:64px;padding:7px 8px;grid-template-columns:25px 1fr;column-gap:7px;border-radius:10px}
+.board-direction-compact .board-kpi .board-kpi-icon{width:25px;height:25px;border-radius:7px;font-size:.76rem}
+.board-direction-compact .board-kpi small{font-size:.58rem}
+.board-direction-compact .board-kpi strong{font-size:.98rem}
+.board-direction-compact .siget-card{border-radius:11px!important}
+.board-direction-compact .siget-card .card-header{padding:9px 11px}
+.board-direction-compact .siget-card .card-header h2{font-size:.82rem}
+.board-direction-compact .siget-card .card-header p{font-size:.62rem}
+.board-direction-compact .siget-card .card-body{padding:9px}
+.board-direction-compact .siget-dependency-grid{grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:7px}
+.board-direction-compact .siget-dependency-card{padding:8px;border-radius:9px}
+.board-direction-compact .siget-dependency-logo{width:32px;height:32px;border-radius:8px}
+.board-direction-compact .siget-dependency-stats{gap:4px 7px;margin-top:7px;font-size:.62rem}
+.board-direction-compact #loadBoardFilters{margin-bottom:10px!important}
+.board-direction-compact #loadBoardFilters .card-body{padding:7px 8px}
+.board-direction-compact #loadBoardFilters .row{row-gap:.35rem!important}
+.board-direction-compact #loadBoardFilters .form-label{font-size:.61rem;margin-bottom:.15rem}
+.board-direction-compact #loadBoardFilters .form-control,
+.board-direction-compact #loadBoardFilters .form-select{height:29px;min-height:29px;padding:.2rem .4rem;font-size:.64rem}
+.board-direction-compact #loadBoardFilters .btn{height:29px;min-height:29px;font-size:.62rem;padding:.2rem .38rem}
+.board-direction-compact .board-period-segmented{margin-top:6px!important;font-size:.62rem}
+.board-direction-compact .board-period-segmented .btn{height:26px;min-height:26px;padding:.18rem .38rem;font-size:.59rem}
+.board-direction-compact .board-period-segmented .small{font-size:.61rem}
+.board-direction-compact .board-period-segmented .form-label{font-size:.6rem}
+
 </style>
 
 <div class="siget-board-heading board-heading d-flex justify-content-between align-items-start gap-3">

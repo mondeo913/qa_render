@@ -47,6 +47,43 @@ $monthlyLabels = $monthly->pluck('period')->values();
 @media(max-width:1399px){.compact-role-kpis{grid-template-columns:repeat(4,minmax(0,1fr))}}
 @media(max-width:700px){.compact-role-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:700px){.siget-exec h2{font-size:1.35rem}.siget-role .role-title{font-size:1.25rem}.exec-kpi label{font-size:.72rem}}
+
+/* Densidad visual compacta: conserva todos los IDs, datos y scripts del dashboard. */
+.siget-exec{padding:12px;border-radius:13px}
+.siget-exec .hero{padding:13px 15px;margin-bottom:10px;border-radius:12px}
+.siget-exec h2{font-size:1.35rem}
+.siget-exec .muted{font-size:.76rem}
+.siget-exec .kpi{min-height:82px;padding:10px;border-radius:11px}
+.siget-exec .kpi .icon{width:28px;height:28px;border-radius:7px;margin-bottom:5px}
+.siget-exec .kpi small{font-size:.72rem}
+.siget-exec .kpi strong{font-size:1.32rem}
+.siget-exec .delta{font-size:.68rem;margin-top:4px}
+.siget-exec .panel-head{padding:10px 12px}
+.siget-exec .panel-head h3{font-size:.92rem}
+.siget-exec .panel-head p{font-size:.68rem;margin-top:2px}
+.siget-exec .chart{height:225px;padding:7px 10px 9px}
+.siget-exec .table{font-size:.72rem}
+.siget-exec .table td,.siget-exec .table th{padding:6px 7px}
+.siget-exec .decision{padding:9px}
+.siget-exec .decision-item{gap:8px;padding:8px 0}
+.siget-exec .decision-item strong{font-size:.8rem}
+.siget-exec .decision-item span{font-size:.7rem}
+.siget-role{padding:12px;border-radius:13px}
+.siget-role .role-title{font-size:1.15rem}
+.siget-role .role-sub{font-size:.76rem}
+.siget-role .role-card{padding:10px;border-radius:10px}
+.siget-role .role-card small{font-size:.7rem}
+.siget-role .role-card strong{font-size:1.25rem}
+.siget-role .role-chart{height:205px}
+.dashboard-role-compact .compact-role-kpis{gap:6px;margin-bottom:10px!important}
+.compact-role-kpis .role-kpi-card{min-height:64px;height:64px;padding:7px 8px;grid-template-columns:25px 1fr;column-gap:7px}
+.compact-role-kpis .role-kpi-icon{width:25px;height:25px;border-radius:7px;font-size:.76rem}
+.compact-role-kpis .role-kpi-card small{font-size:.58rem}
+.compact-role-kpis .role-kpi-card strong{font-size:.98rem}
+#siget-dashboard-filters{margin-bottom:10px!important}
+#siget-dashboard-filters .card-body{padding:.55rem .65rem}
+#siget-dashboard-filters .siget-period-segmenter{padding:.45rem .6rem!important}
+
 </style>
 
 @if($role === 'DIRECTOR_GENERAL')
