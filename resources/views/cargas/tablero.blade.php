@@ -466,7 +466,29 @@
     .board-direction-compact .siget-kanban{grid-template-columns:1fr!important}
 }
 
-.board-direction-compact .siget-kanban{grid-template-columns:repeat(4,220px)!important;width:fit-content!important;max-width:100%!important;gap:6px!important}.board-direction-compact .siget-kanban-column{width:220px!important;min-width:220px!important;max-width:220px!important}.board-direction-compact .siget-kanban-column>header{height:36px!important;min-height:36px!important;max-height:36px!important;padding:3px 6px!important}.board-direction-compact .siget-kanban-column>header h3{font-size:.58rem!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}.board-direction-compact .siget-kanban-stack{padding:4px!important;gap:4px!important;min-height:50px!important}.board-direction-compact .siget-load-card{width:100%!important;min-width:0!important;padding:5px!important;box-sizing:border-box!important}.board-direction-compact .siget-load-card *{max-width:100%!important;min-width:0!important;overflow-wrap:anywhere!important}@media(max-width:980px){.board-direction-compact .siget-kanban{grid-template-columns:repeat(2,220px)!important;width:446px!important}}@media(max-width:520px){.board-direction-compact .siget-kanban{grid-template-columns:220px!important;width:220px!important}}</style>
+.board-direction-compact .siget-kanban{grid-template-columns:repeat(4,220px)!important;width:fit-content!important;max-width:100%!important;gap:6px!important}.board-direction-compact .siget-kanban-column{width:220px!important;min-width:220px!important;max-width:220px!important}.board-direction-compact .siget-kanban-column>header{height:36px!important;min-height:36px!important;max-height:36px!important;padding:3px 6px!important}.board-direction-compact .siget-kanban-column>header h3{font-size:.58rem!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}.board-direction-compact .siget-kanban-stack{padding:4px!important;gap:4px!important;min-height:50px!important}.board-direction-compact .siget-load-card{width:100%!important;min-width:0!important;padding:5px!important;box-sizing:border-box!important}.board-direction-compact .siget-load-card *{max-width:100%!important;min-width:0!important;overflow-wrap:anywhere!important}@media(max-width:980px){.board-direction-compact .siget-kanban{grid-template-columns:repeat(2,220px)!important;width:446px!important}}@media(max-width:520px){.board-direction-compact .siget-kanban{grid-template-columns:220px!important;width:220px!important}}
+/* TAMAÑO FINAL ESTADOS_SIGET_20261001 */
+.board-direction-compact .siget-kanban{display:flex!important;flex-wrap:nowrap!important;align-items:flex-start!important;gap:4px!important;width:100%!important;max-width:100%!important;overflow:visible!important}
+.board-direction-compact .siget-kanban-column{flex:0 0 160px!important;width:160px!important;min-width:160px!important;max-width:160px!important;margin:0!important;border-radius:5px!important;overflow:hidden!important}
+.board-direction-compact .siget-kanban-column>header{height:30px!important;min-height:30px!important;max-height:30px!important;padding:2px 4px!important;gap:2px!important;align-items:center!important}
+.board-direction-compact .siget-kanban-column>header>div:first-child{min-width:0!important;flex:1 1 auto!important;overflow:hidden!important}
+.board-direction-compact .siget-kanban-column>header h3{margin:0!important;font-size:.56rem!important;line-height:1!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}
+.board-direction-compact .siget-kanban-column>header h3 .bi{font-size:.5rem!important;margin-right:1px!important}
+.board-direction-compact .siget-kanban-column>header p{display:none!important}
+.board-direction-compact .siget-kanban-column>header>span{width:14px!important;min-width:14px!important;height:14px!important;padding:0!important;border-radius:4px!important;font-size:.4rem!important;line-height:1!important}
+.board-direction-compact .siget-kanban-stack{padding:3px!important;gap:3px!important;min-height:45px!important}
+.board-direction-compact .siget-load-card{padding:4px!important;border-radius:4px!important}
+.board-direction-compact .siget-load-card h4{font-size:.52rem!important;line-height:1.04!important;margin:0 0 2px!important}
+.board-direction-compact .siget-load-agency{font-size:.4rem!important;line-height:1!important}
+.board-direction-compact .siget-load-card .badge{font-size:.38rem!important;padding:.08rem .15rem!important}
+.board-direction-compact .siget-load-units,.board-direction-compact .siget-load-meta,.board-direction-compact .siget-assignees{font-size:.4rem!important;line-height:1.02!important}
+.board-direction-compact .siget-load-footer{margin-top:2px!important;padding-top:2px!important;gap:2px!important}
+.board-direction-compact .siget-load-footer .btn{height:17px!important;min-height:17px!important;padding:.03rem .18rem!important;font-size:.38rem!important}
+.board-direction-compact .siget-load-counters{gap:2px!important;font-size:.37rem!important}
+@media(max-width:760px){.board-direction-compact .siget-kanban{flex-wrap:wrap!important}.board-direction-compact .siget-kanban-column{flex-basis:160px!important;width:160px!important;min-width:160px!important;max-width:160px!important}}
+@media(max-width:360px){.board-direction-compact .siget-kanban-column{flex-basis:100%!important;width:100%!important;min-width:0!important;max-width:none!important}}
+
+</style>
 
 <div class="siget-board-heading board-heading d-flex justify-content-between align-items-start gap-3">
     <div class="min-w-0">
