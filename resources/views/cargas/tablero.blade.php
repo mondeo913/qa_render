@@ -488,6 +488,94 @@
 @media(max-width:760px){.board-direction-compact .siget-kanban{flex-wrap:wrap!important}.board-direction-compact .siget-kanban-column{flex-basis:160px!important;width:160px!important;min-width:160px!important;max-width:160px!important}}
 @media(max-width:360px){.board-direction-compact .siget-kanban-column{flex-basis:100%!important;width:100%!important;min-width:0!important;max-width:none!important}}
 
+
+/* TABLERO ESTADOS GLOBAL TODOS_ROLES 20261001 */
+/* Regla única y compartida para todos los roles que usan /tablero-cargas. */
+.board-direction-compact .siget-kanban{
+    display:grid!important;
+    grid-template-columns:repeat(4,minmax(0,1fr))!important;
+    gap:4px!important;
+    width:100%!important;
+    max-width:100%!important;
+    min-width:0!important;
+    overflow:visible!important;
+}
+.board-direction-compact .siget-kanban-column{
+    width:100%!important;
+    min-width:0!important;
+    max-width:100%!important;
+    border-radius:5px!important;
+    overflow:hidden!important;
+}
+.board-direction-compact .siget-kanban-column>header{
+    height:28px!important;
+    min-height:28px!important;
+    max-height:28px!important;
+    padding:2px 4px!important;
+    gap:2px!important;
+    align-items:center!important;
+}
+.board-direction-compact .siget-kanban-column>header>div:first-child{
+    min-width:0!important;
+    flex:1 1 auto!important;
+    overflow:hidden!important;
+}
+.board-direction-compact .siget-kanban-column>header h3{
+    margin:0!important;
+    font-size:.55rem!important;
+    line-height:1!important;
+    white-space:nowrap!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+}
+.board-direction-compact .siget-kanban-column>header h3 .bi{
+    font-size:.5rem!important;
+    margin-right:1px!important;
+}
+.board-direction-compact .siget-kanban-column>header p{display:none!important}
+.board-direction-compact .siget-kanban-column>header>span{
+    width:14px!important;
+    min-width:14px!important;
+    height:14px!important;
+    padding:0!important;
+    border-radius:4px!important;
+    font-size:.39rem!important;
+    line-height:1!important;
+}
+.board-direction-compact .siget-kanban-stack{
+    min-height:40px!important;
+    padding:3px!important;
+    gap:3px!important;
+}
+.board-direction-compact .siget-load-card{
+    width:100%!important;
+    min-width:0!important;
+    max-width:100%!important;
+    padding:4px!important;
+    border-radius:4px!important;
+    box-sizing:border-box!important;
+}
+.board-direction-compact .siget-load-card h4{font-size:.52rem!important;line-height:1.03!important;margin:0 0 2px!important}
+.board-direction-compact .siget-load-agency{font-size:.4rem!important;line-height:1!important}
+.board-direction-compact .siget-load-card .badge{font-size:.38rem!important;padding:.08rem .14rem!important}
+.board-direction-compact .siget-load-units,.board-direction-compact .siget-load-meta,.board-direction-compact .siget-assignees{font-size:.39rem!important;line-height:1.02!important}
+.board-direction-compact .siget-load-card .small{font-size:.4rem!important}
+.board-direction-compact .siget-load-card .progress{height:2px!important}
+.board-direction-compact .siget-load-footer{margin-top:2px!important;padding-top:2px!important;gap:2px!important}
+.board-direction-compact .siget-load-counters{gap:2px!important;font-size:.36rem!important}
+.board-direction-compact .siget-load-footer .btn{height:17px!important;min-height:17px!important;padding:.03rem .16rem!important;font-size:.38rem!important}
+.board-direction-compact .siget-kanban-empty{min-height:45px!important;padding:5px 3px!important;font-size:.42rem!important}
+@media(max-width:900px){
+    .board-direction-compact .siget-kanban{grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:3px!important}
+    .board-direction-compact .siget-kanban-column>header h3{font-size:.5rem!important}
+}
+@media(max-width:700px){
+    .board-direction-compact .siget-kanban{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:4px!important}
+}
+@media(max-width:420px){
+    .board-direction-compact .siget-kanban{grid-template-columns:1fr!important}
+}
+
 </style>
 
 <div class="siget-board-heading board-heading d-flex justify-content-between align-items-start gap-3">
