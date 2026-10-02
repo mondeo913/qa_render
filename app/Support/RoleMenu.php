@@ -69,6 +69,7 @@ final class RoleMenu
             ],
             'FISCALIZADOR' => [
                 ['label' => 'Asignaciones', 'route' => 'repository.index', 'icon' => 'bi-search'],
+                ['label' => 'Tablero de cargas', 'route' => 'loads.board', 'icon' => 'bi-kanban'],
                 ['label' => 'Historial', 'route' => 'history.index', 'icon' => 'bi-clock-history'],
                 ['label' => 'Reportes', 'route' => 'reports.index', 'icon' => 'bi-file-bar-graph'],
                 ['label' => 'Inteligencia', 'route' => 'intelligence', 'icon' => 'bi-graph-up-arrow'],
