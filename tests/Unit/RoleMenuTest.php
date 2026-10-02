@@ -26,6 +26,7 @@ class RoleMenuTest extends TestCase
         $this->assertTrue($operatorTx->contains('loads.board'));
         $this->assertTrue($operatorPc->contains('loads.mine'));
         $this->assertTrue($fiscalizador->contains('repository.index'));
+        $this->assertTrue($fiscalizador->contains('loads.board'));
         $this->assertFalse($operatorTx->contains('admin.users'));
     }
 }
