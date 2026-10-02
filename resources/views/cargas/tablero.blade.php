@@ -495,6 +495,9 @@
 
 <script>
 document.addEventListener('DOMContentLoaded',function(){
+ const board=document.querySelector('.siget-kanban');
+ window.scrollTo({left:0,top:window.scrollY,behavior:'instant'});
+ board?.scrollTo({left:0,top:0,behavior:'instant'});
  const form=document.getElementById('loadBoardFilters');
  const agency=document.getElementById('boardAgency');
  const pauta=document.getElementById('boardPauta');
