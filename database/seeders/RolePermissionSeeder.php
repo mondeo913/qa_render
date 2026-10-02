@@ -105,7 +105,7 @@ class RolePermissionSeeder extends Seeder
             'OPERADOR' => array_values(array_unique([...$operatorPermissions,'intelligence.view'])),
             'OPERADOR_TRANSMISION' => array_values(array_unique([...$operatorPermissions,'intelligence.view'])),
             'OPERADOR_PROGRAMACION_CONTINUIDAD' => array_values(array_unique([...$operatorPermissions,'intelligence.view'])),
-            'FISCALIZADOR' => ['repository.view','repository.download','reports.view','reports.export','evidence.review','intelligence.view'],
+            'FISCALIZADOR' => ['repository.view','repository.download','reports.view','reports.export','evidence.review','intelligence.view','scheduled_load.board'],
         ];
 
         // Retirar definitivamente el módulo Indicadores de instalaciones QA existentes.
