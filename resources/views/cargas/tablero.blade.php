@@ -4,410 +4,265 @@
 @section('content')
 <div class="board-direction-compact">
 
-
 <style>
-/* Tablero SIGET: escala normal y proporcional. Solo presentación. */
-.board-direction-compact{
-    width:100%;
-    max-width:100%;
-    min-width:0;
-    overflow:visible;
-}
-.board-direction-compact .board-heading{
-    margin:0 0 14px!important;
-}
-.board-direction-compact .board-heading .scope-label{
-    margin-bottom:3px!important;
-    color:var(--muted)!important;
-    font-size:.68rem!important;
-}
-.board-direction-compact .board-heading h2{
-    margin:0 0 4px!important;
-    color:var(--text)!important;
-    font-size:1.05rem!important;
-    line-height:1.2!important;
-}
-.board-direction-compact .board-heading p{
-    margin:0!important;
-    color:var(--muted)!important;
-    font-size:.72rem!important;
-    line-height:1.35!important;
-}
-.board-direction-compact .board-heading .btn{
-    min-height:34px!important;
-    height:34px!important;
-    padding:.35rem .65rem!important;
-    font-size:.72rem!important;
-}
-
-.board-direction-compact .board-kpis{
-    display:grid!important;
-    grid-template-columns:repeat(6,minmax(0,1fr))!important;
-    gap:10px!important;
-    margin:0 0 14px!important;
-}
-.board-direction-compact .board-kpis>div{
-    min-width:0!important;
-    width:auto!important;
-    max-width:none!important;
-    padding:0!important;
-}
-.board-direction-compact .board-kpi{
-    min-width:0!important;
-    height:76px!important;
-    min-height:76px!important;
-    padding:10px 11px!important;
-    display:grid!important;
-    grid-template-columns:32px 1fr!important;
-    grid-template-rows:auto 1fr!important;
-    column-gap:9px!important;
-    align-items:center!important;
-    border:1px solid var(--border)!important;
-    border-radius:12px!important;
-    background:var(--surface)!important;
-    color:var(--text)!important;
-}
-.board-direction-compact .board-kpi .board-kpi-icon{
-    grid-row:1 / span 2!important;
-    width:32px!important;
-    height:32px!important;
-    border-radius:9px!important;
-    display:grid!important;
-    place-items:center!important;
-    font-size:.85rem!important;
-}
-.board-direction-compact .board-kpi small{
-    color:var(--muted)!important;
-    font-size:.64rem!important;
-    line-height:1.1!important;
-}
-.board-direction-compact .board-kpi strong{
-    color:var(--text)!important;
-    font-size:1.08rem!important;
-    line-height:1!important;
-}
-
-.board-direction-compact .siget-card{
-    width:100%!important;
-    max-width:100%!important;
-    margin-bottom:14px!important;
-    border-radius:14px!important;
-}
-.board-direction-compact .siget-card .card-header{
-    padding:11px 14px!important;
-}
-.board-direction-compact .siget-card .card-header h2{
-    font-size:.9rem!important;
-}
-.board-direction-compact .siget-card .card-header p{
-    font-size:.68rem!important;
-    line-height:1.3!important;
-}
-.board-direction-compact .siget-card .card-body{
-    padding:12px!important;
-}
-
-.board-direction-compact .siget-dependency-grid{
-    display:grid!important;
-    grid-template-columns:repeat(auto-fit,minmax(220px,1fr))!important;
-    gap:10px!important;
-}
-.board-direction-compact .siget-dependency-card{
-    min-width:0!important;
-    padding:11px!important;
-    border-radius:11px!important;
-}
-.board-direction-compact .siget-dependency-logo{
-    width:36px!important;
-    height:36px!important;
-    border-radius:9px!important;
-}
-.board-direction-compact .siget-dependency-stats{
-    gap:5px 8px!important;
-    margin-top:9px!important;
-    font-size:.65rem!important;
-}
-.board-direction-compact .siget-dependency-card .progress{
-    margin-top:10px!important;
-}
-
-.board-direction-compact #loadBoardFilters{
-    margin-bottom:14px!important;
-}
-.board-direction-compact #loadBoardFilters .card-body{
-    padding:11px 12px!important;
-}
-.board-direction-compact #loadBoardFilters .row{
-    row-gap:.7rem!important;
-}
-.board-direction-compact #loadBoardFilters .form-label{
-    margin-bottom:.25rem!important;
-    color:var(--text)!important;
-    font-size:.66rem!important;
-    font-weight:700!important;
-}
-.board-direction-compact #loadBoardFilters .form-control,
-.board-direction-compact #loadBoardFilters .form-select{
-    width:100%!important;
-    min-width:0!important;
-    height:34px!important;
-    min-height:34px!important;
-    padding:.3rem .55rem!important;
-    font-size:.7rem!important;
-}
-.board-direction-compact #loadBoardFilters .input-group-text{
-    height:34px!important;
-    padding:.3rem .55rem!important;
-}
-.board-direction-compact #loadBoardFilters .btn{
-    height:34px!important;
-    min-height:34px!important;
-    padding:.3rem .55rem!important;
-    font-size:.68rem!important;
-}
-.board-direction-compact #loadBoardFilters .form-text{
-    margin-top:3px!important;
-    font-size:.58rem!important;
-    line-height:1.25!important;
-}
-.board-direction-compact .board-period-segmented{
-    margin-top:10px!important;
-    padding-top:9px!important;
-    border-top:1px solid var(--border)!important;
-    font-size:.68rem!important;
-}
-.board-direction-compact .board-period-segmented .btn{
-    height:30px!important;
-    min-height:30px!important;
-    padding:.25rem .55rem!important;
-    font-size:.64rem!important;
-}
-.board-direction-compact .board-period-segmented .small{
-    font-size:.63rem!important;
-}
-
- /* Cuatro estados: siempre contenidos en el ancho disponible. */
+/* Estándar compacto universal del tablero para todos los roles. */
+.board-direction-compact{padding-top:0}
+.board-direction-compact .board-kpis{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px;margin:0 0 16px}
+.board-direction-compact .board-kpis>[class*="col-"]{width:auto!important;max-width:none!important;padding-left:0;padding-right:0}
+.board-direction-compact .board-kpi{min-height:72px;height:72px;padding:8px 9px;display:grid;grid-template-columns:28px 1fr;grid-template-rows:auto 1fr;column-gap:8px;align-items:center;background:#121b24;border:1px solid rgba(255,255,255,.08);border-radius:12px;color:#fff}
+.board-direction-compact .board-kpi .board-kpi-icon{grid-row:1 / span 2;width:28px;height:28px;border-radius:8px;display:grid;place-items:center;font-size:.82rem}
+.board-direction-compact .board-kpi small{font-size:.62rem;line-height:1.05;color:#91a5b7;white-space:normal;overflow-wrap:anywhere}
+.board-direction-compact .board-kpi strong{font-size:1.05rem;line-height:1;color:#fff}
+.board-direction-compact .board-heading{margin-bottom:12px!important}
+.board-direction-compact .board-heading .scope-label{font-size:.65rem;color:#91a5b7}
+.board-direction-compact .board-heading h2{font-size:1rem;color:#fff;margin-bottom:2px!important}
+.board-direction-compact .board-heading p{font-size:.68rem;color:#91a5b7}
+.board-direction-compact .board-heading .btn{height:30px;padding:.25rem .55rem;font-size:.68rem}
+/* Kanban compacto universal: las cuatro etapas deben caber en una sola vista de escritorio. */
 .board-direction-compact .siget-kanban{
     display:grid!important;
     grid-template-columns:repeat(4,minmax(0,1fr))!important;
-    grid-auto-columns:auto!important;
-    gap:12px!important;
+    grid-auto-columns:minmax(0,1fr);
+    gap:8px!important;
     width:100%!important;
     min-width:0!important;
     max-width:100%!important;
-    margin:0!important;
-    padding:0!important;
-    justify-content:stretch!important;
-    align-items:start!important;
     overflow:visible!important;
-    position:static!important;
-    transform:none!important;
+    align-items:start;
 }
-.board-direction-compact .siget-kanban-column{
+.board-direction-compact .siget-kanban > .siget-kanban-column{
     width:100%!important;
     min-width:0!important;
     max-width:none!important;
     margin:0!important;
-    box-sizing:border-box!important;
-    border:1px solid var(--border)!important;
-    border-radius:13px!important;
-    background:var(--surface2)!important;
-    overflow:hidden!important;
 }
-.board-direction-compact .siget-kanban-column>header{
+.board-direction-compact .siget-kanban-column{
+    min-width:0!important;
     width:100%!important;
-    min-width:0!important;
-    min-height:72px!important;
-    height:auto!important;
-    max-height:none!important;
-    padding:10px 12px!important;
-    display:flex!important;
-    align-items:flex-start!important;
-    justify-content:space-between!important;
-    gap:10px!important;
-    box-sizing:border-box!important;
-    overflow:visible!important;
+    border-radius:10px;
 }
-.board-direction-compact .siget-kanban-column>header>div:first-child{
-    min-width:0!important;
-    flex:1 1 auto!important;
-    overflow:visible!important;
+.board-direction-compact .siget-kanban-column > header{
+    min-height:58px;
+    padding:8px 9px!important;
 }
-.board-direction-compact .siget-kanban-column>header h3{
+.board-direction-compact .siget-kanban-column > header{
+    min-width:0;
+}
+.board-direction-compact .siget-kanban-column > header > div:first-child{
+    min-width:0;
+    flex:1 1 auto;
+}
+.board-direction-compact .siget-kanban-column > header h3{
+    font-size:.76rem!important;
+    line-height:1.08;
     margin:0!important;
-    color:var(--text)!important;
-    font-size:.86rem!important;
-    line-height:1.18!important;
-    font-weight:800!important;
-    white-space:normal!important;
-    overflow-wrap:anywhere!important;
+    white-space:normal;
+    overflow-wrap:anywhere;
+    word-break:normal;
 }
-.board-direction-compact .siget-kanban-column>header h3 .bi{
-    font-size:.82rem!important;
-    margin-right:3px!important;
+.board-direction-compact .siget-kanban-column > header p{
+    font-size:.58rem!important;
+    line-height:1.15;
+    margin:3px 0 0!important;
+    overflow-wrap:anywhere;
 }
-.board-direction-compact .siget-kanban-column>header p{
-    display:block!important;
-    margin:5px 0 0!important;
-    color:var(--muted)!important;
-    font-size:.64rem!important;
-    line-height:1.25!important;
-    white-space:normal!important;
-    overflow:hidden!important;
-    display:-webkit-box!important;
-    -webkit-box-orient:vertical!important;
-    -webkit-line-clamp:2!important;
+.board-direction-compact .siget-kanban-column > header > span{
+    flex:0 0 auto;
+    min-width:22px;
+    height:22px;
+    padding:0 5px;
+    display:grid;
+    place-items:center;
+    font-size:.64rem;
 }
-.board-direction-compact .siget-kanban-column>header>span{
-    flex:0 0 auto!important;
-    width:27px!important;
-    min-width:27px!important;
-    height:27px!important;
-    border-radius:8px!important;
-    padding:0!important;
-    display:grid!important;
-    place-items:center!important;
-    font-size:.68rem!important;
-}
-
 .board-direction-compact .siget-kanban-stack{
-    width:100%!important;
-    min-width:0!important;
-    min-height:0!important;
-    padding:9px!important;
-    display:flex!important;
-    flex-direction:column!important;
-    gap:9px!important;
+    padding:6px!important;
+    gap:6px!important;
 }
 .board-direction-compact .siget-load-card{
-    width:100%!important;
-    min-width:0!important;
-    max-width:100%!important;
-    padding:10px!important;
-    box-sizing:border-box!important;
-    border-radius:10px!important;
-    background:var(--surface)!important;
+    padding:7px!important;
+    border-radius:8px;
+    min-width:0;
 }
 .board-direction-compact .siget-load-card h4{
-    min-width:0!important;
-    margin:2px 0 7px!important;
-    color:var(--text)!important;
-    font-size:.78rem!important;
-    line-height:1.2!important;
-    overflow-wrap:anywhere!important;
-    display:-webkit-box!important;
-    -webkit-box-orient:vertical!important;
-    -webkit-line-clamp:2!important;
-    overflow:hidden!important;
+    font-size:.68rem!important;
+    line-height:1.15;
+    margin:2px 0 0!important;
+    overflow-wrap:anywhere;
 }
 .board-direction-compact .siget-load-agency{
-    display:block!important;
-    color:var(--muted)!important;
-    font-size:.63rem!important;
-    line-height:1.1!important;
-    text-transform:uppercase!important;
+    font-size:.56rem!important;
+    line-height:1.05;
 }
 .board-direction-compact .siget-load-card .badge{
-    max-width:100%!important;
-    font-size:.59rem!important;
-    line-height:1.1!important;
-    padding:.24rem .4rem!important;
-    white-space:normal!important;
+    font-size:.54rem!important;
+    padding:.2rem .32rem!important;
 }
 .board-direction-compact .siget-load-units,
 .board-direction-compact .siget-load-meta,
 .board-direction-compact .siget-assignees{
-    min-width:0!important;
-    font-size:.61rem!important;
-    line-height:1.3!important;
-    overflow-wrap:anywhere!important;
-}
-.board-direction-compact .siget-load-units{
-    gap:4px!important;
-    margin-top:5px!important;
+    font-size:.55rem!important;
+    line-height:1.18;
 }
 .board-direction-compact .siget-load-meta{
     gap:5px!important;
     margin-top:5px!important;
 }
 .board-direction-compact .siget-load-card .small{
-    font-size:.62rem!important;
+    font-size:.56rem!important;
 }
 .board-direction-compact .siget-load-card .progress{
-    height:6px!important;
-    margin-top:2px!important;
+    height:4px!important;
 }
 .board-direction-compact .siget-load-footer{
-    margin-top:8px!important;
-    padding-top:7px!important;
-    gap:7px!important;
+    margin-top:6px!important;
+    gap:5px!important;
 }
 .board-direction-compact .siget-load-counters{
-    min-width:0!important;
-    gap:7px!important;
-    font-size:.59rem!important;
+    font-size:.55rem!important;
+    gap:6px!important;
 }
 .board-direction-compact .siget-load-footer .btn{
-    height:29px!important;
-    min-height:29px!important;
-    padding:.22rem .48rem!important;
-    font-size:.61rem!important;
+    font-size:.56rem!important;
+    padding:.2rem .38rem!important;
 }
 .board-direction-compact .siget-kanban-empty{
-    min-height:110px!important;
-    padding:20px 12px!important;
-    border-radius:10px!important;
-    font-size:.66rem!important;
-    text-align:center!important;
+    padding:12px 7px!important;
+    font-size:.6rem!important;
+    text-align:center;
 }
-
-/* Estado final: lectura visual inmediata del cierre completo. */
-.board-direction-compact .siget-kanban-done{
-    border-color:#22a06b!important;
-}
-.board-direction-compact .siget-kanban-done>header{
-    background:color-mix(in srgb,#22a06b 12%,var(--surface2))!important;
-    border-top:4px solid #22a06b!important;
-    padding-top:8px!important;
-}
-.board-direction-compact .siget-kanban-done .siget-load-card .progress-bar{
-    background:#22a06b!important;
-}
-.board-direction-compact .siget-kanban-done .siget-load-card{
-    border-color:color-mix(in srgb,#22a06b 36%,var(--border))!important;
-}
-
-/* Los cuatro estados deben verse completos también en anchos intermedios. */
-@media(max-width:1200px){
-    .board-direction-compact .board-kpis{
-        grid-template-columns:repeat(3,minmax(0,1fr))!important;
-    }
+@media(max-width:980px){
     .board-direction-compact .siget-kanban{
-        gap:9px!important;
+        grid-template-columns:repeat(4,minmax(0,1fr))!important;
+        gap:6px!important;
     }
-    .board-direction-compact .siget-kanban-column>header{
-        padding:9px 10px!important;
+    .board-direction-compact .siget-kanban-column > header{
+        padding:7px 6px!important;
+    }
+    .board-direction-compact .siget-kanban-column > header h3{
+        font-size:.67rem!important;
     }
 }
-@media(max-width:900px){
+@media(max-width:760px){
     .board-direction-compact .siget-kanban{
         grid-template-columns:repeat(2,minmax(0,1fr))!important;
-        gap:10px!important;
+        gap:7px!important;
     }
 }
-@media(max-width:560px){
+@media(max-width:520px){
     .board-direction-compact .siget-kanban{
         grid-template-columns:1fr!important;
     }
-    .board-direction-compact .board-kpis{
+}
+@media(max-width:1200px){.board-direction-compact .board-kpis{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:700px){.board-direction-compact .board-kpis{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.board-direction-compact .board-kpi{height:68px;min-height:68px}}
+
+/* Restauración de estándar visual de la versión 4b14127 + cierre institucional visible. */
+.board-direction-compact .siget-kanban{
+    width:100%!important;
+    max-width:100%!important;
+    min-width:0!important;
+    grid-template-columns:repeat(4,minmax(0,1fr))!important;
+    gap:10px!important;
+    overflow:visible!important;
+    margin:0!important;
+}
+.board-direction-compact .siget-kanban-column{
+    width:100%!important;
+    min-width:0!important;
+    max-width:none!important;
+    border-radius:12px!important;
+    overflow:hidden!important;
+}
+.board-direction-compact .siget-kanban-column>header{
+    min-height:74px!important;
+    height:auto!important;
+    padding:10px 12px!important;
+    box-sizing:border-box!important;
+}
+.board-direction-compact .siget-kanban-column>header h3{
+    font-size:.86rem!important;
+    line-height:1.18!important;
+    white-space:normal!important;
+    overflow-wrap:anywhere!important;
+}
+.board-direction-compact .siget-kanban-column>header p{
+    font-size:.65rem!important;
+    line-height:1.25!important;
+    margin:4px 0 0!important;
+}
+.board-direction-compact .siget-kanban-column>header>span{
+    width:28px!important;
+    min-width:28px!important;
+    height:28px!important;
+    border-radius:8px!important;
+    font-size:.68rem!important;
+}
+.board-direction-compact .siget-kanban-stack{
+    padding:9px!important;
+    gap:9px!important;
+    min-height:120px!important;
+}
+.board-direction-compact .siget-load-card{
+    width:100%!important;
+    min-width:0!important;
+    max-width:100%!important;
+    padding:11px!important;
+    border-radius:10px!important;
+    box-sizing:border-box!important;
+}
+.board-direction-compact .siget-load-agency{font-size:.63rem!important}
+.board-direction-compact .siget-load-card h4{
+    font-size:.79rem!important;
+    line-height:1.2!important;
+    margin:2px 0 7px!important;
+}
+.board-direction-compact .siget-load-card .badge{
+    font-size:.59rem!important;
+    padding:.24rem .4rem!important;
+}
+.board-direction-compact .siget-load-units,
+.board-direction-compact .siget-load-meta,
+.board-direction-compact .siget-assignees{
+    font-size:.61rem!important;
+    line-height:1.25!important;
+}
+.board-direction-compact .siget-load-card .progress{height:6px!important}
+.board-direction-compact .siget-load-footer{margin-top:8px!important;padding-top:7px!important}
+.board-direction-compact .siget-load-counters{font-size:.59rem!important;gap:7px!important}
+.board-direction-compact .siget-load-footer .btn{
+    height:29px!important;
+    min-height:29px!important;
+    font-size:.61rem!important;
+    padding:.22rem .48rem!important;
+}
+
+/* El cierre institucional queda inequívocamente verde en el tablero. */
+.board-direction-compact .siget-kanban-done{
+    border:1px solid #22a06b!important;
+}
+.board-direction-compact .siget-kanban-done>header{
+    border-top:4px solid #22a06b!important;
+    background:color-mix(in srgb,#22a06b 14%,var(--surface2))!important;
+}
+.board-direction-compact .siget-kanban-done .siget-load-card{
+    border-color:color-mix(in srgb,#22a06b 42%,var(--border))!important;
+}
+.board-direction-compact .siget-kanban-done .progress-bar{
+    background:#22a06b!important;
+}
+
+@media(max-width:1100px){
+    .board-direction-compact .siget-kanban{
         grid-template-columns:repeat(2,minmax(0,1fr))!important;
-        gap:8px!important;
-    }
-    .board-direction-compact .board-kpi{
-        height:70px!important;
-        min-height:70px!important;
     }
 }
+@media(max-width:650px){
+    .board-direction-compact .siget-kanban{
+        grid-template-columns:1fr!important;
+    }
+}
+
 </style>
 
 <div class="siget-board-heading board-heading d-flex justify-content-between align-items-start gap-3">
@@ -495,9 +350,6 @@
 
 <script>
 document.addEventListener('DOMContentLoaded',function(){
- const board=document.querySelector('.siget-kanban');
- window.scrollTo({left:0,top:window.scrollY,behavior:'instant'});
- board?.scrollTo({left:0,top:0,behavior:'instant'});
  const form=document.getElementById('loadBoardFilters');
  const agency=document.getElementById('boardAgency');
  const pauta=document.getElementById('boardPauta');
