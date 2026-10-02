@@ -561,6 +561,135 @@
         grid-template-columns:1fr!important;
     }
 }
+
+
+/* AJUSTE FINAL UX DEL TABLERO — escala normal, proporcional y responsive. */
+.board-direction-compact .siget-kanban{
+    display:grid!important;
+    grid-template-columns:repeat(4,minmax(0,1fr))!important;
+    gap:12px!important;
+    width:100%!important;
+    min-width:0!important;
+    max-width:100%!important;
+    margin:12px 0 0!important;
+    padding:0!important;
+    align-items:start!important;
+    overflow:visible!important;
+    position:relative!important;
+    top:auto!important;
+    transform:none!important;
+}
+.board-direction-compact .siget-kanban-column{
+    width:auto!important;
+    min-width:0!important;
+    max-width:none!important;
+    margin:0!important;
+    box-sizing:border-box!important;
+    border-radius:12px!important;
+    overflow:hidden!important;
+}
+.board-direction-compact .siget-kanban-column>header{
+    height:auto!important;
+    min-height:76px!important;
+    max-height:none!important;
+    padding:11px 12px!important;
+    gap:9px!important;
+    box-sizing:border-box!important;
+    align-items:flex-start!important;
+    overflow:visible!important;
+}
+.board-direction-compact .siget-kanban-column>header>div:first-child{
+    min-width:0!important;
+    flex:1 1 auto!important;
+    overflow:visible!important;
+}
+.board-direction-compact .siget-kanban-column>header h3{
+    margin:0!important;
+    font-size:.82rem!important;
+    line-height:1.18!important;
+    font-weight:700!important;
+    white-space:normal!important;
+    overflow:visible!important;
+    text-overflow:clip!important;
+}
+.board-direction-compact .siget-kanban-column>header h3 .bi{
+    font-size:.82rem!important;
+    margin-right:3px!important;
+}
+.board-direction-compact .siget-kanban-column>header p{
+    display:block!important;
+    margin:5px 0 0!important;
+    font-size:.66rem!important;
+    line-height:1.28!important;
+    -webkit-line-clamp:2!important;
+    overflow:hidden!important;
+}
+.board-direction-compact .siget-kanban-column>header>span{
+    flex:0 0 auto!important;
+    width:25px!important;
+    min-width:25px!important;
+    height:25px!important;
+    padding:0!important;
+    border-radius:8px!important;
+    font-size:.68rem!important;
+    line-height:1!important;
+}
+.board-direction-compact .siget-kanban-stack{
+    padding:9px!important;
+    gap:9px!important;
+    min-height:0!important;
+}
+.board-direction-compact .siget-load-card{
+    padding:10px!important;
+    border-radius:10px!important;
+    min-width:0!important;
+}
+.board-direction-compact .siget-load-agency{
+    font-size:.64rem!important;
+    line-height:1.1!important;
+    margin-bottom:2px!important;
+}
+.board-direction-compact .siget-load-card h4{
+    font-size:.75rem!important;
+    line-height:1.2!important;
+    margin:0 0 6px!important;
+    -webkit-line-clamp:2!important;
+    overflow:hidden!important;
+}
+.board-direction-compact .siget-load-card .badge{
+    font-size:.58rem!important;
+    line-height:1.1!important;
+    padding:.25rem .4rem!important;
+    border-radius:5px!important;
+}
+.board-direction-compact .siget-load-units,
+.board-direction-compact .siget-load-meta,
+.board-direction-compact .siget-assignees{
+    font-size:.61rem!important;
+    line-height:1.2!important;
+}
+.board-direction-compact .siget-load-units{margin-top:5px!important;gap:4px!important}
+.board-direction-compact .siget-load-meta{margin-top:6px!important;gap:5px!important}
+.board-direction-compact .siget-load-card .small{font-size:.61rem!important}
+.board-direction-compact .siget-load-card .progress{height:5px!important}
+.board-direction-compact .siget-load-footer{margin-top:7px!important;padding-top:7px!important;gap:7px!important}
+.board-direction-compact .siget-load-counters{font-size:.59rem!important;gap:7px!important}
+.board-direction-compact .siget-load-footer .btn{height:28px!important;min-height:28px!important;padding:.22rem .45rem!important;font-size:.59rem!important}
+.board-direction-compact .siget-kanban-empty{min-height:100px!important;padding:18px 10px!important;font-size:.65rem!important}
+@media(max-width:1100px){
+    .board-direction-compact .siget-kanban{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px!important}
+}
+@media(max-width:560px){
+    .board-direction-compact .siget-kanban{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important}
+    .board-direction-compact .siget-kanban-column>header{min-height:72px!important;padding:10px!important}
+    .board-direction-compact .siget-kanban-column>header h3{font-size:.76rem!important}
+    .board-direction-compact .siget-kanban-column>header p{font-size:.61rem!important}
+    .board-direction-compact .siget-load-card{padding:8px!important}
+}
+@media(max-width:430px){
+    .board-direction-compact .siget-kanban{grid-template-columns:1fr!important}
+}
+
 </style>
 
 <div class="siget-board-heading board-heading d-flex justify-content-between align-items-start gap-3">
@@ -638,8 +767,8 @@
 </div>
 </div></div></form>
 
-<div class="siget-kanban" aria-label="Tablero Kanban de cargas" style="display:grid!important;grid-template-columns:repeat(4,minmax(0,145px))!important;gap:5px!important;width:100%!important;min-width:0!important;max-width:100%!important;overflow:visible!important;align-items:start!important;">
-@foreach($columns as $key=>$column)<section class="siget-kanban-column siget-kanban-{{ $key }}" style="width:145px!important;min-width:145px!important;max-width:145px!important;margin:0!important;box-sizing:border-box!important;overflow:hidden!important;"><header><div><h3><i class="bi {{ $column['icon'] }} me-1"></i>{{ $column['label'] }}</h3><p>{{ $column['description'] }}</p></div><span>{{ $column['loads']->count() }}</span></header><div class="siget-kanban-stack">
+<div class="siget-kanban" aria-label="Tablero Kanban de cargas">
+@foreach($columns as $key=>$column)<section class="siget-kanban-column siget-kanban-{{ $key }}"><header><div><h3><i class="bi {{ $column['icon'] }} me-1"></i>{{ $column['label'] }}</h3><p>{{ $column['description'] }}</p></div><span>{{ $column['loads']->count() }}</span></header><div class="siget-kanban-stack">
 @forelse($column['loads'] as $load)@php $priority=strtoupper((string)($load->priority??'NORMAL')); $traffic=$load->traffic_light instanceof \BackedEnum?$load->traffic_light->value:(string)$load->traffic_light; @endphp
 <article class="siget-load-card {{ $load->board_overdue?'is-overdue':'' }}"><div class="d-flex justify-content-between gap-2 align-items-start"><div><span class="siget-load-agency">{{ $load->agency?->name }}</span><h4>{{ $load->title }}</h4></div><span class="siget-traffic siget-traffic-{{ strtolower($traffic?:'gray') }}" title="Semáforo {{ $traffic }}"></span></div><div class="d-flex flex-wrap gap-1 mb-2"><span class="badge siget-status">{{ $load->board_status_label }}</span><span class="badge siget-priority siget-priority-{{ strtolower($priority) }}">{{ $priority }}</span>@if($load->board_overdue)<span class="badge text-bg-danger">Vencida</span>@endif @if($load->is_blocked)<span class="badge text-bg-secondary">Bloqueada</span>@endif</div>@if($load->board_unit_names->isNotEmpty())<div class="siget-load-units">@foreach($load->board_unit_names as $unitName)<span><i class="bi bi-diagram-3"></i> {{ $unitName }}</span>@endforeach</div>@endif<div class="siget-load-meta"><span><i class="bi bi-calendar-event"></i> {{ $load->effective_open_at?->format('d/m/Y')??'Sin fecha' }}</span><span><i class="bi bi-alarm"></i> {{ $load->effective_close_at?->format('d/m/Y H:i')??'Sin límite' }}</span></div><div class="d-flex justify-content-between small mt-3 mb-1"><span>Avance visible</span><strong>{{ number_format($load->board_progress,0) }}%</strong></div><div class="progress"><div class="progress-bar" style="width: {{ $load->board_progress }}%"></div></div><div class="siget-load-footer"><div class="siget-load-counters"><span title="Entregables"><i class="bi bi-check2-square"></i> {{ $load->deliverables->count() }}</span><span title="Evidencias"><i class="bi bi-paperclip"></i> {{ $load->board_evidence_count }}</span><span title="Observaciones"><i class="bi bi-chat-left-text"></i> {{ $load->board_observation_count }}</span></div><a href="{{ route('loads.show',$load) }}" class="btn btn-sm btn-outline-primary">Abrir</a></div>@if($load->board_responsibles->isNotEmpty())<div class="siget-assignees mt-2"><i class="bi bi-person-check"></i> {{ $load->board_responsibles->join(', ') }}</div>@endif</article>
 @empty<div class="siget-kanban-empty"><i class="bi {{ $column['icon'] }}"></i><span>No hay cargas en esta etapa.</span></div>@endforelse
