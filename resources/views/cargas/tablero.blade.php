@@ -1329,6 +1329,179 @@
         grid-template-columns:1fr!important;
     }
 }
+
+/* TARJETAS INTERNAS DEL KANBAN: compactación exclusiva de cada caja de carga. */
+.board-direction-compact .siget-load-card{
+    height:108px!important;
+    min-height:108px!important;
+    max-height:108px!important;
+    padding:6px 7px!important;
+    margin:0!important;
+    border-radius:7px!important;
+    overflow:hidden!important;
+    display:block!important;
+}
+.board-direction-compact .siget-load-card .load-card-top{
+    display:flex!important;
+    align-items:flex-start!important;
+    justify-content:space-between!important;
+    gap:5px!important;
+    height:25px!important;
+}
+.board-direction-compact .siget-load-card .load-card-title{
+    min-width:0!important;
+    flex:1 1 auto!important;
+}
+.board-direction-compact .siget-load-card .siget-load-agency{
+    display:block!important;
+    max-width:100%!important;
+    font-size:.43rem!important;
+    line-height:.9!important;
+    margin:0!important;
+    white-space:nowrap!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+}
+.board-direction-compact .siget-load-card h4{
+    width:100%!important;
+    height:13px!important;
+    max-height:13px!important;
+    margin:2px 0 0!important;
+    padding:0!important;
+    font-size:.57rem!important;
+    line-height:13px!important;
+    font-weight:800!important;
+    white-space:nowrap!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+}
+.board-direction-compact .siget-load-card .siget-traffic{
+    flex:0 0 auto!important;
+    width:8px!important;
+    height:8px!important;
+    margin-top:2px!important;
+}
+.board-direction-compact .siget-load-card .load-card-badges{
+    display:flex!important;
+    flex-wrap:nowrap!important;
+    align-items:center!important;
+    gap:3px!important;
+    height:15px!important;
+    margin:2px 0 2px!important;
+    overflow:hidden!important;
+}
+.board-direction-compact .siget-load-card .load-card-badges .badge{
+    display:inline-flex!important;
+    align-items:center!important;
+    height:14px!important;
+    max-width:45%!important;
+    padding:1px 4px!important;
+    margin:0!important;
+    border-radius:4px!important;
+    font-size:.40rem!important;
+    line-height:1!important;
+    white-space:nowrap!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+}
+.board-direction-compact .siget-load-card .siget-load-units{
+    height:12px!important;
+    max-height:12px!important;
+    margin:0!important;
+    overflow:hidden!important;
+    display:block!important;
+    white-space:nowrap!important;
+    text-overflow:ellipsis!important;
+    font-size:.41rem!important;
+    line-height:12px!important;
+}
+.board-direction-compact .siget-load-card .siget-load-units span{
+    display:inline!important;
+    white-space:nowrap!important;
+}
+.board-direction-compact .siget-load-card .siget-load-units span+span:before{
+    content:" · ";
+}
+.board-direction-compact .siget-load-card .siget-load-meta{
+    display:flex!important;
+    flex-wrap:nowrap!important;
+    align-items:center!important;
+    gap:5px!important;
+    height:12px!important;
+    max-height:12px!important;
+    margin:2px 0 0!important;
+    overflow:hidden!important;
+    font-size:.40rem!important;
+    line-height:12px!important;
+}
+.board-direction-compact .siget-load-card .siget-load-meta span{
+    min-width:0!important;
+    max-width:50%!important;
+    overflow:hidden!important;
+    white-space:nowrap!important;
+    text-overflow:ellipsis!important;
+}
+.board-direction-compact .siget-load-card .load-card-progress-label{
+    display:flex!important;
+    align-items:center!important;
+    justify-content:space-between!important;
+    height:11px!important;
+    margin:2px 0 1px!important;
+    font-size:.40rem!important;
+    line-height:11px!important;
+}
+.board-direction-compact .siget-load-card .load-card-progress-label strong{
+    font-size:.43rem!important;
+    line-height:11px!important;
+}
+.board-direction-compact .siget-load-card .load-card-progress{
+    height:2px!important;
+    min-height:2px!important;
+    margin:0!important;
+    border-radius:4px!important;
+}
+.board-direction-compact .siget-load-card .siget-load-footer{
+    display:flex!important;
+    align-items:center!important;
+    justify-content:space-between!important;
+    gap:4px!important;
+    height:19px!important;
+    margin:3px 0 0!important;
+    padding:2px 0 0!important;
+    border-top:1px solid var(--border)!important;
+}
+.board-direction-compact .siget-load-card .siget-load-counters{
+    display:flex!important;
+    align-items:center!important;
+    gap:4px!important;
+    min-width:0!important;
+    font-size:.39rem!important;
+    line-height:14px!important;
+    white-space:nowrap!important;
+}
+.board-direction-compact .siget-load-card .siget-load-footer .btn{
+    flex:0 0 auto!important;
+    height:19px!important;
+    min-height:19px!important;
+    padding:0 5px!important;
+    border-radius:4px!important;
+    font-size:.40rem!important;
+    line-height:19px!important;
+}
+.board-direction-compact .siget-load-card .siget-assignees{
+    display:block!important;
+    height:10px!important;
+    max-height:10px!important;
+    margin:2px 0 0!important;
+    padding:0!important;
+    border:0!important;
+    font-size:.38rem!important;
+    line-height:10px!important;
+    white-space:nowrap!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+}
+
 </style>
 
 <div class="siget-board-heading board-heading d-flex justify-content-between align-items-start gap-3">
@@ -1409,7 +1582,48 @@
 <div class="siget-kanban" aria-label="Tablero Kanban de cargas">
 @foreach($columns as $key=>$column)<section class="siget-kanban-column siget-kanban-{{ $key }}"><header><div><h3><i class="bi {{ $column['icon'] }} me-1"></i>{{ $column['label'] }}</h3><p>{{ $column['description'] }}</p></div><span>{{ $column['loads']->count() }}</span></header><div class="siget-kanban-stack">
 @forelse($column['loads'] as $load)@php $priority=strtoupper((string)($load->priority??'NORMAL')); $traffic=$load->traffic_light instanceof \BackedEnum?$load->traffic_light->value:(string)$load->traffic_light; @endphp
-<article class="siget-load-card {{ $load->board_overdue?'is-overdue':'' }}"><div class="d-flex justify-content-between gap-2 align-items-start"><div><span class="siget-load-agency">{{ $load->agency?->name }}</span><h4>{{ $load->title }}</h4></div><span class="siget-traffic siget-traffic-{{ strtolower($traffic?:'gray') }}" title="Semáforo {{ $traffic }}"></span></div><div class="d-flex flex-wrap gap-1 mb-2"><span class="badge siget-status">{{ $load->board_status_label }}</span><span class="badge siget-priority siget-priority-{{ strtolower($priority) }}">{{ $priority }}</span>@if($load->board_overdue)<span class="badge text-bg-danger">Vencida</span>@endif @if($load->is_blocked)<span class="badge text-bg-secondary">Bloqueada</span>@endif</div>@if($load->board_unit_names->isNotEmpty())<div class="siget-load-units">@foreach($load->board_unit_names as $unitName)<span><i class="bi bi-diagram-3"></i> {{ $unitName }}</span>@endforeach</div>@endif<div class="siget-load-meta"><span><i class="bi bi-calendar-event"></i> {{ $load->effective_open_at?->format('d/m/Y')??'Sin fecha' }}</span><span><i class="bi bi-alarm"></i> {{ $load->effective_close_at?->format('d/m/Y H:i')??'Sin límite' }}</span></div><div class="d-flex justify-content-between small mt-3 mb-1"><span>Avance visible</span><strong>{{ number_format($load->board_progress,0) }}%</strong></div><div class="progress"><div class="progress-bar" style="width: {{ $load->board_progress }}%"></div></div><div class="siget-load-footer"><div class="siget-load-counters"><span title="Entregables"><i class="bi bi-check2-square"></i> {{ $load->deliverables->count() }}</span><span title="Evidencias"><i class="bi bi-paperclip"></i> {{ $load->board_evidence_count }}</span><span title="Observaciones"><i class="bi bi-chat-left-text"></i> {{ $load->board_observation_count }}</span></div><a href="{{ route('loads.show',$load) }}" class="btn btn-sm btn-outline-primary">Abrir</a></div>@if($load->board_responsibles->isNotEmpty())<div class="siget-assignees mt-2"><i class="bi bi-person-check"></i> {{ $load->board_responsibles->join(', ') }}</div>@endif</article>
+<article class="siget-load-card {{ $load->board_overdue?'is-overdue':'' }}">
+    <div class="load-card-top">
+        <div class="load-card-title">
+            <span class="siget-load-agency">{{ $load->agency?->name }}</span>
+            <h4 title="{{ $load->title }}">{{ $load->title }}</h4>
+        </div>
+        <span class="siget-traffic siget-traffic-{{ strtolower($traffic?:'gray') }}" title="Semáforo {{ $traffic }}"></span>
+    </div>
+    <div class="load-card-badges">
+        <span class="badge siget-status">{{ $load->board_status_label }}</span>
+        <span class="badge siget-priority siget-priority-{{ strtolower($priority) }}">{{ $priority }}</span>
+        @if($load->board_overdue)<span class="badge text-bg-danger">Vencida</span>@endif
+        @if($load->is_blocked)<span class="badge text-bg-secondary">Bloqueada</span>@endif
+    </div>
+    @if($load->board_unit_names->isNotEmpty())
+        <div class="siget-load-units">
+            @foreach($load->board_unit_names as $unitName)
+                <span><i class="bi bi-diagram-3"></i> {{ $unitName }}</span>
+            @endforeach
+        </div>
+    @endif
+    <div class="siget-load-meta">
+        <span><i class="bi bi-calendar-event"></i> {{ $load->effective_open_at?->format('d/m/Y')??'Sin fecha' }}</span>
+        <span><i class="bi bi-alarm"></i> {{ $load->effective_close_at?->format('d/m/Y H:i')??'Sin límite' }}</span>
+    </div>
+    <div class="load-card-progress-label">
+        <span>Avance visible</span>
+        <strong>{{ number_format($load->board_progress,0) }}%</strong>
+    </div>
+    <div class="progress load-card-progress"><div class="progress-bar" style="width: {{ $load->board_progress }}%"></div></div>
+    <div class="siget-load-footer">
+        <div class="siget-load-counters">
+            <span title="Entregables"><i class="bi bi-check2-square"></i> {{ $load->deliverables->count() }}</span>
+            <span title="Evidencias"><i class="bi bi-paperclip"></i> {{ $load->board_evidence_count }}</span>
+            <span title="Observaciones"><i class="bi bi-chat-left-text"></i> {{ $load->board_observation_count }}</span>
+        </div>
+        <a href="{{ route('loads.show',$load) }}" class="btn btn-sm btn-outline-primary">Abrir</a>
+    </div>
+    @if($load->board_responsibles->isNotEmpty())
+        <div class="siget-assignees"><i class="bi bi-person-check"></i> {{ $load->board_responsibles->join(', ') }}</div>
+    @endif
+</article>
 @empty<div class="siget-kanban-empty"><i class="bi {{ $column['icon'] }}"></i><span>No hay cargas en esta etapa.</span></div>@endforelse
 </div></section>@endforeach
 </div>
