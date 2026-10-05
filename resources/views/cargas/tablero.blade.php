@@ -154,6 +154,266 @@
         grid-template-columns:1fr!important;
     }
 }
+
+/* Ajuste visual definitivo: encabezados y filtros legibles; compactar únicamente estados y tarjetas inferiores. */
+.board-direction-compact .board-heading{
+    min-height:50px!important;
+    margin:0 0 10px!important;
+}
+.board-direction-compact .board-heading .scope-label{
+    font-size:.64rem!important;
+}
+.board-direction-compact .board-heading h2{
+    font-size:1rem!important;
+    line-height:1.08!important;
+}
+.board-direction-compact .board-heading p{
+    font-size:.68rem!important;
+    line-height:1.15!important;
+}
+.board-direction-compact .board-heading .btn{
+    height:32px!important;
+    min-height:32px!important;
+    padding:.25rem .6rem!important;
+    font-size:.68rem!important;
+}
+
+/* KPI superiores: tamaño medio, no miniatura. */
+.board-direction-compact .board-kpis{
+    gap:7px!important;
+    margin-bottom:9px!important;
+}
+.board-direction-compact .board-kpi{
+    height:68px!important;
+    min-height:68px!important;
+    padding:8px 9px!important;
+    grid-template-columns:28px 1fr!important;
+    column-gap:8px!important;
+    border-radius:10px!important;
+}
+.board-direction-compact .board-kpi .board-kpi-icon{
+    width:28px!important;
+    height:28px!important;
+    border-radius:7px!important;
+    font-size:.78rem!important;
+}
+.board-direction-compact .board-kpi small{
+    font-size:.59rem!important;
+    line-height:1.02!important;
+}
+.board-direction-compact .board-kpi strong{
+    font-size:1rem!important;
+}
+
+/* Filtros superiores: recuperan presencia y altura; no son el objetivo de la compactación. */
+.board-direction-compact #loadBoardFilters{
+    margin-bottom:8px!important;
+}
+.board-direction-compact #loadBoardFilters .card-body{
+    padding:8px 10px!important;
+}
+.board-direction-compact #loadBoardFilters .form-label{
+    font-size:.58rem!important;
+    margin-bottom:3px!important;
+}
+.board-direction-compact #loadBoardFilters .form-control,
+.board-direction-compact #loadBoardFilters .form-select,
+.board-direction-compact #loadBoardFilters .input-group-text{
+    height:34px!important;
+    min-height:34px!important;
+    font-size:.63rem!important;
+    padding:.22rem .45rem!important;
+}
+.board-direction-compact #loadBoardFilters .btn{
+    height:34px!important;
+    min-height:34px!important;
+    font-size:.62rem!important;
+}
+.board-direction-compact .board-period-segmented{
+    margin-top:5px!important;
+    padding-top:5px!important;
+}
+.board-direction-compact .board-period-segmented .btn{
+    height:25px!important;
+    min-height:25px!important;
+    font-size:.55rem!important;
+}
+
+/* Catálogo de dependencias: compacto pero todavía perfectamente legible. */
+.board-direction-compact>.siget-card{
+    margin-bottom:8px!important;
+}
+.board-direction-compact>.siget-card .card-header{
+    min-height:34px!important;
+    padding:7px 10px!important;
+}
+.board-direction-compact>.siget-card .card-header h2{
+    font-size:.78rem!important;
+}
+.board-direction-compact>.siget-card .card-body{
+    padding:6px 8px!important;
+}
+.board-direction-compact .siget-dependency-grid{
+    gap:6px!important;
+}
+.board-direction-compact .siget-dependency-card{
+    min-height:54px!important;
+    height:54px!important;
+    padding:6px!important;
+    border-radius:7px!important;
+}
+.board-direction-compact .siget-dependency-logo{
+    width:24px!important;
+    height:24px!important;
+}
+.board-direction-compact .siget-dependency-top strong{
+    font-size:.57rem!important;
+}
+.board-direction-compact .siget-dependency-top small{
+    font-size:.46rem!important;
+}
+.board-direction-compact .siget-dependency-stats{
+    margin-top:4px!important;
+    font-size:.44rem!important;
+}
+.board-direction-compact .siget-dependency-card .progress{
+    height:3px!important;
+    margin-top:4px!important;
+}
+
+/* ===== SOLO ESTA ZONA SE COMPACTA FUERTE ===== */
+.board-direction-compact .siget-kanban{
+    gap:7px!important;
+    margin-top:1px!important;
+}
+
+/* Encabezado de cada estado: visible, compacto y uniforme. */
+.board-direction-compact .siget-kanban-column>header{
+    min-height:52px!important;
+    height:52px!important;
+    padding:7px 8px!important;
+}
+.board-direction-compact .siget-kanban-column>header h3{
+    font-size:.70rem!important;
+    line-height:1.04!important;
+}
+.board-direction-compact .siget-kanban-column>header p{
+    font-size:.50rem!important;
+    line-height:1.05!important;
+    margin-top:2px!important;
+}
+.board-direction-compact .siget-kanban-column>header>span{
+    width:22px!important;
+    min-width:22px!important;
+    height:22px!important;
+    font-size:.57rem!important;
+    border-radius:6px!important;
+}
+
+/* Las cajas de carga son el elemento que más espacio estaba consumiendo. */
+.board-direction-compact .siget-kanban-stack{
+    padding:5px!important;
+    gap:5px!important;
+    min-height:60px!important;
+}
+.board-direction-compact .siget-load-card{
+    padding:7px!important;
+    border-radius:7px!important;
+}
+.board-direction-compact .siget-load-agency{
+    font-size:.48rem!important;
+    line-height:1!important;
+}
+.board-direction-compact .siget-load-card h4{
+    font-size:.60rem!important;
+    line-height:1.04!important;
+    margin:2px 0 4px!important;
+    max-height:2.08em!important;
+    overflow:hidden!important;
+}
+.board-direction-compact .siget-load-card .badge{
+    font-size:.46rem!important;
+    padding:2px 4px!important;
+    border-radius:4px!important;
+}
+.board-direction-compact .siget-load-units,
+.board-direction-compact .siget-load-meta,
+.board-direction-compact .siget-assignees{
+    font-size:.47rem!important;
+    line-height:1.06!important;
+}
+.board-direction-compact .siget-load-meta{
+    gap:4px!important;
+    margin-top:4px!important;
+}
+.board-direction-compact .siget-load-card .small{
+    font-size:.46rem!important;
+}
+.board-direction-compact .siget-load-card .progress{
+    height:3px!important;
+}
+.board-direction-compact .siget-load-footer{
+    margin-top:4px!important;
+    padding-top:4px!important;
+    gap:4px!important;
+}
+.board-direction-compact .siget-load-counters{
+    font-size:.46rem!important;
+    gap:4px!important;
+}
+.board-direction-compact .siget-load-footer .btn{
+    height:23px!important;
+    min-height:23px!important;
+    font-size:.47rem!important;
+    padding:0 .35rem!important;
+    border-radius:4px!important;
+}
+.board-direction-compact .siget-assignees{
+    margin-top:3px!important;
+    padding-top:3px!important;
+}
+
+/* Evita que una tarjeta excepcionalmente larga agrande una columna completa. */
+.board-direction-compact .siget-kanban-stack .siget-load-card{
+    max-height:154px!important;
+    overflow:hidden!important;
+}
+
+/* En la pantalla principal, los estados permanecen visibles y el contenido interno desplaza. */
+@media(min-width:1101px){
+    .board-direction-compact .siget-kanban{
+        align-items:start!important;
+    }
+    .board-direction-compact .siget-kanban-column{
+        min-height:330px!important;
+        max-height:430px!important;
+    }
+    .board-direction-compact .siget-kanban-stack{
+        max-height:375px!important;
+        overflow-y:auto!important;
+        scrollbar-width:thin;
+    }
+}
+@media(max-width:1100px){
+    .board-direction-compact .siget-kanban-column{
+        min-height:260px!important;
+    }
+    .board-direction-compact .siget-kanban-stack{
+        max-height:none!important;
+        overflow:visible!important;
+    }
+}
+@media(max-width:700px){
+    .board-direction-compact .board-heading h2{font-size:.94rem!important}
+    .board-direction-compact .board-kpi{height:62px!important;min-height:62px!important}
+    .board-direction-compact #loadBoardFilters .form-control,
+    .board-direction-compact #loadBoardFilters .form-select,
+    .board-direction-compact #loadBoardFilters .input-group-text,
+    .board-direction-compact #loadBoardFilters .btn{
+        height:31px!important;min-height:31px!important;
+    }
+}
+
 @media(max-width:1200px){.board-direction-compact .board-kpis{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:700px){.board-direction-compact .board-kpis{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.board-direction-compact .board-kpi{height:68px;min-height:68px}}
 
