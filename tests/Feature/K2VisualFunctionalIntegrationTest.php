@@ -65,7 +65,7 @@ class K2VisualFunctionalIntegrationTest extends TestCase {
     public function test_executive_dashboard_is_available_to_admin_and_general_director(): void {
         $this->seed(RolePermissionSeeder::class);
 
-        foreach (['ADMINISTRADOR' => 'Administrador', 'DIRECTOR_GENERAL' => 'Director General'] as $code => $label) {
+        foreach (['ADMINISTRADOR' => 'Administrador', 'DIRECTOR_GENERAL' => 'Director General', 'ENLACE_INSTITUCIONAL' => 'Enlace Institucional'] as $code => $label) {
             $role = Role::where('code', $code)->firstOrFail();
             $user = User::factory()->create(['role_id' => $role->id, 'status' => 'ACTIVE']);
 
@@ -79,7 +79,11 @@ class K2VisualFunctionalIntegrationTest extends TestCase {
                 ->assertSee('"label":"Esperadas"', false)
                 ->assertSee('"label":"Recibidas"', false)
                 ->assertSee('"label":"Validadas"', false)
-                ->assertSee('exec-comparison-card', false);
+                ->assertSee('exec-comparison-card', false)
+                ->assertSee('exec-header', false)
+                ->assertSee('exec-scope', false)
+                ->assertSee('exec-kpis', false)
+                ->assertSee('exec-grid', false);
         }
 
         $template = file_get_contents(resource_path('views/dashboard/executive.blade.php'));
