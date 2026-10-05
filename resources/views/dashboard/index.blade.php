@@ -1,148 +1,639 @@
 @extends('layouts.app')
-@section('title','Dashboard SIGET')
-@section('page-title', $presentation['title'] ?? 'Dashboard SIGET')
-@section('page-subtitle', $presentation['subtitle'] ?? 'Información de SIGET')
+@section('title','Dashboard operativo SIGET')
+@section('page-title','Dashboard operativo')
+@section('page-subtitle', auth()->user()?->organizationalUnit?->name ?: ($presentation['scope'] ?? 'Operación'))
+
 @section('content')
 @php
-$role = auth()->user()?->role?->code;
-$k = $analytics['kpis'] ?? [];
-$filters = $filters ?? [];
-$monthly = collect($analytics['monthly_trend'] ?? []);
-$units = collect($analytics['unit_performance'] ?? $analytics['direction_performance'] ?? []);
-$agencies = collect($analytics['agency_performance'] ?? []);
-$responsibles = collect($analytics['evidence_by_responsible'] ?? []);
-$status = collect($analytics['status_distribution'] ?? []);
-$executiveStatus = $status->only(['REPROGRAMADA','VENCIDA','VALIDADO_Y_CERRADO']);
-$total = (int)($k['total'] ?? 0);
-$closed = (int)($k['closed'] ?? 0);
-$overdue = (int)($k['overdue'] ?? 0);
-$active = (int)($k['active'] ?? 0);
-$reprogrammed = (int)($k['reprogrammed'] ?? 0);
-$completion = (float)($k['completion_average'] ?? 0);
-$compliance = (float)($k['compliance'] ?? 0);
-$closureRate = $total ? round(100*$closed/$total,1) : 0;
-$riskRate = $total ? round(100*$overdue/$total,1) : 0;
-$reprogramRate = $total ? round(100*$reprogrammed/$total,1) : 0;
-$monthlyLabels = $monthly->pluck('period')->values();
+    $role = auth()->user()?->role?->code;
+    $k = $analytics['kpis'] ?? [];
+    $filters = $filters ?? [];
+    $evidenceSummary = $analytics['evidence_summary'] ?? [];
+    $unitEvidence = collect($analytics['evidence_by_unit'] ?? []);
+    $trend = collect($analytics['evidence_trend'] ?? []);
+    $responsibles = collect($analytics['evidence_by_responsible'] ?? []);
+    $riskItems = collect($analytics['risk_items'] ?? []);
+    $upcoming = collect($analytics['upcoming'] ?? []);
+    $tableRows = $riskItems->merge($upcoming)->filter(fn($row) => $row?->id)->unique('id')->sortBy(fn($row) => $row->effective_close_at?->timestamp ?? PHP_INT_MAX)->take(10)->values();
+
+    $total = (int)($k['total'] ?? 0);
+    $expected = (int)($k['evidence_expected'] ?? $evidenceSummary['expected'] ?? 0);
+    $received = (int)($k['evidence_received'] ?? $evidenceSummary['received'] ?? 0);
+    $pending = (int)($k['pending'] ?? max(0, $expected - $received));
+    $observed = (int)($k['observed'] ?? $evidenceSummary['observed'] ?? 0);
+    $overdue = (int)($k['overdue'] ?? 0);
+    $review = (int)($k['review_pending'] ?? $evidenceSummary['review'] ?? 0);
+    $submissionRate = $expected ? round(100 * $received / $expected) : 0;
+
+    $statusMap = collect([
+        'PROGRAMADA' => 'Programado',
+        'ABIERTA' => 'Abierto',
+        'EN_CAPTURA' => 'En captura',
+        'PARCIALMENTE_ENTREGADA' => 'Entrega parcial',
+        'ENTREGADA' => 'Enviado',
+        'EN_REVISION_INSTITUCIONAL' => 'En revisión',
+        'OBSERVADA' => 'Observada',
+        'VALIDADA' => 'Validado',
+        'VALIDADO_Y_CERRADO' => 'Cerrado',
+        'REPROGRAMADA' => 'Reprogramado',
+        'REPROGRAMADA_ABIERTA' => 'Reprogramado',
+        'REPROGRAMADA_ENTREGADA' => 'Enviado',
+        'VENCIDA' => 'Vencida',
+    ]);
+
+    $funnel = [
+        ['label' => 'Programado', 'value' => $expected, 'class' => 'navy'],
+        ['label' => 'Enviado', 'value' => $received, 'class' => 'teal'],
+        ['label' => 'En revisión', 'value' => (int)($evidenceSummary['review'] ?? $review), 'class' => 'amber'],
+        ['label' => 'Validado', 'value' => (int)($evidenceSummary['validated'] ?? 0), 'class' => 'purple'],
+        ['label' => 'Cerrado', 'value' => (int)($analytics['evidence_funnel']['CERRADO'] ?? 0), 'class' => 'green'],
+    ];
+
+    $calendarYm = $filters['from'] ?? $filters['to'] ?? ($trend->last()['period'] ?? now()->format('Y-m'));
+    $calendarBase = date_create($calendarYm . '-01') ?: date_create('first day of this month');
+    $calendarDays = (int)$calendarBase->format('t');
+    $calendarStart = (int)$calendarBase->format('N') - 1;
+    $calendarSignals = [];
+    foreach ($tableRows as $row) {
+        $dateKey = $row->effective_close_at?->format('Y-m-d');
+        if (!$dateKey) continue;
+        $rawStatus = data_get($row, 'status.value', $row->status);
+        $calendarSignals[$dateKey][] = (string)$rawStatus;
+    }
+    $calendarCells = [];
+    for ($i = 0; $i < $calendarStart; $i++) $calendarCells[] = ['day' => null, 'tone' => ''];
+    for ($day = 1; $day <= $calendarDays; $day++) {
+        $dateKey = $calendarBase->format('Y-m-') . str_pad((string)$day, 2, '0', STR_PAD_LEFT);
+        $states = $calendarSignals[$dateKey] ?? [];
+        $tone = '';
+        if (collect($states)->contains(fn($s) => $s === 'VENCIDA')) $tone = 'danger';
+        elseif (collect($states)->contains(fn($s) => in_array($s, ['ENTREGADA','EN_REVISION_INSTITUCIONAL','OBSERVADA','VALIDADA'], true))) $tone = 'active';
+        elseif ($states) $tone = 'next';
+        $calendarCells[] = ['day' => $day, 'tone' => $tone, 'today' => now()->format('Y-m-d') === $dateKey];
+    }
+
+    $scopeLabel = match ($role) {
+        'DIRECTOR_TRANSMISION' => 'Dirección de Transmisión',
+        'DIRECTOR_PROGRAMACION_CONTINUIDAD' => 'Dirección de Programación y Continuidad',
+        'OPERADOR_TRANSMISION' => 'Dirección de Transmisión',
+        'OPERADOR_PROGRAMACION_CONTINUIDAD' => 'Dirección de Programación y Continuidad',
+        'FISCALIZADOR' => 'Fiscalización',
+        default => $presentation['scope'] ?? 'Cargas visibles',
+    };
 @endphp
+
 <style>
-.siget-exec{--line:rgba(255,255,255,.09);--text:#f4f8fb;--muted:#8fa4b7;--cyan:#21c6d8;--blue:#4f7cff;--green:#35c77a;--yellow:#e9b949;--red:#ef4655;background:linear-gradient(180deg,#09131f,#0b1119);border:1px solid var(--line);border-radius:18px;padding:18px;color:var(--text)}
-.siget-exec .hero{background:linear-gradient(100deg,#0e2533,#10283b 55%,#0d1a27);border:1px solid rgba(33,198,216,.22);border-radius:16px;padding:20px 22px;margin-bottom:16px}.siget-exec .eyebrow{font-size:.7rem;text-transform:uppercase;letter-spacing:.12em;color:#69d8e4;font-weight:700}.siget-exec h2{color:#fff;font-weight:700}.siget-exec .muted{color:var(--muted)}
-.siget-exec .kpi{background:linear-gradient(145deg,#111e2b,#0e1823);border:1px solid var(--line);border-radius:14px;padding:16px;min-height:116px;position:relative;overflow:hidden}.siget-exec .kpi:after{content:"";position:absolute;left:0;right:0;bottom:0;height:3px;background:var(--accent,#21c6d8);opacity:.85}.siget-exec .kpi .icon{width:34px;height:34px;border-radius:9px;display:grid;place-items:center;background:rgba(33,198,216,.12);color:var(--accent,#21c6d8);margin-bottom:10px}.siget-exec .kpi small{display:block;color:var(--muted);font-size:.72rem}.siget-exec .kpi strong{display:block;font-size:1.55rem;line-height:1.1;margin-top:3px}.siget-exec .delta{font-size:.68rem;margin-top:7px;color:#76d69d}.siget-exec .mini{font-size:.68rem;color:var(--muted)}
-.siget-exec .panel{background:rgba(16,29,42,.92);border:1px solid var(--line);border-radius:15px;overflow:hidden;height:100%}.siget-exec .panel-head{padding:15px 17px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:12px}.siget-exec .panel-head h3{font-size:.95rem;margin:0;color:#fff}.siget-exec .panel-head p{font-size:.67rem;margin:4px 0 0;color:var(--muted)}.siget-exec .chart{height:300px;padding:10px 14px 12px}.siget-exec .chart canvas{width:100%!important;height:100%!important}.siget-exec .table{--bs-table-bg:transparent;--bs-table-color:#eaf2f7;--bs-table-border-color:var(--line);font-size:.72rem;margin:0}.siget-exec .table th{color:#7890a3;font-size:.61rem;text-transform:uppercase;letter-spacing:.04em}.siget-exec .table td,.siget-exec .table th{padding:9px 10px}.siget-exec .decision{padding:12px}.siget-exec .decision-item{display:flex;gap:11px;padding:11px 0;border-bottom:1px solid var(--line)}.siget-exec .decision-item:last-child{border-bottom:0}.siget-exec .decision-dot{width:10px;height:10px;border-radius:50%;margin-top:5px;background:var(--dot,#35c77a);box-shadow:0 0 12px var(--dot,#35c77a)}.siget-exec .decision-item strong{display:block;color:#fff;font-size:.8rem}.siget-exec .decision-item span{display:block;color:var(--muted);font-size:.68rem;margin-top:3px}.siget-exec .badge-exec{font-size:.58rem;padding:4px 6px;border-radius:7px}.siget-exec .filter-note{font-size:.68rem;color:var(--muted);margin-bottom:12px}
-.siget-role{background:linear-gradient(180deg,#0b1118,#101820);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:18px}.siget-role .role-title{font-size:1.3rem;color:#fff;font-weight:700}.siget-role .role-sub{color:#93a6b6;font-size:.76rem}.siget-role .role-card{background:#121b24;border:1px solid rgba(255,255,255,.08);border-radius:13px;padding:15px;height:100%}.siget-role .role-card small{color:#91a5b7}.siget-role .role-card strong{font-size:1.35rem;color:#fff;display:block;margin-top:5px}.siget-role .role-chart{height:250px}.siget-role .role-chart canvas{width:100%!important;height:100%!important}
+.siget-op-dashboard{
+    --op-navy:#0d2d57;
+    --op-navy-2:#173e70;
+    --op-teal:#0f95a2;
+    --op-teal-2:#148d96;
+    --op-green:#4d904e;
+    --op-amber:#e7a118;
+    --op-red:#c93333;
+    --op-purple:#6650a8;
+    --op-text:#1c2f45;
+    --op-muted:#68798e;
+    --op-line:#e0e6ee;
+    --op-bg:#f6f8fb;
+    --op-surface:#fff;
+    margin:-2px 0 0;
+    color:var(--op-text);
+}
+.siget-op-dashboard .op-heading{
+    display:flex;
+    align-items:flex-end;
+    justify-content:space-between;
+    gap:16px;
+    margin:0 2px 14px;
+}
+.siget-op-dashboard .op-heading-copy h2{margin:0;color:var(--op-navy);font-weight:800;font-size:1.65rem;line-height:1.05}
+.siget-op-dashboard .op-heading-copy p{margin:6px 0 0;color:var(--op-teal);font-weight:700;font-size:.95rem}
+.siget-op-dashboard .op-heading-meta{color:var(--op-muted);font-size:.72rem;text-align:right}
+.siget-op-dashboard .op-filterbar{
+    display:grid;
+    grid-template-columns:1.05fr 1.35fr 1.05fr 1.05fr auto;
+    gap:10px;
+    align-items:center;
+    margin-bottom:14px;
+}
+.siget-op-dashboard .op-filter-control{
+    min-width:0;
+    height:42px;
+    display:flex;
+    align-items:center;
+    gap:9px;
+    padding:0 12px;
+    background:var(--op-surface);
+    border:1px solid #d8e1ec;
+    border-radius:9px;
+    box-shadow:0 2px 8px rgba(20,49,83,.05);
+}
+.siget-op-dashboard .op-filter-control i{color:var(--op-muted);font-size:1rem;flex:0 0 auto}
+.siget-op-dashboard .op-filter-control select{
+    width:100%;
+    min-width:0;
+    border:0;
+    outline:0;
+    box-shadow:none!important;
+    background:transparent!important;
+    color:#22354b;
+    font-size:.76rem;
+    padding:0;
+}
+.siget-op-dashboard .op-filter-control select:focus{box-shadow:none!important}
+.siget-op-dashboard .op-filter-actions{display:flex;gap:8px;align-items:center}
+.siget-op-dashboard .op-filter-actions .btn{height:42px;padding:0 15px;border-radius:9px;font-size:.76rem;font-weight:700}
+.siget-op-dashboard .op-filter-actions .btn-outline-primary{border-color:#5fb0bb;color:#0b7580;background:#fff}
+.siget-op-dashboard .op-advanced{
+    margin:-4px 0 14px;
+    border:1px solid var(--op-line);
+    border-radius:9px;
+    background:#fff;
+    box-shadow:0 2px 8px rgba(20,49,83,.04);
+}
+.siget-op-dashboard .op-advanced .row{padding:10px 12px}
+.siget-op-dashboard .op-advanced .form-label{font-size:.66rem;font-weight:700;color:var(--op-muted);margin-bottom:4px}
+.siget-op-dashboard .op-advanced .form-control,.siget-op-dashboard .op-advanced .form-select{height:34px;font-size:.72rem}
 
-/* Dashboard typography scale: operational and executive panels share readable sizing. */
-.siget-exec .eyebrow{font-size:.8rem}.siget-exec h2{font-size:1.6rem}.siget-exec .muted{font-size:.84rem}.siget-exec .mini{font-size:.78rem}
-.siget-exec .kpi small{font-size:.82rem}.siget-exec .kpi strong{font-size:1.7rem}.siget-exec .delta{font-size:.78rem}
-.siget-exec .panel-head h3{font-size:1.05rem}.siget-exec .panel-head p{font-size:.8rem}.siget-exec .table{font-size:.8rem}.siget-exec .table th{font-size:.7rem}.siget-exec .decision-item strong{font-size:.9rem}.siget-exec .decision-item span{font-size:.8rem}.siget-exec .badge-exec{font-size:.7rem}
-.siget-role .role-title{font-size:1.45rem}.siget-role .role-sub{font-size:.88rem}.siget-role .role-card small{font-size:.82rem}.siget-role .role-card strong{font-size:1.45rem}.siget-role .role-card .role-title.fs-6{font-size:1.05rem!important}.siget-role .table{font-size:.8rem}.siget-role .table th{font-size:.7rem}
-.dashboard-role-compact{padding-top:0}
-.compact-role-kpis{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:8px;margin-left:0;margin-right:0}
-.compact-role-kpis>[class*="col-"]{width:auto!important;max-width:none!important;padding-left:0;padding-right:0}
-.compact-role-kpis .role-kpi-card{min-height:72px;height:72px;padding:8px 9px;display:grid;grid-template-columns:28px 1fr;grid-template-rows:auto 1fr;column-gap:8px;align-items:center}
-.compact-role-kpis .role-kpi-icon{grid-row:1 / span 2;width:28px;height:28px;border-radius:8px;display:grid;place-items:center;font-size:.82rem}
-.compact-role-kpis .role-kpi-card small{font-size:.62rem;line-height:1.05;white-space:normal;overflow-wrap:anywhere}
-.compact-role-kpis .role-kpi-card strong{font-size:1.05rem;line-height:1}
-@media(max-width:1399px){.compact-role-kpis{grid-template-columns:repeat(4,minmax(0,1fr))}}
-@media(max-width:700px){.compact-role-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media(max-width:700px){.siget-exec h2{font-size:1.35rem}.siget-role .role-title{font-size:1.25rem}.exec-kpi label{font-size:.72rem}}
+.siget-op-dashboard .op-kpis{
+    display:grid;
+    grid-template-columns:repeat(8,minmax(0,1fr));
+    gap:7px;
+    margin-bottom:13px;
+}
+.siget-op-dashboard .op-kpi{
+    min-width:0;
+    height:98px;
+    padding:10px 11px;
+    background:var(--op-surface);
+    border:1px solid var(--op-line);
+    border-radius:11px;
+    box-shadow:0 2px 8px rgba(20,49,83,.05);
+    display:grid;
+    grid-template-columns:37px 1fr;
+    grid-template-rows:auto 1fr;
+    column-gap:9px;
+    align-items:center;
+}
+.siget-op-dashboard .op-kpi-icon{
+    grid-row:1 / span 2;
+    width:37px;height:37px;border-radius:50%;
+    display:grid;place-items:center;
+    color:#fff;font-size:1.05rem;
+}
+.siget-op-dashboard .op-kpi-label{
+    font-size:.69rem;line-height:1.08;color:#3a4b61;
+    overflow-wrap:anywhere;
+}
+.siget-op-dashboard .op-kpi-value{
+    display:flex;align-items:flex-end;gap:6px;
+    color:var(--op-navy);font-weight:800;font-size:1.45rem;line-height:1;
+}
+.siget-op-dashboard .op-kpi-meta{font-size:.62rem;color:var(--op-muted);font-weight:600}
+.siget-op-dashboard .op-kpi-progress{margin-top:4px;height:4px;border-radius:5px;background:#edf1f5;overflow:hidden}
+.siget-op-dashboard .op-kpi-progress span{display:block;height:100%;background:var(--op-teal)}
 
-/* Densidad visual compacta: conserva todos los IDs, datos y scripts del dashboard. */
-.siget-exec{padding:12px;border-radius:13px}
-.siget-exec .hero{padding:13px 15px;margin-bottom:10px;border-radius:12px}
-.siget-exec h2{font-size:1.35rem}
-.siget-exec .muted{font-size:.76rem}
-.siget-exec .kpi{min-height:82px;padding:10px;border-radius:11px}
-.siget-exec .kpi .icon{width:28px;height:28px;border-radius:7px;margin-bottom:5px}
-.siget-exec .kpi small{font-size:.72rem}
-.siget-exec .kpi strong{font-size:1.32rem}
-.siget-exec .delta{font-size:.68rem;margin-top:4px}
-.siget-exec .panel-head{padding:10px 12px}
-.siget-exec .panel-head h3{font-size:.92rem}
-.siget-exec .panel-head p{font-size:.68rem;margin-top:2px}
-.siget-exec .chart{height:225px;padding:7px 10px 9px}
-.siget-exec .table{font-size:.72rem}
-.siget-exec .table td,.siget-exec .table th{padding:6px 7px}
-.siget-exec .decision{padding:9px}
-.siget-exec .decision-item{gap:8px;padding:8px 0}
-.siget-exec .decision-item strong{font-size:.8rem}
-.siget-exec .decision-item span{font-size:.7rem}
-.siget-role{padding:12px;border-radius:13px}
-.siget-role .role-title{font-size:1.15rem}
-.siget-role .role-sub{font-size:.76rem}
-.siget-role .role-card{padding:10px;border-radius:10px}
-.siget-role .role-card small{font-size:.7rem}
-.siget-role .role-card strong{font-size:1.25rem}
-.siget-role .role-chart{height:205px}
-.dashboard-role-compact .compact-role-kpis{gap:6px;margin-bottom:10px!important}
-.compact-role-kpis .role-kpi-card{min-height:64px;height:64px;padding:7px 8px;grid-template-columns:25px 1fr;column-gap:7px}
-.compact-role-kpis .role-kpi-icon{width:25px;height:25px;border-radius:7px;font-size:.76rem}
-.compact-role-kpis .role-kpi-card small{font-size:.58rem}
-.compact-role-kpis .role-kpi-card strong{font-size:.98rem}
-#siget-dashboard-filters{margin-bottom:10px!important}
-#siget-dashboard-filters .card-body{padding:.55rem .65rem}
-#siget-dashboard-filters .siget-period-segmenter{padding:.45rem .6rem!important}
+.siget-op-dashboard .op-grid-top{
+    display:grid;
+    grid-template-columns:1.15fr .85fr 1.1fr;
+    gap:11px;
+    margin-bottom:11px;
+}
+.siget-op-dashboard .op-grid-bottom{
+    display:grid;
+    grid-template-columns:1.02fr .88fr 1.75fr;
+    gap:11px;
+}
+.siget-op-dashboard .op-card{
+    min-width:0;
+    background:var(--op-surface);
+    border:1px solid var(--op-line);
+    border-radius:10px;
+    overflow:hidden;
+    box-shadow:0 2px 8px rgba(20,49,83,.045);
+}
+.siget-op-dashboard .op-card-head{
+    padding:10px 13px 7px;
+}
+.siget-op-dashboard .op-card-head h3{
+    margin:0;color:var(--op-navy);font-size:.9rem;line-height:1.15;font-weight:800;
+}
+.siget-op-dashboard .op-card-head p{
+    margin:3px 0 0;color:var(--op-muted);font-size:.65rem;
+}
+.siget-op-dashboard .op-card-body{padding:0 13px 11px}
+.siget-op-dashboard .op-chart{height:188px}
+.siget-op-dashboard .op-chart canvas{width:100%!important;height:100%!important}
 
+.siget-op-dashboard .op-bar-list{display:grid;gap:11px;padding:6px 0 4px}
+.siget-op-dashboard .op-bar-row{display:grid;grid-template-columns:minmax(64px,1fr) minmax(95px,2fr) 30px;gap:8px;align-items:center;font-size:.67rem;color:#50637a}
+.siget-op-dashboard .op-bar-track{height:11px;background:#edf1f5;border-radius:3px;overflow:hidden}
+.siget-op-dashboard .op-bar-stack{height:100%;display:flex}
+.siget-op-dashboard .op-bar-stack span{height:100%}
+.siget-op-dashboard .op-bar-value{text-align:right;font-weight:700;color:#3e5067}
+.siget-op-dashboard .op-unit-legend,.siget-op-dashboard .op-calendar-legend{
+    display:flex;flex-wrap:wrap;gap:10px;margin:6px 0 8px;color:var(--op-muted);font-size:.61rem
+}
+.siget-op-dashboard .op-legend-dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:4px;vertical-align:-1px}
+.siget-op-dashboard .op-legend-navy{background:var(--op-navy)}
+.siget-op-dashboard .op-legend-teal{background:var(--op-teal)}
+.siget-op-dashboard .op-legend-gray{background:#cad0d8}
+.siget-op-dashboard .op-legend-amber{background:var(--op-amber)}
+.siget-op-dashboard .op-legend-red{background:var(--op-red)}
+.siget-op-dashboard .op-legend-outline{background:#fff;border:1px solid #9ba8b6}
+
+.siget-op-dashboard .op-calendar{padding:3px 0 0}
+.siget-op-dashboard .op-calendar-head{
+    display:grid;grid-template-columns:28px 1fr 28px;align-items:center;
+    margin-bottom:7px
+}
+.siget-op-dashboard .op-calendar-head .title{text-align:center;font-size:.71rem;font-weight:800;color:#2e4055;text-transform:capitalize}
+.siget-op-dashboard .op-calendar-head button{width:28px;height:28px;border:0;background:transparent;color:#53687e;border-radius:7px}
+.siget-op-dashboard .op-calendar-head button:hover{background:#f1f4f7}
+.siget-op-dashboard .op-calendar-week{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;font-size:.59rem;text-align:center;color:#6e7d90;font-weight:700;margin-bottom:3px}
+.siget-op-dashboard .op-calendar-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
+.siget-op-dashboard .op-day{min-height:24px;border-radius:6px;display:grid;place-items:center;position:relative;font-size:.64rem;color:#3d4e64}
+.siget-op-dashboard .op-day.muted{color:#b8c0ca}
+.siget-op-dashboard .op-day.today{background:#d7dadd;color:#27384e;font-weight:800}
+.siget-op-dashboard .op-day .signal{position:absolute;left:50%;bottom:2px;transform:translateX(-50%);width:5px;height:5px;border-radius:50%}
+.siget-op-dashboard .signal.active{background:var(--op-teal)}
+.siget-op-dashboard .signal.next{background:var(--op-amber)}
+.siget-op-dashboard .signal.danger{background:var(--op-red)}
+
+.siget-op-dashboard .op-funnel-wrap{display:grid;grid-template-columns:1fr 146px;gap:10px;align-items:center}
+.siget-op-dashboard .op-funnel{display:grid;place-items:center;gap:1px}
+.siget-op-dashboard .op-funnel-stage{height:35px;display:grid;place-items:center;position:relative;clip-path:polygon(0 0,100% 0,89% 100%,11% 100%);color:#fff;font-size:.67rem;font-weight:800}
+.siget-op-dashboard .op-funnel-stage.navy{width:100%;background:var(--op-navy)}
+.siget-op-dashboard .op-funnel-stage.teal{width:84%;background:var(--op-teal)}
+.siget-op-dashboard .op-funnel-stage.amber{width:68%;background:var(--op-amber)}
+.siget-op-dashboard .op-funnel-stage.purple{width:52%;background:var(--op-purple)}
+.siget-op-dashboard .op-funnel-stage.green{width:38%;background:var(--op-green)}
+.siget-op-dashboard .op-funnel-stage span:last-child{margin-left:8px}
+.siget-op-dashboard .op-funnel-table{font-size:.6rem}
+.siget-op-dashboard .op-funnel-table .rowline{display:grid;grid-template-columns:1fr 43px;gap:6px;padding:9px 0;border-bottom:1px solid #edf0f4}
+.siget-op-dashboard .op-funnel-table .rowline:last-child{border-bottom:0}
+.siget-op-dashboard .op-funnel-table .qty{text-align:right;font-weight:700}
+.siget-op-dashboard .op-funnel-table .pct{text-align:right;color:var(--op-muted);font-weight:600}
+
+.siget-op-dashboard .op-trend{height:220px}
+.siget-op-dashboard .op-trend canvas{width:100%!important;height:100%!important}
+.siget-op-dashboard .op-responsible-list{display:grid;gap:9px;padding-top:6px}
+.siget-op-dashboard .op-resp-row{display:grid;grid-template-columns:88px 1fr 26px;gap:7px;align-items:center;font-size:.66rem;color:#50637a}
+.siget-op-dashboard .op-resp-track{height:13px;border-radius:3px;background:#edf1f5;overflow:hidden}
+.siget-op-dashboard .op-resp-track span{display:block;height:100%;background:var(--op-teal)}
+.siget-op-dashboard .op-resp-row strong{text-align:right;color:#42546b;font-size:.65rem}
+
+.siget-op-dashboard .op-table-card{padding:0}
+.siget-op-dashboard .op-evidence-table{width:100%;border-collapse:collapse;font-size:.62rem}
+.siget-op-dashboard .op-evidence-table th{background:#f7f9fb;color:#64758a;text-transform:none;font-size:.62rem;font-weight:800;padding:7px 8px;text-align:left;white-space:nowrap}
+.siget-op-dashboard .op-evidence-table td{padding:7px 8px;border-top:1px solid #edf0f4;color:#34475e;vertical-align:middle}
+.siget-op-dashboard .op-evidence-table .evidence-name{font-weight:700;color:#243850;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:240px}
+.siget-op-dashboard .op-state{
+    display:inline-flex;align-items:center;justify-content:center;
+    padding:4px 7px;border-radius:6px;font-size:.58rem;font-weight:800;white-space:nowrap
+}
+.siget-op-dashboard .state-red{background:#fde8e8;color:#bd2f2f}
+.siget-op-dashboard .state-amber{background:#fff1d5;color:#a56d00}
+.siget-op-dashboard .state-teal{background:#e2f4f3;color:#147f87}
+.siget-op-dashboard .state-green{background:#e6f3e7;color:#3e7e40}
+.siget-op-dashboard .state-purple{background:#eee9fb;color:#5d4d9b}
+.siget-op-dashboard .op-table-actions{display:flex;gap:5px;white-space:nowrap}
+.siget-op-dashboard .op-table-actions .btn{height:27px;padding:0 8px;border-radius:5px;font-size:.58rem;font-weight:700}
+.siget-op-dashboard .op-table-actions .btn-outline-primary{border-color:#7e95ad;color:#23466e}
+.siget-op-dashboard .op-table-actions .btn-outline-danger{border-color:#e39a9a;color:#bf3333}
+
+.siget-op-dashboard .op-footer{
+    margin-top:13px;padding:8px 0 0;border-top:1px solid #e7ebf1;
+    text-align:center;color:#8a96a7;font-size:.65rem
+}
+.siget-op-dashboard .op-scope-badge{
+    display:inline-flex;align-items:center;gap:6px;
+    padding:5px 8px;border-radius:7px;background:#eff7f8;color:#137a85;font-size:.63rem;font-weight:800
+}
+
+@media (max-width:1500px){
+  .siget-op-dashboard .op-filterbar{grid-template-columns:repeat(4,minmax(0,1fr))}
+  .siget-op-dashboard .op-filter-actions{grid-column:1 / -1;justify-content:flex-end}
+  .siget-op-dashboard .op-kpis{grid-template-columns:repeat(4,minmax(0,1fr))}
+}
+@media (max-width:1100px){
+  .siget-op-dashboard .op-grid-top,.siget-op-dashboard .op-grid-bottom{grid-template-columns:1fr}
+  .siget-op-dashboard .op-filterbar{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .siget-op-dashboard .op-filter-actions{grid-column:auto}
+  .siget-op-dashboard .op-funnel-wrap{grid-template-columns:1fr}
+}
+@media (max-width:700px){
+  .siget-op-dashboard .op-heading{display:block}
+  .siget-op-dashboard .op-heading-meta{text-align:left;margin-top:7px}
+  .siget-op-dashboard .op-filterbar{grid-template-columns:1fr}
+  .siget-op-dashboard .op-filter-actions{grid-column:auto;justify-content:stretch}
+  .siget-op-dashboard .op-filter-actions .btn{flex:1}
+  .siget-op-dashboard .op-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .siget-op-dashboard .op-kpi{height:91px}
+  .siget-op-dashboard .op-card-head{padding:10px}
+  .siget-op-dashboard .op-card-body{padding:0 10px 10px}
+  .siget-op-dashboard .op-chart{height:210px}
+  .siget-op-dashboard .op-evidence-table{min-width:700px}
+}
+
+/* Mismo lenguaje visual en claro y oscuro sin alterar la información ni los permisos. */
+html[data-bs-theme="dark"] .siget-op-dashboard{
+    --op-bg:#0f151c;--op-surface:#151c24;--op-text:#eaf1f6;--op-muted:#91a3b6;--op-line:#2e3b49;
+    --op-navy:#79b4df;--op-navy-2:#83c4d0;--op-teal:#44c1c7;--op-green:#70bb72;--op-amber:#eab44a;--op-red:#ed6a6a;--op-purple:#9d89d6;
+}
+html[data-bs-theme="dark"] .siget-op-dashboard .op-heading-copy h2,
+html[data-bs-theme="dark"] .siget-op-dashboard .op-card-head h3{color:#eef6fb}
+html[data-bs-theme="dark"] .siget-op-dashboard .op-filter-control,
+html[data-bs-theme="dark"] .siget-op-dashboard .op-advanced,
+html[data-bs-theme="dark"] .siget-op-dashboard .op-kpi,
+html[data-bs-theme="dark"] .siget-op-dashboard .op-card{background:var(--op-surface);border-color:var(--op-line)}
+html[data-bs-theme="dark"] .siget-op-dashboard .op-filter-control select{color:#e6eef4}
+html[data-bs-theme="dark"] .siget-op-dashboard .op-evidence-table th{background:#19232e;color:#b1c0ce}
+html[data-bs-theme="dark"] .siget-op-dashboard .op-evidence-table td{border-color:#2c3845;color:#d9e5ed}
+html[data-bs-theme="dark"] .siget-op-dashboard .op-evidence-table .evidence-name{color:#f1f6fa}
+html[data-bs-theme="dark"] .siget-op-dashboard .op-kpi-label{color:#c0ccd6}
+html[data-bs-theme="dark"] .siget-op-dashboard .op-day{color:#dae5ed}
+html[data-bs-theme="dark"] .siget-op-dashboard .op-calendar-head .title{color:#eaf3f8}
+html[data-bs-theme="dark"] .siget-op-dashboard .op-bar-track,
+html[data-bs-theme="dark"] .siget-op-dashboard .op-resp-track{background:#26323e}
 </style>
 
-@if($role === 'DIRECTOR_GENERAL')
-<div class="siget-exec">
-<div class="hero d-flex justify-content-between align-items-start gap-3"><div><div class="eyebrow">Dirección General · Visión estratégica</div><h2 class="mb-1">Centro Ejecutivo Institucional</h2><div class="muted">Situación global, desempeño, riesgo y tendencia. No contiene bandejas ni rutas operativas.</div></div><div class="text-end"><div class="mini">UNIVERSO ANALIZADO</div><strong class="fs-4">{{ number_format($total) }}</strong><div class="mini">cargas</div></div></div>
-@include('dashboard.partials.filters')
-<div class="filter-note">Los filtros acotan el universo y todas las gráficas se recalculan sobre la selección.</div>
-<div class="row g-3 mb-3">@foreach([['Cumplimiento institucional',$compliance,'%','bi-check2-circle','#35c77a','lectura institucional'],['Avance medio',$completion,'%','bi-speedometer2','#4f7cff','avance del universo'],['Cierre efectivo',$closureRate,'%','bi-patch-check','#21c6d8','cierres validados'],['Presión de riesgo',$riskRate,'%','bi-exclamation-triangle','#ef4655','vencimiento relativo'],['Estabilidad operativa',max(0,100-$reprogramRate),'%','bi-graph-up-arrow','#e9b949','reprogramación relativa'],['Cargas activas',$active,'','bi-activity','#9aa8b5','universo en operación']] as $card)<div class="col-6 col-xl-2"><div class="kpi" style="--accent:{{ $card[4] }}"><div class="icon"><i class="bi {{ $card[3] }}"></i></div><small>{{ $card[0] }}</small><strong>{{ $card[1] }}{{ $card[2] }}</strong><div class="delta">{{ $card[5] }}</div></div></div>@endforeach</div>
-<div class="row g-3">
-<div class="col-xl-5"><div class="panel"><div class="panel-head"><div><h3>Tendencia institucional</h3><p>Evolución del trabajo: entradas, cierres y cumplimiento.</p></div><span class="mini">Periodo seleccionado</span></div><div class="chart"><canvas id="roleTrendChart"></canvas></div></div></div>
-<div class="col-xl-3"><div class="panel"><div class="panel-head"><div><h3>Composición institucional por estado</h3><p>Distribución del universo actual.</p></div></div><div class="chart"><canvas id="roleStatusChart"></canvas></div></div></div>
-<div class="col-xl-4"><div class="panel"><div class="panel-head"><div><h3>Desempeño comparativo por Dirección</h3><p>Cargas y cumplimiento.</p></div></div><div class="chart"><canvas id="roleDirectionChart"></canvas></div></div></div>
-<div class="col-xl-4"><div class="panel"><div class="panel-head"><div><h3>Concentración de riesgo por Dependencia</h3><p>Vencimientos y % de riesgo para localizar presión.</p></div></div><div class="chart"><canvas id="roleAgencyChart"></canvas></div></div></div>
-<div class="col-xl-4"><div class="panel"><div class="panel-head"><div><h3>Matriz ejecutiva de desempeño</h3><p>Lectura por Dirección para decisión.</p></div></div><div class="table-responsive"><table class="table"><thead><tr><th>Dirección / Unidad</th><th>Cargas</th><th>Cumpl.</th><th>Cierre</th><th>Venc.</th><th>Lectura</th></tr></thead><tbody>@forelse($units->take(8) as $row)@php $pct=(float)($row['percentage']??0); $od=(int)($row['overdue']??0); $rt=(int)($row['total']??0); $cl=(int)($row['closed']??0); $cr=$rt?round(100*$cl/$rt,1):0; @endphp<tr><td><strong>{{ $row['unit'] ?? 'Sin unidad' }}</strong></td><td>{{ $rt }}</td><td>{{ $pct }}%</td><td>{{ $cr }}%</td><td>{{ $od }}</td><td><span class="badge-exec {{ $od>0?'bg-danger':($pct>=80?'bg-success':'bg-warning text-dark') }}">{{ $od>0?'ATENCIÓN':($pct>=80?'FAVORABLE':'SEGUIMIENTO') }}</span></td></tr>@empty<tr><td colspan="6" class="text-center py-4">Sin información para comparar.</td></tr>@endforelse</tbody></table></div></div></div>
-<div class="col-xl-4"><div class="panel"><div class="panel-head"><div><h3>Lectura para Dirección General</h3><p>Resumen ejecutivo para toma de decisiones.</p></div></div><div class="decision"><div class="decision-item" style="--dot:#35c77a"><i class="decision-dot"></i><div><strong>El cumplimiento institucional</strong><span>{{ $compliance }}% sobre {{ number_format($total) }} cargas, con tendencia del periodo seleccionado.</span></div></div><div class="decision-item" style="--dot:#e9b949"><i class="decision-dot"></i><div><strong>La brecha de desempeño</strong><span>{{ $units->filter(fn($u)=>(float)($u['percentage']??0)<80)->count() }} Dirección(es) requieren seguimiento por debajo de 80%.</span></div></div><div class="decision-item" style="--dot:#ef4655"><i class="decision-dot"></i><div><strong>La presión de riesgo</strong><span>{{ $overdue }} cargas vencidas representan {{ $riskRate }}% del universo y se concentran por dependencia.</span></div></div><div class="decision-item" style="--dot:#4f7cff"><i class="decision-dot"></i><div><strong>La oportunidad inmediata</strong><span>{{ $k['due_soon'] ?? 0 }} cargas vencen en las próximas 72 horas; priorizar donde coincidan vencimiento y bajo cumplimiento.</span></div></div></div></div></div>
-</div></div>
-@else
-<div class="siget-role dashboard-role-compact">
-@include('dashboard.partials.filters')
-@php
-$roleCards = match($role) {
-    'ENLACE_INSTITUCIONAL' => [
-        ['Entregables',$total,'bi-layers','info'],['En operación',$active,'bi-activity','primary'],['Por revisar',$k['review_pending']??0,'bi-clipboard-check','warning'],
-        ['Observados',$k['observed']??0,'bi-exclamation-triangle','danger'],['Reprogramados',$reprogrammed,'bi-arrow-repeat','secondary'],['Cierre',$closureRate.'%','bi-patch-check','success']
-    ],
-    'ADMINISTRADOR' => [
-        ['Cargas registradas',$total,'bi-layers','info'],['Activas',$active,'bi-activity','primary'],['Cerradas',$closed,'bi-check2-circle','success'],
-        ['Vencidas',$overdue,'bi-calendar-x','danger'],['Reprogramadas',$reprogrammed,'bi-arrow-repeat','purple'],['Avance medio',$completion.'%','bi-speedometer2','warning']
-    ],
-    'DIRECTOR_TRANSMISION','DIRECTOR_PROGRAMACION_CONTINUIDAD' => [
-        ['Spots asignados',$total,'bi-broadcast-pin','info'],['Evidencias esperadas',$k['evidence_expected']??0,'bi-files','primary'],
-        ['Evidencias enviadas',$k['evidence_received']??0,'bi-cloud-arrow-up','success'],['Pendientes',$k['pending']??0,'bi-hourglass-split','warning'],
-        ['Observadas o rechazadas',$k['observed']??0,'bi-exclamation-octagon','danger'],['Vencidas',$overdue,'bi-calendar-x','danger'],
-        ['Pendientes de validación',$k['review_pending']??0,'bi-clipboard-check','warning'],['Cumplimiento',$compliance.'%','bi-bullseye','success']
-    ],
-    default => [
-        ['Total',$total,'bi-layers','info'],['Activas',$active,'bi-activity','primary'],['Cerradas',$closed,'bi-check2-circle','success'],
-        ['Vencidas',$overdue,'bi-calendar-x','danger'],['Reprogramadas',$reprogrammed,'bi-arrow-repeat','purple'],['Cumplimiento',$compliance.'%','bi-bullseye','success']
-    ],
-};
-@endphp
-<div class="row g-2 mb-3 compact-role-kpis">
-@foreach($roleCards as $card)
-<div class="col-6 col-xl-2 col-xxl-auto"><div class="role-card role-kpi-card">
-    <div class="role-kpi-icon text-bg-{{ $card[3] }}"><i class="bi {{ $card[2] }}"></i></div>
-    <small>{{ $card[0] }}</small><strong>{{ $card[1] }}</strong>
-</div></div>
-@endforeach
+<div class="siget-op-dashboard">
+    <div class="op-heading">
+        <div class="op-heading-copy">
+            <h2>Dashboard operativo</h2>
+            <p>{{ $scopeLabel }}</p>
+        </div>
+        <div class="op-heading-meta">
+            <span class="op-scope-badge"><i class="bi bi-shield-check"></i> Alcance autorizado</span>
+            <div class="mt-1">Los indicadores y gráficas se calculan únicamente con el universo visible para este usuario.</div>
+        </div>
+    </div>
+
+    @include('dashboard.partials.filters')
+
+    <div class="op-kpis">
+        <div class="op-kpi">
+            <div class="op-kpi-icon" style="background:#118fa0"><i class="bi bi-broadcast-pin"></i></div>
+            <div class="op-kpi-label">Spots asignados</div>
+            <div>
+                <div class="op-kpi-value">{{ number_format($total) }}</div>
+            </div>
+        </div>
+        <div class="op-kpi">
+            <div class="op-kpi-icon" style="background:#13a2b1"><i class="bi bi-clipboard-check"></i></div>
+            <div class="op-kpi-label">Evidencias esperadas</div>
+            <div><div class="op-kpi-value">{{ number_format($expected) }}</div></div>
+        </div>
+        <div class="op-kpi">
+            <div class="op-kpi-icon" style="background:#4f9051"><i class="bi bi-cloud-arrow-up"></i></div>
+            <div class="op-kpi-label">Evidencias enviadas</div>
+            <div><div class="op-kpi-value">{{ number_format($received) }}</div></div>
+        </div>
+        <div class="op-kpi">
+            <div class="op-kpi-icon" style="background:#113a68"><i class="bi bi-pie-chart-fill"></i></div>
+            <div class="op-kpi-label">Cumplimiento de envío</div>
+            <div>
+                <div class="op-kpi-value">{{ $submissionRate }}%</div>
+                <div class="op-kpi-progress"><span style="width:{{ min(100,$submissionRate) }}%"></span></div>
+            </div>
+        </div>
+        <div class="op-kpi">
+            <div class="op-kpi-icon" style="background:#ec9f00"><i class="bi bi-clock-fill"></i></div>
+            <div class="op-kpi-label">Pendientes</div>
+            <div><div class="op-kpi-value" style="color:var(--op-amber)">{{ number_format($pending) }}</div></div>
+        </div>
+        <div class="op-kpi">
+            <div class="op-kpi-icon" style="background:#c63131"><i class="bi bi-exclamation-circle-fill"></i></div>
+            <div class="op-kpi-label">Observadas o rechazadas</div>
+            <div><div class="op-kpi-value" style="color:var(--op-red)">{{ number_format($observed) }}</div></div>
+        </div>
+        <div class="op-kpi">
+            <div class="op-kpi-icon" style="background:#c63131"><i class="bi bi-calendar-x-fill"></i></div>
+            <div class="op-kpi-label">Vencidas</div>
+            <div><div class="op-kpi-value" style="color:var(--op-red)">{{ number_format($overdue) }}</div></div>
+        </div>
+        <div class="op-kpi">
+            <div class="op-kpi-icon" style="background:#153f71"><i class="bi bi-search"></i></div>
+            <div class="op-kpi-label">Pendientes de validación</div>
+            <div><div class="op-kpi-value">{{ number_format($review) }}</div></div>
+        </div>
+    </div>
+
+    <div class="op-grid-top">
+        <section class="op-card">
+            <div class="op-card-head">
+                <h3>Avance por unidad interna</h3>
+                <div class="op-unit-legend">
+                    <span><i class="op-legend-dot op-legend-navy"></i>Esperadas</span>
+                    <span><i class="op-legend-dot op-legend-teal"></i>Recibidas</span>
+                    <span><i class="op-legend-dot op-legend-gray"></i>Pendientes</span>
+                </div>
+            </div>
+            <div class="op-card-body">
+                <div class="op-bar-list">
+                @forelse($unitEvidence->take(6) as $row)
+                    @php
+                        $uExpected = (int)($row['expected'] ?? 0);
+                        $uReceived = (int)($row['received'] ?? 0);
+                        $uPending = (int)($row['pending'] ?? 0);
+                        $uMax = max(1,$uExpected);
+                    @endphp
+                    <div class="op-bar-row">
+                        <span>{{ Str::limit($row['unit'] ?? 'Sin unidad',18) }}</span>
+                        <div class="op-bar-track">
+                            <div class="op-bar-stack">
+                                <span style="width:100%;background:var(--op-navy)"></span>
+                                <span style="width:0;background:var(--op-teal)"></span>
+                            </div>
+                            <div style="margin-top:-11px;height:11px;position:relative;overflow:hidden;border-radius:3px">
+                                <span style="display:block;height:100%;width:{{ min(100,round(100*$uReceived/$uMax)) }}%;background:var(--op-teal)"></span>
+                            </div>
+                            <div style="margin-top:-11px;height:11px;position:relative;overflow:hidden;border-radius:3px;pointer-events:none">
+                                <span style="display:block;height:100%;width:{{ min(100,round(100*$uPending/$uMax)) }}%;background:#cbd1d8"></span>
+                            </div>
+                        </div>
+                        <span class="op-bar-value">{{ $uExpected }}</span>
+                    </div>
+                @empty
+                    <div class="text-secondary text-center py-5">No hay unidades en el alcance actual.</div>
+                @endforelse
+                </div>
+            </div>
+        </section>
+
+        <section class="op-card">
+            <div class="op-card-head">
+                <h3>Calendario de fechas programadas</h3>
+            </div>
+            <div class="op-card-body">
+                <div class="op-calendar">
+                    <div class="op-calendar-head">
+                        <button type="button" aria-label="Mes anterior"><i class="bi bi-chevron-left"></i></button>
+                        <div class="title">{{ strftime('%B %Y', $calendarBase->getTimestamp()) }}</div>
+                        <button type="button" aria-label="Mes siguiente"><i class="bi bi-chevron-right"></i></button>
+                    </div>
+                    <div class="op-calendar-week">
+                        <span>Lun</span><span>Mar</span><span>Mié</span><span>Jue</span><span>Vie</span><span>Sáb</span><span>Dom</span>
+                    </div>
+                    <div class="op-calendar-grid">
+                    @foreach($calendarCells as $cell)
+                        <div class="op-day {{ !$cell['day'] ? 'muted' : '' }} {{ ($cell['today'] ?? false) ? 'today' : '' }}">
+                            {{ $cell['day'] ?: '' }}
+                            @if(!empty($cell['tone']))<span class="signal {{ $cell['tone'] }}"></span>@endif
+                        </div>
+                    @endforeach
+                    </div>
+                    <div class="op-calendar-legend">
+                        <span><i class="op-legend-dot op-legend-amber"></i>Próximos</span>
+                        <span><i class="op-legend-dot op-legend-teal"></i>Activos</span>
+                        <span><i class="op-legend-dot op-legend-red"></i>Vencidos</span>
+                        <span><i class="op-legend-dot op-legend-outline"></i>Cerrados</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="op-card">
+            <div class="op-card-head">
+                <h3>Estado del expediente</h3>
+            </div>
+            <div class="op-card-body">
+                <div class="op-funnel-wrap">
+                    <div class="op-funnel">
+                        @foreach($funnel as $stage)
+                            <div class="op-funnel-stage {{ $stage['class'] }}">
+                                <span>{{ $stage['label'] }}</span><span>{{ number_format($stage['value']) }}</span>
+                            </div>
+                        @endforeach
+                    </div>
+                    <div class="op-funnel-table">
+                        @php $funnelBase=max(1,$expected); @endphp
+                        @foreach($funnel as $stage)
+                            <div class="rowline">
+                                <span>{{ $stage['label'] }}</span>
+                                <span class="qty">{{ number_format($stage['value']) }}</span>
+                                <span class="pct" style="grid-column:2"> {{ round(100*$stage['value']/$funnelBase) }}%</span>
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <div class="op-grid-bottom">
+        <section class="op-card">
+            <div class="op-card-head">
+                <h3>Tendencia de entregas</h3>
+                <p>Evidencias esperadas, enviadas y validadas.</p>
+            </div>
+            <div class="op-card-body">
+                <div class="op-trend"><canvas id="sigetOperationalTrend"></canvas></div>
+            </div>
+        </section>
+
+        <section class="op-card">
+            <div class="op-card-head">
+                <h3>Carga por responsable</h3>
+                <p>Responsables dentro del alcance autorizado.</p>
+            </div>
+            <div class="op-card-body">
+                <div class="op-responsible-list">
+                    @forelse($responsibles->take(7) as $row)
+                        @php $respExpected=(int)($row['expected']??0); $maxResp=max(1,(int)$responsibles->max('expected')); @endphp
+                        <div class="op-resp-row">
+                            <span>{{ Str::limit($row['responsible'] ?? 'Sin asignar',16) }}</span>
+                            <div class="op-resp-track"><span style="width:{{ min(100,round(100*$respExpected/$maxResp)) }}%"></span></div>
+                            <strong>{{ $respExpected }}</strong>
+                        </div>
+                    @empty
+                        <div class="text-secondary text-center py-4">Sin responsables visibles.</div>
+                    @endforelse
+                </div>
+            </div>
+        </section>
+
+        <section class="op-card op-table-card">
+            <div class="op-card-head">
+                <h3>Bandeja de evidencias</h3>
+                <p>Acciones informativas; el flujo de entrega y validación permanece en sus rutas existentes.</p>
+            </div>
+            <div class="table-responsive">
+                <table class="op-evidence-table">
+                    <thead><tr><th>Evidencia</th><th>Responsable</th><th>Fecha límite</th><th>Estado</th><th>Acción</th></tr></thead>
+                    <tbody>
+                    @forelse($tableRows as $load)
+                        @php
+                            $loadStatus = data_get($load,'status.value',$load->status);
+                            $statusLabel = $statusMap[$loadStatus] ?? str_replace('_',' ',$loadStatus);
+                            $statusClass = match($loadStatus) {
+                                'VENCIDA' => 'state-red',
+                                'OBSERVADA','RECHAZADO' => 'state-red',
+                                'EN_REVISION_INSTITUCIONAL','ENTREGADA','EN_CAPTURA' => 'state-teal',
+                                'VALIDADA','VALIDADO_Y_CERRADO' => 'state-purple',
+                                default => 'state-amber',
+                            };
+                            $responsibleNames = $load->deliverables?->pluck('responsibleUser.name')->filter()->unique()->join(', ');
+                            $deadline = $load->effective_close_at?->format('d/m/Y');
+                        @endphp
+                        <tr>
+                            <td class="evidence-name" title="{{ $load->title }}">{{ $load->title ?: 'Carga sin nombre' }}</td>
+                            <td>{{ Str::limit($responsibleNames ?: 'Sin asignar',24) }}</td>
+                            <td class="{{ $loadStatus === 'VENCIDA' ? 'text-danger fw-bold' : '' }}">{{ $deadline ?: '—' }}</td>
+                            <td><span class="op-state {{ $statusClass }}">{{ $statusLabel }}</span></td>
+                            <td>
+                                <div class="op-table-actions">
+                                    <a href="{{ route('loads.show',$load) }}" class="btn btn-outline-primary btn-sm">Ver expediente</a>
+                                    <a href="{{ route('loads.show',$load) }}" class="btn btn-outline-danger btn-sm">Atender</a>
+                                </div>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr><td colspan="5" class="text-center text-secondary py-4">No hay evidencias para mostrar en el alcance actual.</td></tr>
+                    @endforelse
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </div>
+
+    <div class="op-footer">
+        Horario del sistema: {{ now()->format('d/m/Y H:i') }} h (Hora del Centro)
+    </div>
 </div>
-<div class="row g-3"><div class="col-xl-7"><div class="role-card"><div class="role-title fs-6">{{ $role==='DIRECTOR_PROGRAMACION_CONTINUIDAD'?'Planeación vs ejecución':'Ritmo de operación' }}</div><div class="role-sub mb-2">Entradas, ejecución, cierres y cumplimiento.</div><div class="role-chart"><canvas id="roleTrendChart"></canvas></div></div></div><div class="col-xl-5"><div class="role-card"><div class="role-title fs-6">Estado operativo</div><div class="role-sub mb-2">Distribución actual de estados.</div><div class="role-chart"><canvas id="roleStatusChart"></canvas></div></div></div><div class="col-xl-6"><div class="role-card"><div class="role-title fs-6">{{ $role==='DIRECTOR_TRANSMISION'?'Carga por unidad':'Avance por Dirección' }}</div><div class="role-sub mb-2">Volumen y cumplimiento de la dirección seleccionada.</div><div class="role-chart"><canvas id="roleDirectionChart"></canvas></div></div></div><div class="col-xl-6"><div class="role-card"><div class="role-title fs-6">Carga por responsable operativo</div><div class="role-sub mb-2">Responsables asignados a las pautas visibles.</div><div class="role-chart"><canvas id="roleResponsibleChart"></canvas></div></div></div><div class="col-12"><div class="role-card"><div class="role-title fs-6">Bandeja de evidencias de la dirección</div><div class="role-sub mb-2">Las cargas y responsables pertenecen únicamente al alcance de esta dirección.</div><div class="table-responsive"><table class="table table-sm align-middle"><thead><tr><th>Pauta</th><th>Carga</th><th>Dirección</th><th>Responsable</th><th>Fecha límite</th><th>Estado</th></tr></thead><tbody>@forelse(collect($analytics['upcoming'] ?? [])->take(10) as $load)<tr><td><strong>{{ $load->calendarImport?->original_filename ?? 'Pauta sin nombre' }}</strong></td><td>{{ $load->title }}</td><td>{{ $load->deliverables->pluck('organizationalUnit.name')->filter()->unique()->join(', ') ?: 'Sin dirección' }}</td><td>{{ $load->deliverables->pluck('responsibleUser.name')->filter()->unique()->join(', ') ?: 'Sin asignar' }}</td><td>{{ $load->effective_close_at?->format('d/m/Y') ?: 'Sin fecha' }}</td><td>{{ $load->status instanceof \BackedEnum ? $load->status->value : $load->status }}</td></tr>@empty<tr><td colspan="6" class="text-center text-secondary">No hay cargas próximas para esta dirección.</td></tr>@endforelse</tbody></table></div></div></div></div></div>
-@endif
+
 <script>
-(function(){const monthly=@json($monthlyLabels),totals=@json($monthly->pluck('total')->values()),closed=@json($monthly->pluck('closed')->values()),comp=@json($monthly->pluck('compliance')->values()),units=@json($units->take(10)->values()),agencies=@json($agencies->take(10)->values()),responsibles=@json($responsibles->take(10)->values()),rawStatus=@json($status),executiveStatus=@json($executiveStatus);const text='#eaf2f7',muted='#8195a8',grid='rgba(255,255,255,.08)',cyan='#21c6d8',blue='#4f7cff',green='#35c77a',red='#ef4655',yellow='#e9b949';function c(id,type,data,opts={}){const el=document.getElementById(id);if(!el||typeof Chart==='undefined')return;new Chart(el,{type,data,options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:text,boxWidth:10,font:{size:10}}}},scales:{x:{ticks:{color:muted,font:{size:9}},grid:{color:grid}},y:{ticks:{color:muted,font:{size:9}},grid:{color:grid},beginAtZero:true}},...opts}})}
-const executive=!!document.querySelector('.siget-exec');
-c('roleTrendChart','line',{labels:monthly,datasets:[{label:'Entradas',data:totals,borderColor:cyan,tension:.35,borderWidth:2,fill:false},{label:'Cierres',data:closed,borderColor:blue,tension:.35,borderWidth:2,fill:false},{label:'Cumplimiento %',data:comp,borderColor:green,tension:.35,borderWidth:2,yAxisID:'y1',fill:false}]},{scales:{x:{ticks:{color:muted},grid:{color:grid}},y:{ticks:{color:muted},grid:{color:grid},beginAtZero:true},y1:{position:'right',min:0,max:100,ticks:{color:muted},grid:{drawOnChartArea:false}}}});
-const s=executive
-? {'Reprogramadas':Number(executiveStatus.REPROGRAMADA||0),'Vencidas':Number(executiveStatus.VENCIDA||0),'Validadas y cerradas':Number(executiveStatus.VALIDADO_Y_CERRADO||0)}
-: (()=>{const x={};Object.entries(rawStatus).forEach(([k,v])=>{let n=k==='VALIDADO_Y_CERRADO'?'Cerradas':k==='VENCIDA'?'Vencidas':(['OBSERVADA','EN_REVISION_INSTITUCIONAL'].includes(k)?'En revisión':(['REPROGRAMADA','REPROGRAMADA_ABIERTA','REPROGRAMADA_ENTREGADA','SUSPENDIDA'].includes(k)?'Reprogramadas':'En operación'));x[n]=(x[n]||0)+Number(v)});return x;})();c('roleStatusChart','doughnut',{labels:Object.keys(s),datasets:[{data:Object.values(s),backgroundColor:[green,blue,yellow,red,cyan],borderWidth:0}]},{cutout:'68%',plugins:{legend:{position:'bottom',labels:{color:text,boxWidth:9,font:{size:9}}}}});
-if(executive){c('roleDirectionChart','bar',{labels:units.map(x=>x.unit||x.name||'Sin unidad'),datasets:[{type:'bar',label:'Cargas',data:units.map(x=>Number(x.total||0)),backgroundColor:cyan,borderRadius:5,yAxisID:'y'},{type:'line',label:'Cumplimiento %',data:units.map(x=>Number(x.percentage||0)),borderColor:yellow,backgroundColor:yellow,tension:.25,borderWidth:2,pointRadius:3,yAxisID:'y1'}]},{scales:{x:{ticks:{color:muted,font:{size:9}},grid:{color:grid}},y:{beginAtZero:true,ticks:{color:muted},grid:{color:grid}},y1:{position:'right',min:0,max:100,ticks:{color:muted},grid:{drawOnChartArea:false}}},plugins:{legend:{position:'bottom',labels:{color:text,boxWidth:9,font:{size:9}}}}});const riskLabels=agencies.map(x=>x.agency||'Sin dependencia'),riskCounts=agencies.map(x=>Number(x.overdue||0)),riskPct=agencies.map(x=>{const t=Number(x.total||0);return t?Number((100*Number(x.overdue||0)/t).toFixed(1)):0});c('roleAgencyChart','bar',{labels:riskLabels,datasets:[{type:'bar',label:'Vencidas',data:riskCounts,backgroundColor:red,borderRadius:4,yAxisID:'y'},{type:'line',label:'% Vencidas',data:riskPct,borderColor:blue,backgroundColor:blue,tension:.25,borderWidth:2,pointRadius:3,yAxisID:'y1'}]},{scales:{x:{ticks:{color:muted,font:{size:9}},grid:{color:grid}},y:{beginAtZero:true,ticks:{color:muted},grid:{color:grid}},y1:{position:'right',min:0,max:100,ticks:{color:muted},grid:{drawOnChartArea:false}}},plugins:{legend:{position:'bottom',labels:{color:text,boxWidth:9,font:{size:9}}}}});}else{c('roleDirectionChart','bar',{labels:units.map(x=>x.unit||x.name||'Sin unidad'),datasets:[{label:'Cargas',data:units.map(x=>Number(x.total||0)),backgroundColor:cyan,borderRadius:5},{label:'Cumplimiento %',data:units.map(x=>Number(x.percentage||0)),backgroundColor:blue,borderRadius:5}]},{plugins:{legend:{position:'bottom',labels:{color:text,boxWidth:9,font:{size:9}}}}});c('roleAgencyChart','bar',{labels:agencies.map(x=>x.agency||'Sin dependencia'),datasets:[{label:'Vencidas',data:agencies.map(x=>Number(x.overdue||0)),backgroundColor:red,borderRadius:5},{label:'Cumplimiento %',data:agencies.map(x=>Number(x.percentage||0)),backgroundColor:yellow,borderRadius:5}]},{indexAxis:'y',plugins:{legend:{position:'bottom',labels:{color:text,boxWidth:9,font:{size:9}}}}});}})();
-if(!executive){c('roleResponsibleChart','bar',{labels:responsibles.map(x=>x.responsible||'Sin asignar'),datasets:[{label:'Evidencias esperadas',data:responsibles.map(x=>Number(x.expected||0)),backgroundColor:cyan,borderRadius:5},{label:'Evidencias enviadas',data:responsibles.map(x=>Number(x.received||0)),backgroundColor:green,borderRadius:5}]},{indexAxis:'y',plugins:{legend:{position:'bottom',labels:{color:text,boxWidth:9,font:{size:9}}}}});}
+(function(){
+    const el = document.getElementById('sigetOperationalTrend');
+    if(!el || typeof Chart === 'undefined') return;
+
+    const labels = @json($trend->pluck('period')->values());
+    const expected = @json($trend->pluck('expected')->values());
+    const received = @json($trend->pluck('received')->values());
+    const validated = @json($trend->pluck('validated')->values());
+
+    new Chart(el,{
+        type:'line',
+        data:{
+            labels,
+            datasets:[
+                {label:'Esperadas',data:expected,borderColor:'#173e70',backgroundColor:'transparent',tension:.35,borderWidth:2,pointRadius:2.5},
+                {label:'Enviadas',data:received,borderColor:'#148d96',backgroundColor:'transparent',tension:.35,borderWidth:2,pointRadius:2.5},
+                {label:'Validadas',data:validated,borderColor:'#4d904e',backgroundColor:'transparent',tension:.35,borderWidth:2,pointRadius:2.5}
+            ]
+        },
+        options:{
+            responsive:true,
+            maintainAspectRatio:false,
+            plugins:{legend:{position:'top',align:'start',labels:{color:'#5e7187',boxWidth:9,font:{size:10}}}},
+            scales:{
+                x:{ticks:{color:'#738297',font:{size:9}},grid:{color:'#eef2f6'}},
+                y:{beginAtZero:true,ticks:{color:'#738297',font:{size:9}},grid:{color:'#eef2f6'}}
+            }
+        }
+    });
+})();
 </script>
 @endsection
