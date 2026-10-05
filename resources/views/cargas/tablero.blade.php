@@ -1163,6 +1163,172 @@
     .board-direction-compact .siget-kanban{grid-template-columns:1fr!important}
 }
 
+
+/* CORRECCIÓN DEFINITIVA DEL KANBAN
+   No modifica encabezado, filtros ni KPI. Solo estados y tarjetas de carga. */
+.board-direction-compact .siget-kanban{
+    display:grid!important;
+    grid-template-columns:repeat(4,minmax(0,1fr))!important;
+    gap:8px!important;
+    width:100%!important;
+    min-width:0!important;
+    overflow:visible!important;
+    align-items:start!important;
+}
+.board-direction-compact .siget-kanban-column{
+    width:100%!important;
+    min-width:0!important;
+    max-width:none!important;
+    height:360px!important;
+    min-height:360px!important;
+    max-height:360px!important;
+    border-radius:9px!important;
+    overflow:hidden!important;
+}
+.board-direction-compact .siget-kanban-column>header{
+    height:46px!important;
+    min-height:46px!important;
+    padding:6px 8px!important;
+    box-sizing:border-box!important;
+    overflow:hidden!important;
+}
+.board-direction-compact .siget-kanban-column>header h3{
+    font-size:.69rem!important;
+    line-height:1.02!important;
+    margin:0!important;
+}
+.board-direction-compact .siget-kanban-column>header p{
+    font-size:.49rem!important;
+    line-height:1!important;
+    margin:2px 0 0!important;
+}
+.board-direction-compact .siget-kanban-column>header>span{
+    width:21px!important;
+    min-width:21px!important;
+    height:21px!important;
+    font-size:.54rem!important;
+    border-radius:6px!important;
+}
+.board-direction-compact .siget-kanban-stack{
+    height:314px!important;
+    min-height:0!important;
+    max-height:314px!important;
+    overflow-y:auto!important;
+    overflow-x:hidden!important;
+    padding:5px!important;
+    gap:5px!important;
+    scrollbar-width:thin!important;
+}
+.board-direction-compact .siget-load-card{
+    width:100%!important;
+    min-width:0!important;
+    height:122px!important;
+    min-height:122px!important;
+    max-height:122px!important;
+    padding:7px!important;
+    margin:0!important;
+    border-radius:7px!important;
+    box-sizing:border-box!important;
+    overflow:hidden!important;
+}
+.board-direction-compact .siget-load-agency{
+    font-size:.46rem!important;
+    line-height:1!important;
+    margin:0!important;
+}
+.board-direction-compact .siget-load-card h4{
+    font-size:.58rem!important;
+    line-height:1.02!important;
+    height:2.08em!important;
+    max-height:2.08em!important;
+    margin:2px 0 4px!important;
+    overflow:hidden!important;
+}
+.board-direction-compact .siget-load-card .badge{
+    font-size:.44rem!important;
+    line-height:1!important;
+    padding:2px 4px!important;
+    border-radius:4px!important;
+}
+.board-direction-compact .siget-load-units{
+    display:block!important;
+    height:1.08em!important;
+    max-height:1.08em!important;
+    overflow:hidden!important;
+    font-size:.44rem!important;
+    line-height:1.08!important;
+    margin:0!important;
+}
+.board-direction-compact .siget-load-meta{
+    display:flex!important;
+    flex-wrap:nowrap!important;
+    gap:4px!important;
+    height:1.08em!important;
+    max-height:1.08em!important;
+    overflow:hidden!important;
+    margin:4px 0 0!important;
+    font-size:.43rem!important;
+    line-height:1.08!important;
+}
+.board-direction-compact .siget-load-card .small{
+    font-size:.43rem!important;
+    line-height:1!important;
+}
+.board-direction-compact .siget-load-card .progress{
+    height:3px!important;
+    margin:4px 0 0!important;
+}
+.board-direction-compact .siget-load-footer{
+    height:22px!important;
+    margin-top:4px!important;
+    padding-top:3px!important;
+    gap:3px!important;
+}
+.board-direction-compact .siget-load-counters{
+    font-size:.43rem!important;
+    line-height:1!important;
+    gap:3px!important;
+}
+.board-direction-compact .siget-load-footer .btn{
+    height:21px!important;
+    min-height:21px!important;
+    padding:0 4px!important;
+    font-size:.43rem!important;
+    border-radius:4px!important;
+    line-height:1!important;
+}
+.board-direction-compact .siget-assignees{
+    display:block!important;
+    height:1em!important;
+    max-height:1em!important;
+    margin:3px 0 0!important;
+    padding-top:3px!important;
+    font-size:.42rem!important;
+    line-height:1!important;
+    overflow:hidden!important;
+    white-space:nowrap!important;
+    text-overflow:ellipsis!important;
+}
+.board-direction-compact .siget-kanban-empty{
+    min-height:48px!important;
+    height:48px!important;
+    padding:6px!important;
+    font-size:.46rem!important;
+}
+@media(max-width:1100px){
+    .board-direction-compact .siget-kanban{
+        grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    }
+    .board-direction-compact .siget-kanban-column{
+        height:360px!important;
+        max-height:360px!important;
+    }
+}
+@media(max-width:650px){
+    .board-direction-compact .siget-kanban{
+        grid-template-columns:1fr!important;
+    }
+}
 </style>
 
 <div class="siget-board-heading board-heading d-flex justify-content-between align-items-start gap-3">
