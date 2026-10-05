@@ -534,6 +534,375 @@
     .board-direction-compact .siget-kanban{grid-template-columns:1fr!important}
 }
 
+/* ÚLTIMO NIVEL DE COMPACTACIÓN — prevalece sobre reglas heredadas anteriores. */
+.board-direction-compact{
+    padding-top:0!important;
+    font-size:.8rem!important;
+}
+.board-direction-compact .board-heading{
+    min-height:34px!important;
+    margin:0 0 6px!important;
+    gap:8px!important;
+}
+.board-direction-compact .board-heading .scope-label{
+    margin:0 0 1px!important;
+    font-size:.52rem!important;
+    line-height:1!important;
+}
+.board-direction-compact .board-heading h2{
+    margin:0!important;
+    font-size:.86rem!important;
+    line-height:1!important;
+}
+.board-direction-compact .board-heading p{
+    margin:2px 0 0!important;
+    font-size:.53rem!important;
+    line-height:1.05!important;
+}
+.board-direction-compact .board-heading .btn{
+    height:25px!important;
+    min-height:25px!important;
+    padding:0 .45rem!important;
+    font-size:.56rem!important;
+    line-height:1!important;
+}
+
+/* KPI: máximo ahorro vertical sin perder lectura. */
+.board-direction-compact .board-kpis{
+    grid-template-columns:repeat(6,minmax(0,1fr))!important;
+    gap:5px!important;
+    margin:0 0 6px!important;
+}
+.board-direction-compact .board-kpi{
+    height:48px!important;
+    min-height:48px!important;
+    padding:5px 6px!important;
+    grid-template-columns:21px 1fr!important;
+    column-gap:6px!important;
+    border-radius:7px!important;
+}
+.board-direction-compact .board-kpi .board-kpi-icon{
+    width:21px!important;
+    height:21px!important;
+    border-radius:5px!important;
+    font-size:.61rem!important;
+}
+.board-direction-compact .board-kpi small{
+    font-size:.49rem!important;
+    line-height:.95!important;
+}
+.board-direction-compact .board-kpi strong{
+    font-size:.82rem!important;
+    line-height:.9!important;
+}
+
+/* Catálogo: pasa de tarjetas altas a una tira compacta de selección. */
+.board-direction-compact>.siget-card{
+    margin:0 0 6px!important;
+    border-radius:8px!important;
+}
+.board-direction-compact>.siget-card .card-header{
+    min-height:28px!important;
+    padding:5px 8px!important;
+    align-items:center!important;
+}
+.board-direction-compact>.siget-card .card-header h2{
+    margin:0!important;
+    font-size:.64rem!important;
+    line-height:1!important;
+}
+.board-direction-compact>.siget-card .card-header p{
+    display:none!important;
+}
+.board-direction-compact>.siget-card .card-header .badge{
+    font-size:.49rem!important;
+    padding:2px 4px!important;
+}
+.board-direction-compact>.siget-card .card-body{
+    padding:5px!important;
+}
+.board-direction-compact .siget-dependency-grid{
+    display:grid!important;
+    grid-template-columns:repeat(7,minmax(90px,1fr))!important;
+    gap:4px!important;
+}
+.board-direction-compact .siget-dependency-card{
+    min-height:44px!important;
+    height:44px!important;
+    padding:4px 5px!important;
+    border-radius:6px!important;
+    overflow:hidden!important;
+}
+.board-direction-compact .siget-dependency-top{
+    gap:4px!important;
+    min-height:20px!important;
+}
+.board-direction-compact .siget-dependency-logo{
+    width:19px!important;
+    height:19px!important;
+    min-width:19px!important;
+    border-radius:4px!important;
+}
+.board-direction-compact .siget-dependency-top strong{
+    font-size:.49rem!important;
+    line-height:.92!important;
+    white-space:nowrap!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+}
+.board-direction-compact .siget-dependency-top small{
+    font-size:.4rem!important;
+    line-height:.9!important;
+}
+.board-direction-compact .siget-dependency-stats{
+    display:flex!important;
+    gap:5px!important;
+    margin-top:3px!important;
+    font-size:.38rem!important;
+    line-height:.9!important;
+    white-space:nowrap!important;
+}
+.board-direction-compact .siget-dependency-stats span:nth-child(n+3){display:none!important}
+.board-direction-compact .siget-dependency-card .progress{
+    height:2px!important;
+    margin-top:3px!important;
+}
+.board-direction-compact .siget-dependency-card>.d-flex.justify-content-between{
+    display:none!important;
+}
+
+/* Filtros: altura mínima, sin explicaciones ni espacios muertos. */
+.board-direction-compact #loadBoardFilters{
+    margin:0 0 6px!important;
+    border-radius:8px!important;
+}
+.board-direction-compact #loadBoardFilters .card-body{
+    padding:5px 6px!important;
+}
+.board-direction-compact #loadBoardFilters .row.g-3{
+    --bs-gutter-x:.3rem!important;
+    --bs-gutter-y:.25rem!important;
+}
+.board-direction-compact #loadBoardFilters .form-label{
+    font-size:.46rem!important;
+    line-height:1!important;
+    margin:0 0 1px!important;
+}
+.board-direction-compact #loadBoardFilters .form-control,
+.board-direction-compact #loadBoardFilters .form-select,
+.board-direction-compact #loadBoardFilters .input-group-text{
+    height:25px!important;
+    min-height:25px!important;
+    font-size:.52rem!important;
+    padding:1px 4px!important;
+    border-radius:5px!important;
+}
+.board-direction-compact #loadBoardFilters .form-text{
+    display:none!important;
+}
+.board-direction-compact #loadBoardFilters .bg-light-subtle{
+    min-height:25px!important;
+    height:25px!important;
+    padding:4px 5px!important;
+    font-size:.47rem!important;
+    overflow:hidden!important;
+    white-space:nowrap!important;
+}
+.board-direction-compact #loadBoardFilters .form-switch{
+    margin:0!important;
+    min-height:25px!important;
+    font-size:.5rem!important;
+}
+.board-direction-compact #loadBoardFilters .btn{
+    height:25px!important;
+    min-height:25px!important;
+    padding:1px 5px!important;
+    font-size:.5rem!important;
+    border-radius:5px!important;
+}
+.board-direction-compact .board-period-segmented{
+    margin:3px 0 0!important;
+    padding-top:3px!important;
+    border-top:1px solid var(--border)!important;
+}
+.board-direction-compact .board-period-segmented .small,
+.board-direction-compact .board-period-segmented strong{
+    font-size:.46rem!important;
+    line-height:1!important;
+}
+.board-direction-compact .board-period-segmented .btn{
+    height:21px!important;
+    min-height:21px!important;
+    padding:0 4px!important;
+    font-size:.43rem!important;
+    border-radius:4px!important;
+}
+.board-direction-compact #boardCustomRange{
+    margin-top:3px!important;
+}
+
+/* KANBAN: prioridad absoluta a que las cuatro etapas aparezcan arriba. */
+.board-direction-compact .siget-kanban{
+    grid-template-columns:repeat(4,minmax(0,1fr))!important;
+    gap:6px!important;
+    margin:0!important;
+    align-items:start!important;
+}
+.board-direction-compact .siget-kanban-column{
+    border-radius:7px!important;
+    overflow:hidden!important;
+}
+.board-direction-compact .siget-kanban-column>header{
+    min-height:40px!important;
+    height:40px!important;
+    padding:4px 6px!important;
+    gap:5px!important;
+}
+.board-direction-compact .siget-kanban-column>header h3{
+    font-size:.59rem!important;
+    line-height:.98!important;
+    margin:0!important;
+}
+.board-direction-compact .siget-kanban-column>header p{
+    font-size:.41rem!important;
+    line-height:.9!important;
+    margin:2px 0 0!important;
+    white-space:nowrap!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+}
+.board-direction-compact .siget-kanban-column>header>span{
+    width:19px!important;
+    min-width:19px!important;
+    height:19px!important;
+    border-radius:5px!important;
+    font-size:.48rem!important;
+}
+.board-direction-compact .siget-kanban-stack{
+    padding:4px!important;
+    gap:4px!important;
+    min-height:42px!important;
+}
+.board-direction-compact .siget-load-card{
+    padding:5px!important;
+    border-radius:6px!important;
+}
+.board-direction-compact .siget-load-card h4{
+    font-size:.53rem!important;
+    line-height:.98!important;
+    margin:1px 0 3px!important;
+    max-height:2.05em!important;
+    overflow:hidden!important;
+}
+.board-direction-compact .siget-load-agency{
+    display:block!important;
+    font-size:.4rem!important;
+    line-height:.9!important;
+    max-width:calc(100% - 12px)!important;
+    overflow:hidden!important;
+    white-space:nowrap!important;
+    text-overflow:ellipsis!important;
+}
+.board-direction-compact .siget-load-card .badge{
+    font-size:.4rem!important;
+    line-height:1!important;
+    padding:2px 3px!important;
+    border-radius:4px!important;
+}
+.board-direction-compact .siget-load-units{
+    display:block!important;
+    max-height:1.1em!important;
+    overflow:hidden!important;
+    font-size:.42rem!important;
+    line-height:1.05!important;
+}
+.board-direction-compact .siget-load-meta{
+    display:flex!important;
+    flex-wrap:nowrap!important;
+    gap:4px!important;
+    margin-top:3px!important;
+    font-size:.4rem!important;
+    line-height:.95!important;
+    overflow:hidden!important;
+}
+.board-direction-compact .siget-load-meta span{
+    min-width:0!important;
+    overflow:hidden!important;
+    white-space:nowrap!important;
+    text-overflow:ellipsis!important;
+}
+.board-direction-compact .siget-load-card .d-flex.justify-content-between.small{
+    margin-top:3px!important;
+    margin-bottom:1px!important;
+    font-size:.41rem!important;
+    line-height:1!important;
+}
+.board-direction-compact .siget-load-card .progress{
+    height:2px!important;
+}
+.board-direction-compact .siget-load-footer{
+    margin-top:3px!important;
+    padding-top:3px!important;
+    gap:3px!important;
+}
+.board-direction-compact .siget-load-counters{
+    font-size:.4rem!important;
+    gap:3px!important;
+    white-space:nowrap!important;
+}
+.board-direction-compact .siget-load-footer .btn{
+    height:20px!important;
+    min-height:20px!important;
+    padding:0 4px!important;
+    font-size:.42rem!important;
+    line-height:1!important;
+    border-radius:4px!important;
+}
+.board-direction-compact .siget-assignees{
+    margin-top:2px!important;
+    padding-top:2px!important;
+    border-top:1px solid rgba(128,145,160,.18)!important;
+    font-size:.4rem!important;
+    line-height:.95!important;
+    white-space:nowrap!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+}
+.board-direction-compact .siget-kanban-empty{
+    min-height:42px!important;
+    padding:7px 4px!important;
+    font-size:.43rem!important;
+}
+
+/* Mantener la columna de cierre verde, pero igualmente compacta. */
+.board-direction-compact .siget-kanban-done{
+    border-color:#22a06b!important;
+}
+.board-direction-compact .siget-kanban-done>header{
+    border-top-width:3px!important;
+}
+
+/* La cabecera Kanban queda dentro de la primera pantalla al hacer scroll. */
+.board-direction-compact .siget-kanban-column>header{
+    position:sticky!important;
+    top:0!important;
+    z-index:2!important;
+}
+
+@media(max-width:1200px){
+    .board-direction-compact .siget-dependency-grid{grid-template-columns:repeat(4,minmax(90px,1fr))!important}
+    .board-direction-compact .board-kpis{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+}
+@media(max-width:760px){
+    .board-direction-compact .siget-dependency-grid{grid-template-columns:repeat(2,minmax(90px,1fr))!important}
+    .board-direction-compact .board-kpis{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+    .board-direction-compact .siget-kanban{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+}
+@media(max-width:520px){
+    .board-direction-compact .siget-dependency-grid{grid-template-columns:1fr!important}
+    .board-direction-compact .siget-kanban{grid-template-columns:1fr!important}
+}
+
 </style>
 
 <div class="siget-board-heading board-heading d-flex justify-content-between align-items-start gap-3">
