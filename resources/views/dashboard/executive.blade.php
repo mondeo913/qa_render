@@ -1,62 +1,124 @@
 @extends('layouts.app')
 @section('title','Dashboard ejecutivo SIGET')
 @section('page-title','Dashboard ejecutivo')
-@section('page-subtitle', (auth()->user()?->role?->code === 'ADMINISTRADOR' ? 'Administrador' : 'Director General').' · cumplimiento institucional de evidencias')
+@section('page-subtitle', match(auth()->user()?->role?->code) { 'ADMINISTRADOR' => 'Administrador', 'DIRECTOR_GENERAL' => 'Director General', 'ENLACE_INSTITUCIONAL' => 'Enlace Institucional', default => 'Centro ejecutivo' }.' · cumplimiento institucional de evidencias')
 @section('content')
 @php
 $summary=$analytics['evidence_summary']??['expected'=>0,'received'=>0,'validated'=>0,'pending'=>0,'observed'=>0,'review'=>0,'delivery_percentage'=>0,'validation_percentage'=>0,'observation_percentage'=>0];
     $pauta=$analytics['pauta_summary']??[];$units=collect($analytics['evidence_by_unit']??[]);$directions=collect($analytics['evidence_by_direction']??[]);$trend=collect($analytics['evidence_trend']??[]);$due=collect($analytics['pending_by_due']??[]);$campaigns=collect($analytics['evidence_by_campaign']??[]);$alerts=collect($analytics['risk_items']??[])->take(10);
 $statuses=[['label'=>'Validadas','value'=>$summary['validated'],'color'=>'#35a866'],['label'=>'En revisión','value'=>$summary['review'],'color'=>'#e5a817'],['label'=>'Observadas','value'=>$summary['observed'],'color'=>'#ed7b20'],['label'=>'Pendientes','value'=>$summary['pending'],'color'=>'#d52e2e']];
+$roleCode=auth()->user()?->role?->code;
+$roleLabel=match($roleCode){'ADMINISTRADOR'=>'Administrador','DIRECTOR_GENERAL'=>'Director General','ENLACE_INSTITUCIONAL'=>'Enlace Institucional',default=>'Centro ejecutivo'};
+$roleScope=match($roleCode){'ADMINISTRADOR'=>'Alcance global','DIRECTOR_GENERAL'=>'Supervisión institucional','ENLACE_INSTITUCIONAL'=>'Dependencias asignadas',default=>'Alcance autorizado'};
 @endphp
 <style>
-.exec{background:#f7f9fc;color:#172b4d;min-height:100%;margin:-28px;padding:0 28px 28px;font-size:.78rem}.exec-top{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:24px 0 14px}.exec-brand{display:flex;align-items:center;gap:12px}.exec-brand img{width:52px;height:52px;object-fit:contain}.exec-brand strong{display:block;font-size:1.65rem;line-height:1;color:#0c2851}.exec-brand small{color:#68788d;font-size:.68rem}.exec-title h2{margin:0;color:#12294e;font-size:1.5rem;font-weight:800}.exec-title p{margin:4px 0 0;color:#68788d;font-size:.74rem}.exec-actions{display:flex;align-items:center;gap:9px}.exec-actions .btn{font-size:.72rem}.exec-filters{background:#fff;border:1px solid #e0e6ee;border-radius:10px;padding:13px 14px;margin-bottom:14px;box-shadow:0 3px 10px rgba(20,49,83,.04)}.exec-filters label{display:block;color:#68788d;font-size:.62rem;font-weight:800;margin-bottom:4px}.exec-filters .form-select,.exec-filters .form-control{font-size:.71rem;border-color:#dbe3ec}.exec-period{display:flex;align-items:center;gap:6px;flex-wrap:wrap;color:#6e7c8e;font-size:.63rem;margin-top:10px}.exec-period button{border:1px solid #dbe3ec;background:#fff;color:#53657a;border-radius:6px;padding:5px 9px;font-size:.63rem}.exec-period button.active,.exec-period button:hover{background:#e7f5f7;color:#087f8c;border-color:#8ad7dd}.exec-kpis{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:14px}.exec-kpi{background:#fff;border:1px solid #e0e6ee;border-radius:11px;padding:12px 13px;min-height:108px;box-shadow:0 3px 10px rgba(20,49,83,.04)}.exec-kpi-top{display:flex;align-items:center;gap:8px;min-height:30px}.exec-kpi-icon{width:32px;height:32px;border-radius:50%;display:grid;place-items:center;font-size:1rem}.exec-kpi label{font-size:.66rem;color:#34445a;line-height:1.2}.exec-kpi strong{display:block;font-size:1.7rem;line-height:1.1;margin:8px 0 0}.exec-kpi .blue{color:#116aa5;background:#e2f0f8}.exec-kpi .teal{color:#087f8c;background:#dff5f3}.exec-kpi .green{color:#29925a;background:#e5f5e9}.exec-kpi .cyan{color:#09898f;background:#dff5f3}.exec-kpi .amber{color:#d89400;background:#fff1cf}.exec-kpi .red{color:#d22f2f;background:#fde7e7}.exec-grid{display:grid;grid-template-columns:1.15fr 1.15fr 1.15fr;gap:12px;margin-bottom:12px}.exec-card{background:#fff;border:1px solid #e0e6ee;border-radius:10px;padding:12px;min-width:0}.exec-card h3{font-size:.82rem;margin:0;color:#172b4d}.exec-card .card-sub{font-size:.61rem;color:#77869a;margin:3px 0 10px}.exec-chart{height:190px}.exec-chart canvas{width:100%!important;height:100%!important}.exec-bars{display:grid;gap:9px;padding:7px 0}.exec-bar-row{display:grid;grid-template-columns:88px 1fr 43px;align-items:center;gap:7px;font-size:.62rem;color:#53657a}.exec-bar{height:11px;border-radius:3px;background:#edf1f5;overflow:hidden}.exec-bar span{display:block;height:100%;border-radius:3px}.exec-status-row{display:grid;grid-template-columns:90px 1fr 45px;align-items:center;gap:8px;font-size:.63rem;color:#53657a;margin:11px 0}.exec-status-row .exec-bar{height:9px}.exec-table-card{background:#fff;border:1px solid #e0e6ee;border-radius:10px;overflow:hidden}.exec-table-title{display:flex;align-items:center;justify-content:space-between;padding:12px 13px;border-bottom:1px solid #e7ebf0}.exec-table-title h3{font-size:.84rem;margin:0;color:#172b4d}.exec-table-title span{font-size:.6rem;color:#77869a}.exec-table{width:100%;border-collapse:collapse;font-size:.65rem}.exec-table th{background:#f6f8fa;color:#65758a;text-transform:uppercase;font-size:.55rem;padding:8px;text-align:left}.exec-table td{padding:8px;border-top:1px solid #edf0f4;color:#33445a}.exec-table .num{text-align:right}.exec-badge{display:inline-flex;padding:3px 7px;border-radius:5px;font-size:.56rem;font-weight:800}.exec-badge.warn{color:#b47700;background:#fff1cf}.exec-badge.bad{color:#bd2f2f;background:#fde6e6}.exec-badge.info{color:#087f8c;background:#e0f5f4}.agency-mark{width:34px;height:34px;border-radius:8px;display:inline-grid;place-items:center;background:#fff;border:1px solid #dce5ef;padding:3px;margin-right:7px;vertical-align:middle;overflow:hidden}.agency-mark img{width:100%;height:100%;display:block;object-fit:contain}.export-icon{margin-right:4px}@media(max-width:1200px){.exec-kpis{grid-template-columns:repeat(3,1fr)}.exec-grid{grid-template-columns:1fr 1fr}}@media(max-width:700px){.exec{margin:-18px;padding:0 14px 18px}.exec-top{display:block}.exec-actions{margin-top:10px}.exec-kpis{grid-template-columns:repeat(2,1fr)}.exec-grid{grid-template-columns:1fr}}
-html[data-bs-theme=dark] .exec{background:#0b1017;color:#edf4fa}html[data-bs-theme=dark] .exec-title h2,html[data-bs-theme=dark] .exec-brand strong,html[data-bs-theme=dark] .exec-card h3,html[data-bs-theme=dark] .exec-table-title h3{color:#edf4fa}html[data-bs-theme=dark] .exec-filters,html[data-bs-theme=dark] .exec-card,html[data-bs-theme=dark] .exec-table-card,html[data-bs-theme=dark] .exec-kpi{background:#151d27;border-color:#2c3948}html[data-bs-theme=dark] .exec-filters .form-select,html[data-bs-theme=dark] .exec-filters .form-control,html[data-bs-theme=dark] .exec-period button{background:#0e151e;color:#edf4fa;border-color:#3a4a5b}html[data-bs-theme=dark] .exec-table th{background:#1b2632;color:#b3c1cf}html[data-bs-theme=dark] .exec-table td{color:#dce6ee;border-color:#2c3948}html[data-bs-theme=dark] .exec-bar{background:#273442}.exec-grid:has(#sigetAgencyChart){grid-template-columns:1fr 1.45fr 1fr}.exec-comparison-card{min-width:0}.exec-comparison-card .exec-chart{height:230px}.exec-comparison-card canvas{min-width:0}@media(max-width:700px){.exec-grid:has(#sigetAgencyChart){grid-template-columns:1fr}.exec-comparison-card .exec-chart{height:250px}}
-
-/* KPI geometry: equal cards, centered content and stable responsive wrapping. */
-.exec-kpis{grid-template-columns:repeat(6,minmax(0,1fr));align-items:stretch}
-.exec-kpi{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;min-width:0;height:108px;min-height:108px;padding:10px 8px}
-.exec-kpi-top{width:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;min-height:0}
-.exec-kpi label{display:flex;align-items:center;justify-content:center;text-align:center;min-height:28px;width:100%;font-size:.65rem;line-height:1.15}
-.exec-kpi strong{margin:5px 0 0;font-size:1.65rem;line-height:1}
-.agency-mark{width:72px;height:38px;flex:0 0 72px;padding:2px;border-radius:6px}
-.agency-mark img{object-fit:contain;background:#fff}
-.agency-name{display:inline-flex;align-items:center;min-width:70px}
-@media(max-width:1200px){.exec-kpis{grid-template-columns:repeat(3,minmax(0,1fr))}}
-@media(max-width:700px){.exec-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.exec-kpi{height:104px;min-height:104px}.agency-mark{width:62px;flex-basis:62px}}
-
-/* Final visual normalization: logos never crop and every indicator card is centered. */
-.exec-kpis{align-items:stretch}
-.exec-kpi{align-items:center;justify-content:center;text-align:center;overflow:hidden}
-.exec-kpi-top{align-items:center;justify-content:center;text-align:center}
-.exec-kpi label{white-space:normal;overflow-wrap:anywhere}
-.exec-grid{align-items:stretch}
+/* Estándar ejecutivo SIGET: misma geometría visual del dashboard operativo. */
+.exec{
+  --exec-navy:#0d2d57;--exec-teal:#0f95a2;--exec-green:#4d904e;--exec-amber:#e7a118;
+  --exec-red:#c93333;--exec-purple:#6650a8;--exec-text:#1c2f45;--exec-muted:#68798e;
+  --exec-line:#dfe6ee;--exec-surface:#fff;--exec-bg:#f6f8fb;
+  background:var(--exec-bg);color:var(--exec-text);min-height:100%;
+  margin:-28px;padding:0 28px 28px;font-size:.86rem;
+}
+.exec-header{
+  display:flex;align-items:flex-end;justify-content:space-between;gap:18px;
+  padding:12px 0 14px;border-bottom:1px solid #e4eaf1;margin-bottom:12px;
+}
+.exec-overline{font-size:.68rem;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:#75869a;margin-bottom:3px}
+.exec-title h2{margin:0;color:var(--exec-navy);font-size:1.65rem;line-height:1.05;font-weight:800}
+.exec-title p{margin:5px 0 0;color:var(--exec-teal);font-size:.9rem;font-weight:700}
+.exec-title small{display:block;margin-top:4px;color:var(--exec-muted);font-size:.68rem}
+.exec-header-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.exec-scope{
+  display:inline-flex;align-items:center;gap:6px;padding:7px 9px;border-radius:8px;
+  background:#eff7f8;color:#137a85;border:1px solid #d5ecee;font-size:.64rem;font-weight:800
+}
+.exec-actions{display:flex;align-items:center;gap:8px}.exec-actions .btn{font-size:.74rem;height:38px;border-radius:8px;font-weight:700}
+.exec-filterbar{display:grid;grid-template-columns:1.05fr 1.25fr 1.05fr .95fr auto;gap:9px;align-items:center;margin-bottom:12px}
+.exec-filter-control{
+  min-width:0;height:42px;display:flex;align-items:center;gap:8px;padding:0 11px;
+  background:var(--exec-surface);border:1px solid #d8e1ec;border-radius:9px;box-shadow:0 2px 8px rgba(20,49,83,.05)
+}
+.exec-filter-control i{color:var(--exec-muted);font-size:.95rem;flex:0 0 auto}
+.exec-filter-control select{width:100%;min-width:0;height:40px;border:0;outline:0!important;box-shadow:none!important;background:transparent!important;color:#22354b;font-size:.73rem;padding:0 22px 0 0}
+.exec-filter-actions{display:flex;gap:7px;align-items:center}.exec-filter-actions .btn{height:42px;border-radius:9px;font-size:.73rem;font-weight:700;white-space:nowrap}
+.exec-filter-actions .btn-primary{background:#0f8f9b;border-color:#0f8f9b}
+.exec-period{
+  display:flex;align-items:center;gap:5px;flex-wrap:wrap;color:#6e7c8e;font-size:.68rem;
+  margin-top:7px;padding:7px 8px;border:1px solid #e1e7ee;border-radius:8px;background:#fff
+}
+.exec-period button{border:1px solid #dbe3ec;background:#fff;color:#53657a;border-radius:6px;padding:5px 8px;font-size:.66rem}
+.exec-period button.active,.exec-period button:hover{background:#e7f5f7;color:#087f8c;border-color:#8ad7dd}
+.exec-filters{background:transparent;border:0;padding:0;margin-bottom:0;box-shadow:none}
+.exec-filters> .row{display:none}
+.exec-filters .exec-filterbar{display:grid}
+.exec-kpis{
+  display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:7px;margin-bottom:12px;align-items:stretch
+}
+.exec-kpi{
+  min-width:0;height:98px;padding:10px 11px;background:var(--exec-surface);border:1px solid var(--exec-line);
+  border-radius:11px;box-shadow:0 2px 8px rgba(20,49,83,.05);
+  display:grid;grid-template-columns:37px 1fr;grid-template-rows:auto 1fr;column-gap:9px;align-items:center
+}
+.exec-kpi-top{display:contents}
+.exec-kpi-icon{grid-row:1 / span 2;width:37px;height:37px;border-radius:50%;display:grid;place-items:center;font-size:1rem}
+.exec-kpi label{font-size:.7rem;line-height:1.08;color:#3a4b61;overflow-wrap:anywhere;font-weight:700}
+.exec-kpi strong{display:flex;align-items:flex-end;font-size:1.5rem;line-height:1;color:var(--exec-navy);font-weight:800}
+.exec-kpi .blue{color:#116aa5;background:#e2f0f8}.exec-kpi .teal{color:#087f8c;background:#dff5f3}
+.exec-kpi .green{color:#29925a;background:#e5f5e9}.exec-kpi .cyan{color:#09898f;background:#dff5f3}
+.exec-kpi .amber{color:#d89400;background:#fff1cf}.exec-kpi .red{color:#d22f2f;background:#fde7e7}
+.exec-grid{
+  display:grid;grid-template-columns:1.12fr 1.18fr 1fr;gap:10px;margin-bottom:10px;align-items:stretch
+}
 .exec-grid>.exec-card{height:100%;display:flex;flex-direction:column}
-.exec-grid>.exec-card>h3,.exec-grid>.exec-card>.card-sub{flex:0 0 auto}
-.exec-grid>.exec-card>.exec-bars{flex:1;align-content:center;justify-content:center}
-.exec-grid>.exec-card>.exec-chart{flex:1;min-height:230px}
-.exec-grid>.exec-card:has(.exec-status-row){justify-content:center}
-.exec-table td:first-child{display:flex;align-items:center;gap:8px;min-width:170px}
-.agency-mark{width:78px;height:46px;flex:0 0 78px;display:flex;align-items:center;justify-content:center;overflow:visible;padding:3px;background:#fff}
+.exec-card{
+  min-width:0;background:var(--exec-surface);border:1px solid var(--exec-line);border-radius:10px;padding:11px;
+  box-shadow:0 2px 8px rgba(20,49,83,.045)
+}
+.exec-card h3{font-size:.9rem;line-height:1.15;margin:0;color:var(--exec-navy);font-weight:800}
+.exec-card .card-sub{font-size:.67rem;color:#77869a;margin:3px 0 9px}
+.exec-chart{height:205px;flex:1;min-height:205px}.exec-chart canvas{width:100%!important;height:100%!important}
+.exec-bars{display:grid;gap:10px;padding:6px 0;flex:1;align-content:center}
+.exec-bar-row{display:grid;grid-template-columns:minmax(76px,1.05fr) 2fr 44px;align-items:center;gap:7px;font-size:.68rem;color:#53657a}
+.exec-bar{height:11px;border-radius:3px;background:#edf1f5;overflow:hidden}.exec-bar span{display:block;height:100%;border-radius:3px}
+.exec-status-row{display:grid;grid-template-columns:88px 1fr 45px;align-items:center;gap:7px;font-size:.68rem;color:#53657a;margin:9px 0}
+.exec-status-row .exec-bar{height:10px}
+.exec-table-card{background:var(--exec-surface);border:1px solid var(--exec-line);border-radius:10px;overflow:hidden;box-shadow:0 2px 8px rgba(20,49,83,.045)}
+.exec-table-title{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-bottom:1px solid #e7ebf0}
+.exec-table-title h3{font-size:.92rem;margin:0;color:var(--exec-navy);font-weight:800}
+.exec-table-title span{font-size:.67rem;color:#77869a}
+.exec-table{width:100%;border-collapse:collapse;font-size:.67rem}
+.exec-table th{background:#f7f9fb;color:#64758a;text-transform:none;font-size:.61rem;padding:7px 8px;text-align:left}
+.exec-table td{padding:7px 8px;border-top:1px solid #edf0f4;color:#33445a;vertical-align:middle}
+.exec-badge{display:inline-flex;padding:3px 7px;border-radius:5px;font-size:.61rem;font-weight:800}
+.exec-badge.warn{color:#b47700;background:#fff1cf}.exec-badge.bad{color:#bd2f2f;background:#fde6e6}.exec-badge.info{color:#087f8c;background:#e0f5f4}
+.agency-mark{width:70px;height:38px;flex:0 0 70px;display:flex;align-items:center;justify-content:center;overflow:visible;padding:2px;background:#fff;border:1px solid #dce5ef;border-radius:7px}
 .agency-mark img{display:block;width:100%;height:100%;max-width:100%;max-height:100%;object-fit:contain;object-position:center;background:#fff}
-.agency-name{min-width:0;overflow-wrap:anywhere}
-@media(max-width:700px){.agency-mark{width:68px;flex-basis:68px;height:42px}.exec-table td:first-child{min-width:145px}.exec-grid>.exec-card>.exec-chart{min-height:250px}}
-
-/* KPI labels remain readable over the dark executive dashboard. */
-.exec-kpi label{font-weight:700;letter-spacing:.01em;color:#d7e2ec;text-shadow:0 1px 1px rgba(0,0,0,.22)}
-html[data-bs-theme=dark] .exec-kpi label{color:#e8f1f7}
-.exec-kpi strong{font-weight:800}
-
-/* Dashboard typography scale: readable at normal desktop zoom and responsive. */
-.exec{font-size:.9rem}
-.exec-brand small{font-size:.8rem}.exec-title p{font-size:.84rem}.exec-actions .btn{font-size:.82rem}
-.exec-filters label{font-size:.68rem;line-height:1.1;margin-bottom:3px}.exec-filters .form-select,.exec-filters .form-control{font-size:.76rem;line-height:1.15;min-height:32px;padding:.34rem .55rem}
-.exec-period{font-size:.75rem}.exec-period button{font-size:.75rem}
-.exec-kpi label{font-size:.78rem;line-height:1.2}.exec-kpi strong{font-size:1.8rem}
-.exec-card h3{font-size:1rem}.exec-card .card-sub{font-size:.76rem}.exec-bar-row{font-size:.76rem}.exec-status-row{font-size:.76rem}
-.exec-table{font-size:.78rem}.exec-table th{font-size:.66rem}.exec-table-title span{font-size:.72rem}.exec-badge{font-size:.68rem}
+.exec-table td:first-child{display:flex;align-items:center;gap:7px;min-width:180px}.agency-name{min-width:0;overflow-wrap:anywhere}
+html[data-bs-theme=dark] .exec{--exec-surface:#151c24;--exec-text:#eaf1f6;--exec-muted:#91a3b6;--exec-line:#2e3b49;--exec-navy:#79b4df;--exec-teal:#44c1c7;background:#0f151c}
+html[data-bs-theme=dark] .exec-header{border-bottom-color:#2e3b49}html[data-bs-theme=dark] .exec-title h2,html[data-bs-theme=dark] .exec-card h3,html[data-bs-theme=dark] .exec-table-title h3{color:#eef6fb}
+html[data-bs-theme=dark] .exec-filter-control,html[data-bs-theme=dark] .exec-period{background:#151c24;border-color:#2e3b49}
+html[data-bs-theme=dark] .exec-filter-control select{color:#e6eef4}html[data-bs-theme=dark] .exec-period button{background:#101820;color:#e6eef4;border-color:#3a4a5b}
+html[data-bs-theme=dark] .exec-kpi,html[data-bs-theme=dark] .exec-card,html[data-bs-theme=dark] .exec-table-card{background:#151c24;border-color:#2e3b49}
+html[data-bs-theme=dark] .exec-kpi label,html[data-bs-theme=dark] .exec-bar-row,html[data-bs-theme=dark] .exec-status-row{color:#c0ccd6}
+html[data-bs-theme=dark] .exec-table th{background:#19232e;color:#b1c0ce}html[data-bs-theme=dark] .exec-table td{border-color:#2c3845;color:#d9e5ed}
+@media(max-width:1500px){.exec-kpis{grid-template-columns:repeat(3,minmax(0,1fr))}.exec-filterbar{grid-template-columns:repeat(4,minmax(0,1fr))}.exec-filter-actions{grid-column:1/-1;justify-content:flex-end}}
+@media(max-width:1100px){.exec-grid{grid-template-columns:1fr 1fr}.exec-filterbar{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:700px){.exec{margin:-18px;padding:0 14px 18px}.exec-header{display:block}.exec-header-actions{justify-content:flex-start;margin-top:9px}.exec-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.exec-grid{grid-template-columns:1fr}.exec-filterbar{grid-template-columns:1fr}.exec-filter-actions{grid-column:auto;justify-content:stretch}.exec-filter-actions .btn{flex:1}.exec-chart{height:225px;min-height:225px}.exec-table td:first-child{min-width:145px}.agency-mark{width:62px;flex-basis:62px;height:40px}}
 </style>
 <div class="exec">
-<div class="exec-top"><div></div><div class="exec-actions"><a class="btn btn-primary" href="{{ route('reports.pdf',request()->query()) }}"><i class="bi bi-download export-icon"></i>Exportar resumen</a></div></div>
+<div class="exec-header">
+  <div class="exec-title">
+    <div class="exec-overline">SIGET · Centro ejecutivo</div>
+    <h2>Dashboard ejecutivo</h2>
+    <p>{{ $roleLabel }}</p>
+    <small>Indicadores, desempeño, riesgo y tendencia del alcance autorizado.</small>
+  </div>
+  <div class="exec-header-actions">
+    <span class="exec-scope"><i class="bi bi-shield-check"></i>{{ $roleScope }}</span>
+    <div class="exec-actions"><a class="btn btn-primary" href="{{ route('reports.pdf',request()->query()) }}"><i class="bi bi-download me-1"></i>Exportar resumen</a></div>
+  </div>
+</div>
 <form method="GET" action="{{ route('dashboard') }}" class="exec-filters" id="execFilterForm"><div class="row g-2 align-items-end"><div class="col-xl-3 col-md-6"><label>Dependencia</label><select name="agency_id" id="exec-agency-filter" class="form-select form-select-sm"><option value="">Todas las dependencias</option>@foreach($filterAgencies as $a)<option value="{{ $a->id }}" @selected((string)($filters['agency_id']??'')===(string)$a->id)>{{ $a->name }}</option>@endforeach</select></div><div class="col-xl-3 col-md-6"><label>Dirección o unidad</label><select name="organizational_unit_id" class="form-select form-select-sm"><option value="">Todas las direcciones</option>@foreach($filterUnits as $u)@php $ids=is_array($u->filter_unit_ids??null)?implode(',',$u->filter_unit_ids):$u->id; @endphp<option value="{{ $ids }}" @selected((string)($filters['organizational_unit_id']??'')===(string)$ids)>{{ $u->name }}</option>@endforeach</select></div><div class="col-xl-3 col-md-6"><label>Pauta</label><select name="pauta_id" id="exec-pauta-filter" class="form-select form-select-sm"><option value="">Todas las pautas visibles</option>@foreach(($filterPautas ?? []) as $pauta)<option value="{{ data_get($pauta,'value','') }}" data-agency-id="{{ data_get($pauta,'agency_id','') }}" @selected((string)($filters['pauta_id']??'')===(string)data_get($pauta,'value',''))>{{ data_get($pauta,'label','Pauta sin nombre') }}</option>@endforeach</select></div><div class="col-xl-2 col-md-6"><label>Periodo</label><select class="form-select form-select-sm" id="execPeriodSelect"><option value="">Periodo seleccionado</option><option value="month">Mes actual</option><option value="quarter">Trimestre actual</option><option value="custom">Rango personalizado</option></select></div><div class="col-xl-1"><button class="btn btn-primary btn-sm w-100" title="Aplicar filtros"><i class="bi bi-funnel"></i></button></div></div><div class="exec-period"><i class="bi bi-calendar3"></i><strong>Rango segmentado:</strong><button type="button" data-range="today">Hoy</button><button type="button" data-range="week">Semana actual</button><button type="button" data-range="month">Mes actual</button><button type="button" data-range="quarter">Trimestre actual</button><button type="button" data-range="custom">Personalizado</button><span class="ms-auto">{{ ($filters['from']??'')&&($filters['to']??'')?$filters['from'].' → '.$filters['to']:'Periodo de la pauta' }}</span></div><div class="row g-2 mt-1 d-none" id="execCustomRange"><div class="col-md-3"><label>Desde</label><input type="month" name="from" value="{{ $filters['from']??'' }}" class="form-control form-control-sm"></div><div class="col-md-3"><label>Hasta</label><input type="month" name="to" value="{{ $filters['to']??'' }}" class="form-control form-control-sm"></div></div></form>
 <div class="exec-kpis"><div class="exec-kpi"><div class="exec-kpi-top"><span class="exec-kpi-icon blue"><i class="bi bi-calendar-event"></i></span><label>Spots programados</label></div><strong class="text-primary">{{ number_format($pauta['programmed']??0) }}</strong></div><div class="exec-kpi"><div class="exec-kpi-top"><span class="exec-kpi-icon teal"><i class="bi bi-layers"></i></span><label>Evidencias esperadas</label></div><strong class="text-info">{{ number_format($summary['expected']) }}</strong></div><div class="exec-kpi"><div class="exec-kpi-top"><span class="exec-kpi-icon green"><i class="bi bi-check2-square"></i></span><label>Evidencias recibidas</label></div><strong class="text-success">{{ number_format($summary['received']) }}</strong></div><div class="exec-kpi"><div class="exec-kpi-top"><span class="exec-kpi-icon cyan"><i class="bi bi-bullseye"></i></span><label>Cumplimiento de entrega</label></div><strong style="color:#087f8c">{{ $summary['delivery_percentage'] }}%</strong></div><div class="exec-kpi"><div class="exec-kpi-top"><span class="exec-kpi-icon amber"><i class="bi bi-clock"></i></span><label>Evidencias pendientes</label></div><strong style="color:#d89400">{{ number_format($summary['pending']) }}</strong></div><div class="exec-kpi"><div class="exec-kpi-top"><span class="exec-kpi-icon red"><i class="bi bi-exclamation-triangle"></i></span><label>Evidencias con problemas</label></div><strong class="text-danger">{{ number_format($summary['observed']) }}</strong></div></div>
 <div class="exec-grid"><div class="exec-card"><h3>Avance general de evidencias <i class="bi bi-info-circle text-muted"></i></h3><p class="card-sub">Meta institucional: 90%</p><div class="exec-bars">@foreach([['label'=>'Esperadas','value'=>$summary['expected'],'color'=>'#2779ad'],['label'=>'Recibidas','value'=>$summary['received'],'color'=>'#29925a'],['label'=>'Validadas','value'=>$summary['validated'],'color'=>'#087f8c']] as $bar)@php $pct=$summary['expected']?round(100*$bar['value']/$summary['expected']):0; @endphp<div class="exec-bar-row"><span>{{ $bar['label'] }}</span><div class="exec-bar"><span style="width:{{ min(100,$pct) }}%;background:{{ $bar['color'] }}"></span></div><b>{{ number_format($bar['value']) }}</b></div>@endforeach</div></div><div class="exec-card exec-comparison-card"><h3>Comparativo por dirección</h3><p class="card-sub">Esperadas, recibidas y validadas · tres barras por dirección</p><div class="exec-chart"><canvas id="sigetAgencyChart"></canvas></div></div><div class="exec-card"><h3>Estado de evidencias</h3><p class="card-sub">Distribución del universo</p>@foreach($statuses as $st)@php $totalStatus=max(1,$summary['expected']);$pct=round(100*$st['value']/$totalStatus); @endphp<div class="exec-status-row"><span>{{ $st['label'] }}</span><div class="exec-bar"><span style="width:{{ min(100,$pct) }}%;background:{{ $st['color'] }}"></span></div><b>{{ number_format($st['value']) }} ({{ $pct }}%)</b></div>@endforeach</div></div>
