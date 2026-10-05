@@ -50,8 +50,17 @@ $roleScope=match($roleCode){'ADMINISTRADOR'=>'Alcance global','DIRECTOR_GENERAL'
 .exec-period button{border:1px solid #dbe3ec;background:#fff;color:#53657a;border-radius:6px;padding:5px 8px;font-size:.66rem}
 .exec-period button.active,.exec-period button:hover{background:#e7f5f7;color:#087f8c;border-color:#8ad7dd}
 .exec-filters{background:transparent;border:0;padding:0;margin-bottom:0;box-shadow:none}
-.exec-filters> .row{display:none}
+.exec-filters>.row{
+  display:grid!important;grid-template-columns:1.05fr 1.25fr 1.05fr .95fr 42px;
+  gap:9px;align-items:end;margin:0!important
+}
+.exec-filters>.row>[class*="col-"]{width:auto!important;max-width:none!important;flex:none!important;padding:0!important}
+.exec-filters>.row>div>label{display:block;color:#68798d;font-size:.66rem;font-weight:700;line-height:1.1;margin-bottom:4px}
+.exec-filters>.row .form-select,.exec-filters>.row .form-control{height:42px;min-height:42px;border-radius:9px;font-size:.74rem;border-color:#d8e1ec}
+.exec-filters>.row>div:last-child .btn{height:42px;border-radius:9px}
 .exec-filters .exec-filterbar{display:grid}
+.exec-filters>.row .exec-period{grid-column:1/-1}
+.exec-filters>.row #execCustomRange{grid-column:1/-1}
 .exec-kpis{
   display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:7px;margin-bottom:12px;align-items:stretch
 }
@@ -102,9 +111,26 @@ html[data-bs-theme=dark] .exec-filter-control select{color:#e6eef4}html[data-bs-
 html[data-bs-theme=dark] .exec-kpi,html[data-bs-theme=dark] .exec-card,html[data-bs-theme=dark] .exec-table-card{background:#151c24;border-color:#2e3b49}
 html[data-bs-theme=dark] .exec-kpi label,html[data-bs-theme=dark] .exec-bar-row,html[data-bs-theme=dark] .exec-status-row{color:#c0ccd6}
 html[data-bs-theme=dark] .exec-table th{background:#19232e;color:#b1c0ce}html[data-bs-theme=dark] .exec-table td{border-color:#2c3845;color:#d9e5ed}
-@media(max-width:1500px){.exec-kpis{grid-template-columns:repeat(3,minmax(0,1fr))}.exec-filterbar{grid-template-columns:repeat(4,minmax(0,1fr))}.exec-filter-actions{grid-column:1/-1;justify-content:flex-end}}
-@media(max-width:1100px){.exec-grid{grid-template-columns:1fr 1fr}.exec-filterbar{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media(max-width:700px){.exec{margin:-18px;padding:0 14px 18px}.exec-header{display:block}.exec-header-actions{justify-content:flex-start;margin-top:9px}.exec-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.exec-grid{grid-template-columns:1fr}.exec-filterbar{grid-template-columns:1fr}.exec-filter-actions{grid-column:auto;justify-content:stretch}.exec-filter-actions .btn{flex:1}.exec-chart{height:225px;min-height:225px}.exec-table td:first-child{min-width:145px}.agency-mark{width:62px;flex-basis:62px;height:40px}}
+@media(max-width:1500px){
+  .exec-kpis{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .exec-filters>.row{grid-template-columns:repeat(4,minmax(0,1fr))}
+  .exec-filters>.row>div:last-child{grid-column:auto}
+}
+@media(max-width:1100px){
+  .exec-grid{grid-template-columns:1fr 1fr}
+  .exec-filters>.row{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:700px){
+  .exec{margin:-18px;padding:0 14px 18px}
+  .exec-header{display:block}
+  .exec-header-actions{justify-content:flex-start;margin-top:9px}
+  .exec-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .exec-grid{grid-template-columns:1fr}
+  .exec-filters>.row{grid-template-columns:1fr}
+  .exec-chart{height:225px;min-height:225px}
+  .exec-table td:first-child{min-width:145px}
+  .agency-mark{width:62px;flex-basis:62px;height:40px}
+}
 </style>
 <div class="exec">
 <div class="exec-header">
