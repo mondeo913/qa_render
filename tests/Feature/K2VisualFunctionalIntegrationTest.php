@@ -27,8 +27,39 @@ class K2VisualFunctionalIntegrationTest extends TestCase {
         $this->seed(RolePermissionSeeder::class);
         $role=Role::where('code','DIRECTOR_TRANSMISION')->firstOrFail();
         $user=User::factory()->create(['role_id'=>$role->id,'status'=>'ACTIVE']);
-        $this->actingAs($user)->get(route('dashboard'))->assertOk()->assertSee('Dashboard de Transmisión');
+        $this->actingAs($user)->get(route('dashboard'))->assertOk()->assertSee('Dashboard operativo')->assertSee('Dirección de Transmisión');
         $this->assertTrue($role->permissions()->where('code','scheduled_load.close')->exists());
+    }
+
+    public function test_operational_dashboard_uses_standardized_geometry_and_keeps_filter_flow(): void {
+        $this->seed(RolePermissionSeeder::class);
+        $role = Role::where('code', 'DIRECTOR_TRANSMISION')->firstOrFail();
+        $agency = ContractingAgency::factory()->create(['name' => 'Dependencia estándar']);
+        $user = User::factory()->create([
+            'role_id' => $role->id,
+            'status' => 'ACTIVE',
+            'contracting_agency_id' => $agency->id,
+        ]);
+
+        $response = $this->actingAs($user)->get(route('dashboard', [
+            'agency_id' => $agency->id,
+        ]));
+
+        $response->assertOk()
+            ->assertSee('Dashboard operativo')
+            ->assertSee('Avance por unidad interna')
+            ->assertSee('Calendario de fechas programadas')
+            ->assertSee('Estado del expediente')
+            ->assertSee('Tendencia de entregas')
+            ->assertSee('Carga por responsable')
+            ->assertSee('Bandeja de evidencias')
+            ->assertSee('Exportar')
+            ->assertSee('Más filtros')
+            ->assertSee('name="agency_id"', false)
+            ->assertSee('name="pauta_id"', false)
+            ->assertSee('name="organizational_unit_id"', false)
+            ->assertSee('name="responsible_id"', false)
+            ->assertSee('value="'.$agency->id.'" selected', false);
     }
 
     public function test_executive_dashboard_is_available_to_admin_and_general_director(): void {
