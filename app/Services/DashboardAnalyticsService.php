@@ -296,7 +296,7 @@ final class DashboardAnalyticsService
         $dueSoon = (clone $base())->whereBetween('effective_close_at', [now(), now()->addDays(3)])->whereNotIn('status', ['VALIDADO_Y_CERRADO', 'CANCELADA'])->count();
         $agencyPerformance = $agencyProgress;
         $directionPerformance = $directionProgress;
-        $riskItems = (clone $base())->with(['agency', 'deliverables.organizationalUnit'])->whereIn('status', ['VENCIDA', 'OBSERVADA', 'EN_REVISION_INSTITUCIONAL', 'PENDIENTE_DOCUMENTO_FIRMADO'])->orderByRaw("CASE status WHEN 'VENCIDA' THEN 1 WHEN 'OBSERVADA' THEN 2 ELSE 3 END")->orderBy('effective_close_at')->limit(15)->get();
+        $riskItems = (clone $base())->with(['agency', 'deliverables.organizationalUnit', 'deliverables.responsibleUser'])->whereIn('status', ['VENCIDA', 'OBSERVADA', 'EN_REVISION_INSTITUCIONAL', 'PENDIENTE_DOCUMENTO_FIRMADO'])->orderByRaw("CASE status WHEN 'VENCIDA' THEN 1 WHEN 'OBSERVADA' THEN 2 ELSE 3 END")->orderBy('effective_close_at')->limit(15)->get();
 
         return [
             'kpis' => [
