@@ -645,6 +645,161 @@
     }
 }
 
+
+/* SIGET — AJUSTE FINAL: KANBAN MÁS COMPACTO Y ENCABEZADOS NEUTROS. */
+
+.board-direction-compact .siget-kanban{
+    grid-template-columns:repeat(4,minmax(0,1fr))!important;
+    gap:8px!important;
+    width:100%!important;
+    max-width:100%!important;
+    min-width:0!important;
+    overflow:visible!important;
+}
+.board-direction-compact .siget-kanban-column{
+    width:100%!important;
+    min-width:0!important;
+    height:278px!important;
+    min-height:278px!important;
+    max-height:278px!important;
+    border-radius:9px!important;
+}
+.board-direction-compact .siget-kanban-column>header{
+    height:56px!important;
+    min-height:56px!important;
+    padding:7px 9px!important;
+    color:var(--text,#f4f7fb)!important;
+}
+.board-direction-compact .siget-kanban-column>header h3,
+.board-direction-compact .siget-kanban-column>header h3 *,
+.board-direction-compact .siget-kanban-column>header p{
+    color:var(--text,#f4f7fb)!important;
+}
+html[data-bs-theme=dark] .board-direction-compact .siget-kanban-column>header h3,
+html[data-bs-theme=dark] .board-direction-compact .siget-kanban-column>header h3 *{
+    color:#f4f7fb!important;
+}
+.board-direction-compact .siget-kanban-column>header h3{
+    font-size:.78rem!important;
+    line-height:1.05!important;
+    font-weight:800!important;
+}
+.board-direction-compact .siget-kanban-column>header p{
+    font-size:.54rem!important;
+    line-height:1.08!important;
+    margin:3px 0 0!important;
+    color:var(--muted,#aeb7c5)!important;
+}
+.board-direction-compact .siget-kanban-column>header>span{
+    width:22px!important;
+    min-width:22px!important;
+    height:22px!important;
+    border-radius:6px!important;
+    font-size:.60rem!important;
+}
+.board-direction-compact .siget-kanban-stack{
+    height:222px!important;
+    min-height:0!important;
+    max-height:222px!important;
+    padding:6px!important;
+    gap:6px!important;
+    overflow-y:auto!important;
+    overflow-x:hidden!important;
+}
+.board-direction-compact .siget-load-card{
+    height:150px!important;
+    min-height:150px!important;
+    max-height:150px!important;
+    padding:8px!important;
+    border-radius:7px!important;
+}
+.board-direction-compact .siget-load-agency{
+    font-size:.55rem!important;
+    line-height:1!important;
+}
+.board-direction-compact .siget-load-card h4{
+    height:15px!important;
+    max-height:15px!important;
+    margin:2px 0 0!important;
+    font-size:.70rem!important;
+    line-height:15px!important;
+}
+.board-direction-compact .siget-load-card .load-card-badges{
+    height:17px!important;
+    margin:4px 0 3px!important;
+    gap:3px!important;
+}
+.board-direction-compact .siget-load-card .load-card-badges .badge{
+    height:16px!important;
+    padding:1px 5px!important;
+    font-size:.51rem!important;
+    line-height:14px!important;
+}
+.board-direction-compact .siget-load-card .siget-load-units{
+    height:13px!important;
+    max-height:13px!important;
+    font-size:.53rem!important;
+    line-height:13px!important;
+}
+.board-direction-compact .siget-load-card .siget-load-meta{
+    height:13px!important;
+    max-height:13px!important;
+    margin-top:3px!important;
+    gap:6px!important;
+    font-size:.52rem!important;
+    line-height:13px!important;
+}
+.board-direction-compact .siget-load-card .load-card-progress-label{
+    height:13px!important;
+    margin:4px 0 1px!important;
+    font-size:.52rem!important;
+    line-height:13px!important;
+}
+.board-direction-compact .siget-load-card .load-card-progress-label strong{
+    font-size:.58rem!important;
+}
+.board-direction-compact .siget-load-card .load-card-progress{
+    height:4px!important;
+    min-height:4px!important;
+}
+.board-direction-compact .siget-load-card .siget-load-footer{
+    height:21px!important;
+    margin:4px 0 0!important;
+    padding-top:3px!important;
+    gap:5px!important;
+}
+.board-direction-compact .siget-load-card .siget-load-counters{
+    gap:6px!important;
+    font-size:.51rem!important;
+}
+.board-direction-compact .siget-load-card .siget-load-footer .btn{
+    height:21px!important;
+    min-height:21px!important;
+    padding:0 6px!important;
+    font-size:.52rem!important;
+}
+.board-direction-compact .siget-load-card .siget-assignees{
+    height:12px!important;
+    max-height:12px!important;
+    margin:3px 0 0!important;
+    font-size:.49rem!important;
+    line-height:12px!important;
+}
+.board-direction-compact .siget-kanban-empty{
+    height:70px!important;
+    min-height:70px!important;
+    padding:8px!important;
+    font-size:.58rem!important;
+}
+@media(max-width:1000px){
+    .board-direction-compact .siget-kanban{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+}
+@media(max-width:560px){
+    .board-direction-compact .siget-kanban{grid-template-columns:1fr!important}
+    .board-direction-compact .siget-kanban-column{height:auto!important;min-height:0!important;max-height:none!important}
+    .board-direction-compact .siget-kanban-stack{height:auto!important;max-height:none!important;overflow:visible!important}
+}
+
 </style>
 
 <div class="siget-board-heading board-heading d-flex justify-content-between align-items-start gap-3">
