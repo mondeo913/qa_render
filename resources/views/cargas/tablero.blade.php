@@ -1194,6 +1194,84 @@ html[data-bs-theme=dark] .board-direction-compact .siget-board-heading>div>p:las
     }
 }
 
+
+/* DETALLE DE CARGAS: compactar únicamente las cajas inferiores de cada estado. */
+.board-direction-compact .siget-kanban-stack{
+    padding:8px!important;
+    gap:7px!important;
+}
+.board-direction-compact .siget-load-card{
+    padding:8px!important;
+    border-radius:9px!important;
+}
+.board-direction-compact .siget-load-card .d-flex.justify-content-between.gap-2{
+    gap:6px!important;
+}
+.board-direction-compact .siget-load-agency{
+    font-size:.57rem!important;
+    line-height:1.05!important;
+    margin-bottom:1px!important;
+}
+.board-direction-compact .siget-load-card h4{
+    font-size:.70rem!important;
+    line-height:1.12!important;
+    margin:1px 0 5px!important;
+    -webkit-line-clamp:2!important;
+}
+.board-direction-compact .siget-load-card .d-flex.flex-wrap.gap-1.mb-2{
+    gap:3px!important;
+    margin-bottom:5px!important;
+}
+.board-direction-compact .siget-load-card .badge{
+    font-size:.52rem!important;
+    line-height:1.05!important;
+    padding:.18rem .32rem!important;
+    border-radius:4px!important;
+}
+.board-direction-compact .siget-load-units,
+.board-direction-compact .siget-load-meta{
+    font-size:.55rem!important;
+    line-height:1.15!important;
+    gap:2px!important;
+}
+.board-direction-compact .siget-load-units{margin-top:3px!important}
+.board-direction-compact .siget-load-meta{margin-top:3px!important}
+.board-direction-compact .siget-load-card .mt-3{
+    margin-top:7px!important;
+}
+.board-direction-compact .siget-load-card .mb-1{
+    margin-bottom:3px!important;
+}
+.board-direction-compact .siget-load-card .small{
+    font-size:.56rem!important;
+    line-height:1.1!important;
+}
+.board-direction-compact .siget-load-card .progress{
+    height:5px!important;
+    margin-top:0!important;
+    border-radius:4px!important;
+}
+.board-direction-compact .siget-load-footer{
+    margin-top:6px!important;
+    padding-top:6px!important;
+    gap:6px!important;
+}
+.board-direction-compact .siget-load-counters{
+    font-size:.53rem!important;
+    gap:6px!important;
+}
+.board-direction-compact .siget-load-footer .btn{
+    height:27px!important;
+    min-height:27px!important;
+    padding:.18rem .42rem!important;
+    font-size:.56rem!important;
+}
+.board-direction-compact .siget-assignees{
+    margin-top:5px!important;
+    font-size:.53rem!important;
+    line-height:1.1!important;
+}
+
 </style>
 
 <div class="siget-board-heading board-heading d-flex justify-content-between align-items-start gap-3">
