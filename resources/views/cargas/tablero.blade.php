@@ -951,6 +951,249 @@ html[data-bs-theme=dark] .board-direction-compact .siget-board-heading>div>p:las
     }
 }
 
+
+/* SIGET — AJUSTE VISUAL 2: tamaño real de tarjetas internas + catálogo/filtros legibles. */
+
+/* Catálogo de dependencias: recuperar tamaño visual, sin hacerlo voluminoso. */
+.board-direction-compact>.siget-card .card-header{
+    min-height:52px!important;
+    padding:10px 13px!important;
+}
+.board-direction-compact>.siget-card .card-header h2{
+    font-size:.96rem!important;
+    line-height:1.15!important;
+}
+.board-direction-compact>.siget-card .card-header p{
+    font-size:.72rem!important;
+    line-height:1.22!important;
+    margin:3px 0 0!important;
+}
+.board-direction-compact>.siget-card .card-header>.badge{
+    font-size:.65rem!important;
+}
+.board-direction-compact>.siget-card .card-body{
+    padding:10px 12px!important;
+}
+.board-direction-compact .siget-dependency-grid{
+    grid-template-columns:repeat(auto-fit,minmax(190px,1fr))!important;
+    gap:9px!important;
+}
+.board-direction-compact .siget-dependency-card{
+    min-height:86px!important;
+    height:86px!important;
+    padding:9px 10px!important;
+    border-radius:9px!important;
+}
+.board-direction-compact .siget-dependency-logo{
+    width:34px!important;
+    height:34px!important;
+    border-radius:7px!important;
+}
+.board-direction-compact .siget-dependency-top{
+    gap:8px!important;
+}
+.board-direction-compact .siget-dependency-top strong{
+    font-size:.72rem!important;
+    line-height:1.08!important;
+    font-weight:800!important;
+}
+.board-direction-compact .siget-dependency-top small{
+    font-size:.58rem!important;
+    line-height:1.05!important;
+}
+.board-direction-compact .siget-dependency-stats{
+    gap:8px!important;
+    margin-top:6px!important;
+    font-size:.54rem!important;
+    line-height:1.05!important;
+    flex-wrap:wrap!important;
+}
+.board-direction-compact .siget-dependency-card .progress{
+    height:4px!important;
+    margin-top:6px!important;
+}
+.board-direction-compact .siget-dependency-card .small{
+    font-size:.56rem!important;
+    line-height:1.1!important;
+}
+
+/* Filtros: aumentar fuente y controles para lectura normal. */
+.board-direction-compact #loadBoardFilters .card-body{
+    padding:11px 12px!important;
+}
+.board-direction-compact #loadBoardFilters .form-label{
+    font-size:.72rem!important;
+    line-height:1.1!important;
+    margin-bottom:4px!important;
+    font-weight:700!important;
+}
+.board-direction-compact #loadBoardFilters .form-control,
+.board-direction-compact #loadBoardFilters .form-select,
+.board-direction-compact #loadBoardFilters .input-group-text{
+    height:40px!important;
+    min-height:40px!important;
+    font-size:.74rem!important;
+    padding:.35rem .55rem!important;
+    border-radius:7px!important;
+}
+.board-direction-compact #loadBoardFilters .btn{
+    height:40px!important;
+    min-height:40px!important;
+    padding:.3rem .65rem!important;
+    font-size:.68rem!important;
+    border-radius:7px!important;
+}
+.board-direction-compact .board-period-segmented{
+    font-size:.68rem!important;
+}
+.board-direction-compact .board-period-segmented .btn{
+    height:30px!important;
+    min-height:30px!important;
+    font-size:.62rem!important;
+    padding:.2rem .55rem!important;
+}
+
+/* Tarjetas INTERNAS del contenido: compactación fuerte y consistente. */
+.board-direction-compact .siget-kanban{
+    gap:8px!important;
+}
+.board-direction-compact .siget-kanban-column{
+    height:300px!important;
+    min-height:300px!important;
+    max-height:300px!important;
+}
+.board-direction-compact .siget-kanban-column>header{
+    height:50px!important;
+    min-height:50px!important;
+    padding:6px 8px!important;
+}
+.board-direction-compact .siget-kanban-stack{
+    height:250px!important;
+    min-height:250px!important;
+    max-height:250px!important;
+    padding:5px!important;
+    gap:5px!important;
+}
+
+/* Es la tarjeta de cada IMSS/IPAB/Pauta, no la columna de estado. */
+.board-direction-compact article.siget-load-card{
+    display:block!important;
+    width:100%!important;
+    height:104px!important;
+    min-height:104px!important;
+    max-height:104px!important;
+    padding:6px!important;
+    margin:0!important;
+    border-radius:6px!important;
+    box-sizing:border-box!important;
+    overflow:hidden!important;
+}
+.board-direction-compact article.siget-load-card .load-card-top{
+    height:19px!important;
+    min-height:19px!important;
+    gap:4px!important;
+}
+.board-direction-compact article.siget-load-card .siget-load-agency{
+    height:9px!important;
+    font-size:.47rem!important;
+    line-height:9px!important;
+}
+.board-direction-compact article.siget-load-card h4{
+    height:11px!important;
+    max-height:11px!important;
+    margin:1px 0 0!important;
+    font-size:.58rem!important;
+    line-height:11px!important;
+    font-weight:800!important;
+}
+.board-direction-compact article.siget-load-card .siget-load-card .siget-traffic,
+.board-direction-compact article.siget-load-card .siget-traffic{
+    width:7px!important;
+    height:7px!important;
+}
+.board-direction-compact article.siget-load-card .load-card-badges{
+    height:13px!important;
+    margin:2px 0 1px!important;
+    gap:2px!important;
+}
+.board-direction-compact article.siget-load-card .load-card-badges .badge{
+    height:13px!important;
+    padding:1px 4px!important;
+    font-size:.42rem!important;
+    line-height:11px!important;
+}
+.board-direction-compact article.siget-load-card .siget-load-units{
+    height:10px!important;
+    max-height:10px!important;
+    font-size:.44rem!important;
+    line-height:10px!important;
+}
+.board-direction-compact article.siget-load-card .siget-load-meta{
+    height:10px!important;
+    max-height:10px!important;
+    margin-top:1px!important;
+    gap:4px!important;
+    font-size:.43rem!important;
+    line-height:10px!important;
+}
+.board-direction-compact article.siget-load-card .load-card-progress-label{
+    height:9px!important;
+    margin:2px 0 1px!important;
+    font-size:.43rem!important;
+    line-height:9px!important;
+}
+.board-direction-compact article.siget-load-card .load-card-progress-label strong{
+    font-size:.49rem!important;
+}
+.board-direction-compact article.siget-load-card .load-card-progress{
+    height:2px!important;
+    min-height:2px!important;
+}
+.board-direction-compact article.siget-load-card .siget-load-footer{
+    height:16px!important;
+    margin:2px 0 0!important;
+    padding-top:0!important;
+    gap:4px!important;
+}
+.board-direction-compact article.siget-load-card .siget-load-counters{
+    gap:4px!important;
+    font-size:.41rem!important;
+}
+.board-direction-compact article.siget-load-card .siget-load-footer .btn{
+    height:16px!important;
+    min-height:16px!important;
+    padding:0 5px!important;
+    font-size:.42rem!important;
+    line-height:14px!important;
+}
+.board-direction-compact article.siget-load-card .siget-assignees{
+    height:8px!important;
+    max-height:8px!important;
+    margin:1px 0 0!important;
+    font-size:.38rem!important;
+    line-height:8px!important;
+}
+
+/* Evitar que Bootstrap o estilos anteriores vuelvan a inflar las tarjetas. */
+.board-direction-compact .siget-kanban-stack>article.siget-load-card{
+    flex:0 0 104px!important;
+}
+@media(max-width:1200px){
+    .board-direction-compact .siget-dependency-grid{
+        grid-template-columns:repeat(3,minmax(180px,1fr))!important;
+    }
+}
+@media(max-width:760px){
+    .board-direction-compact .siget-dependency-grid{
+        grid-template-columns:repeat(2,minmax(160px,1fr))!important;
+    }
+}
+@media(max-width:560px){
+    .board-direction-compact .siget-dependency-grid{
+        grid-template-columns:1fr!important;
+    }
+}
+
 </style>
 
 <div class="siget-board-heading board-heading d-flex justify-content-between align-items-start gap-3">
