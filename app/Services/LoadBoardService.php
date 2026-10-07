@@ -59,7 +59,7 @@ final class LoadBoardService
         }
 
         $loads=$this->access->scopeLoads(ScheduledLoad::query(),$user);
-        if(!empty($filters['agency_id']))$loads->where('contracting_agency_id',(int)$filters['agency_id']);
+        if(!empty($filters['agency_id']))$loads->where('scheduled_loads.contracting_agency_id',(int)$filters['agency_id']);
         if(!empty($filters['unit_id'])){
             $unitIds=$this->parseIds($filters['unit_id']);
             if($unitIds)$loads->whereHas('deliverables',fn(Builder $d)=>$d->whereIn('organizational_unit_id',$unitIds));
