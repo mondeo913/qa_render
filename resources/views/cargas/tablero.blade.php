@@ -1272,6 +1272,234 @@ html[data-bs-theme=dark] .board-direction-compact .siget-board-heading>div>p:las
     line-height:1.1!important;
 }
 
+
+/* Estándar de interfaz compartido con Centro de Inteligencia: tipografía, controles y densidad. Solo presentación. */
+.board-direction-compact,
+.board-direction-compact button,
+.board-direction-compact input,
+.board-direction-compact select,
+.board-direction-compact .btn,
+.board-direction-compact .form-control,
+.board-direction-compact .form-select{
+    font-family:Inter,"Segoe UI",system-ui,sans-serif!important;
+}
+.board-direction-compact .siget-card .card-header{
+    padding:11px 14px!important;
+}
+.board-direction-compact .siget-card .card-header h2{
+    font-size:.9rem!important;
+    line-height:1.2!important;
+    font-weight:800!important;
+}
+.board-direction-compact .siget-card .card-header p{
+    font-size:.68rem!important;
+    line-height:1.3!important;
+}
+.board-direction-compact #loadBoardFilters .form-label{
+    font-size:.66rem!important;
+    line-height:1.1!important;
+    margin-bottom:3px!important;
+}
+.board-direction-compact #loadBoardFilters .form-control,
+.board-direction-compact #loadBoardFilters .form-select{
+    height:32px!important;
+    min-height:32px!important;
+    padding:.34rem .55rem!important;
+    font-size:.76rem!important;
+}
+.board-direction-compact #loadBoardFilters .input-group-text{
+    height:32px!important;
+    font-size:.76rem!important;
+    padding:.34rem .55rem!important;
+}
+.board-direction-compact #loadBoardFilters .btn{
+    height:32px!important;
+    min-height:32px!important;
+    padding:.34rem .55rem!important;
+    font-size:.76rem!important;
+}
+.board-direction-compact .board-period-segmented{
+    font-size:.68rem!important;
+}
+.board-direction-compact .board-period-segmented .btn{
+    height:30px!important;
+    min-height:30px!important;
+    padding:.25rem .55rem!important;
+    font-size:.64rem!important;
+}
+.board-direction-compact .board-period-segmented .small{
+    font-size:.63rem!important;
+}
+.board-direction-compact .board-kpis{
+    gap:10px!important;
+    margin-bottom:14px!important;
+}
+.board-direction-compact .board-kpi{
+    height:94px!important;
+    min-height:94px!important;
+    padding:12px 13px!important;
+    grid-template-columns:36px minmax(0,1fr)!important;
+    column-gap:10px!important;
+    border-radius:13px!important;
+}
+.board-direction-compact .board-kpi .board-kpi-icon{
+    width:36px!important;
+    height:36px!important;
+    border-radius:10px!important;
+    font-size:.9rem!important;
+}
+.board-direction-compact .board-kpi small{
+    font-size:.7rem!important;
+    line-height:1.12!important;
+}
+.board-direction-compact .board-kpi strong{
+    font-size:1.35rem!important;
+    line-height:1.05!important;
+}
+
+/* Las cuatro columnas usan la misma geometría que los paneles de Inteligencia. */
+.board-direction-compact .siget-kanban{
+    display:grid!important;
+    grid-template-columns:repeat(4,minmax(0,1fr))!important;
+    gap:10px!important;
+    width:100%!important;
+    min-width:0!important;
+    max-width:100%!important;
+    margin:0!important;
+    overflow:visible!important;
+}
+.board-direction-compact .siget-kanban-column{
+    width:100%!important;
+    min-width:0!important;
+    max-width:none!important;
+    border-radius:14px!important;
+    overflow:hidden!important;
+    background:var(--surface2)!important;
+}
+.board-direction-compact .siget-kanban-column>header{
+    min-height:66px!important;
+    height:auto!important;
+    padding:11px 13px!important;
+    gap:9px!important;
+    box-sizing:border-box!important;
+    align-items:flex-start!important;
+}
+.board-direction-compact .siget-kanban-column>header h3{
+    margin:0!important;
+    font-size:.82rem!important;
+    line-height:1.18!important;
+    font-weight:800!important;
+    white-space:normal!important;
+    overflow-wrap:anywhere!important;
+}
+.board-direction-compact .siget-kanban-column>header p{
+    margin:4px 0 0!important;
+    font-size:.63rem!important;
+    line-height:1.25!important;
+    display:-webkit-box!important;
+    -webkit-box-orient:vertical!important;
+    -webkit-line-clamp:2!important;
+    overflow:hidden!important;
+}
+.board-direction-compact .siget-kanban-column>header>span{
+    width:27px!important;
+    min-width:27px!important;
+    height:27px!important;
+    border-radius:8px!important;
+    font-size:.67rem!important;
+}
+.board-direction-compact .siget-kanban-stack{
+    padding:8px!important;
+    gap:8px!important;
+    min-height:110px!important;
+}
+.board-direction-compact .siget-load-card{
+    padding:9px!important;
+    border-radius:10px!important;
+}
+.board-direction-compact .siget-load-agency{
+    font-size:.58rem!important;
+    line-height:1.05!important;
+}
+.board-direction-compact .siget-load-card h4{
+    font-size:.72rem!important;
+    line-height:1.15!important;
+    margin:2px 0 6px!important;
+}
+.board-direction-compact .siget-load-card .badge{
+    font-size:.53rem!important;
+    line-height:1.05!important;
+    padding:.2rem .33rem!important;
+    border-radius:5px!important;
+}
+.board-direction-compact .siget-load-units,
+.board-direction-compact .siget-load-meta,
+.board-direction-compact .siget-assignees{
+    font-size:.56rem!important;
+    line-height:1.2!important;
+}
+.board-direction-compact .siget-load-units{margin-top:4px!important;gap:3px!important}
+.board-direction-compact .siget-load-meta{margin-top:4px!important;gap:4px!important}
+.board-direction-compact .siget-load-card .small{
+    font-size:.57rem!important;
+}
+.board-direction-compact .siget-load-card .progress{
+    height:5px!important;
+}
+.board-direction-compact .siget-load-footer{
+    margin-top:7px!important;
+    padding-top:6px!important;
+    gap:6px!important;
+}
+.board-direction-compact .siget-load-counters{
+    font-size:.54rem!important;
+    gap:6px!important;
+}
+.board-direction-compact .siget-load-footer .btn{
+    height:27px!important;
+    min-height:27px!important;
+    padding:.18rem .42rem!important;
+    font-size:.56rem!important;
+}
+.board-direction-compact .siget-kanban-empty{
+    min-height:90px!important;
+    padding:18px 10px!important;
+    font-size:.66rem!important;
+}
+.board-direction-compact .siget-kanban-done{
+    border-color:#22a06b!important;
+}
+.board-direction-compact .siget-kanban-done>header{
+    border-top:4px solid #22a06b!important;
+    background:color-mix(in srgb,#22a06b 12%,var(--surface2))!important;
+}
+.board-direction-compact .siget-kanban-done .progress-bar{
+    background:#22a06b!important;
+}
+@media(max-width:1200px){
+    .board-direction-compact .siget-kanban{
+        gap:9px!important;
+    }
+}
+@media(max-width:980px){
+    .board-direction-compact .siget-kanban{
+        grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    }
+}
+@media(max-width:700px){
+    .board-direction-compact .board-kpis{
+        grid-template-columns:repeat(2,minmax(0,1fr))!important;
+        gap:8px!important;
+    }
+    .board-direction-compact .board-kpi{
+        height:92px!important;
+        min-height:92px!important;
+    }
+    .board-direction-compact .siget-kanban{
+        grid-template-columns:1fr!important;
+    }
+}
+
 </style>
 
 <div class="siget-board-heading board-heading d-flex justify-content-between align-items-start gap-3">
