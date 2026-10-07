@@ -2,6 +2,92 @@
 @section('title', 'Tablero de cargas')
 @section('page-title', 'Tablero de cargas por dependencia')
 @section('content')
+<style id="siget-board-runtime-fix">
+/* SIGET: override visual for every known K2 runtime branch. */
+.siget-kanban{
+  display:grid!important;
+  grid-template-columns:repeat(4,minmax(0,1fr))!important;
+  gap:8px!important;
+  width:100%!important;
+  max-width:100%!important;
+  min-width:0!important;
+  overflow:visible!important;
+}
+.siget-kanban-column{
+  min-width:0!important;
+  width:100%!important;
+  height:278px!important;
+  min-height:278px!important;
+  max-height:278px!important;
+  overflow:hidden!important;
+  border-radius:9px!important;
+}
+.siget-kanban-column>header{
+  height:56px!important;
+  min-height:56px!important;
+  padding:7px 9px!important;
+  color:var(--text,#f4f7fb)!important;
+  box-sizing:border-box!important;
+}
+.siget-kanban-column>header h3,
+.siget-kanban-column>header h3 i{
+  color:#f4f7fb!important;
+  font-size:.78rem!important;
+  line-height:1.05!important;
+  font-weight:800!important;
+}
+.siget-kanban-column>header p{
+  color:var(--muted,#aeb7c5)!important;
+  font-size:.54rem!important;
+  line-height:1.08!important;
+  margin:3px 0 0!important;
+}
+.siget-kanban-column>header>span{
+  width:22px!important;
+  min-width:22px!important;
+  height:22px!important;
+  font-size:.60rem!important;
+}
+.siget-kanban-stack{
+  height:222px!important;
+  min-height:0!important;
+  max-height:222px!important;
+  padding:6px!important;
+  gap:6px!important;
+  overflow-y:auto!important;
+  overflow-x:hidden!important;
+}
+.siget-load-card{
+  height:150px!important;
+  min-height:150px!important;
+  max-height:150px!important;
+  padding:8px!important;
+  border-radius:7px!important;
+  overflow:hidden!important;
+  box-sizing:border-box!important;
+}
+.siget-load-agency{font-size:.55rem!important;line-height:1!important}
+.siget-load-card h4{
+  height:15px!important;max-height:15px!important;
+  margin:2px 0 0!important;
+  font-size:.70rem!important;line-height:15px!important;
+}
+.siget-load-card .badge{
+  font-size:.51rem!important;
+  padding:1px 5px!important;
+  line-height:14px!important;
+}
+.siget-load-units,.siget-load-meta{font-size:.52rem!important;line-height:13px!important}
+.siget-load-meta{gap:6px!important;margin-top:3px!important}
+.siget-load-card .progress{height:4px!important;min-height:4px!important}
+.siget-load-footer{margin-top:4px!important;padding-top:3px!important}
+.siget-load-counters{font-size:.51rem!important;gap:6px!important}
+.siget-load-footer .btn{height:21px!important;min-height:21px!important;font-size:.52rem!important;padding:0 6px!important}
+.siget-assignees{font-size:.49rem!important;line-height:12px!important}
+.siget-kanban-empty{height:70px!important;min-height:70px!important;font-size:.58rem!important}
+@media(max-width:1000px){.siget-kanban{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
+@media(max-width:560px){.siget-kanban{grid-template-columns:1fr!important}.siget-kanban-column{height:auto!important;min-height:0!important;max-height:none!important}.siget-kanban-stack{height:auto!important;max-height:none!important;overflow:visible!important}}
+</style>
 <div class="siget-board-heading mb-4">
     <div>
         <p class="mb-1 text-secondary">{{ $scopeLabel }}</p>
