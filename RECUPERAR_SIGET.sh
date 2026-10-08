@@ -79,17 +79,19 @@ fi
 
 wait_for_http "http://127.0.0.1:8000/up" "SIGET" 60
 
-echo
-show_service_status
-echo
 
+# Arrancar el watchdog ANTES de esperar HTTP. Así puede recuperar Laravel
+# aunque el arranque inicial del servidor falle.
 WATCHDOG_SCRIPT="${ROOT}/.devcontainer/siget-watchdog.sh"
 WATCHDOG_LOG="${LOG_DIR}/siget-watchdog-launcher.log"
 if [[ -f "${WATCHDOG_SCRIPT}" ]]; then
-  chmod +x "${WATCHDOG_SCRIPT}" >/dev/null 2>&1 || true
+  chmod +x "${WATCHDOG_SCRIPT}" "${ROOT}/.devcontainer/siget-web-worker.sh" >/dev/null 2>&1 || true
   nohup bash "${WATCHDOG_SCRIPT}" >> "${WATCHDOG_LOG}" 2>&1 &
-  echo "Watchdog SIGET activo en segundo plano."
+  echo "Watchdog SIGET activado en segundo plano."
 fi
 
+
+show_service_status
+echo
 echo "SIGET disponible: $(app_url)/iniciar-sesion"
 echo "La base persistente NO se borra ni se reinicializa durante esta recuperación."
