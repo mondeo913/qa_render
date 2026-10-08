@@ -29,6 +29,9 @@ if command -v npm >/dev/null 2>&1 && [[ -f package.json ]]; then
   fi
 fi
 
+# Eliminar cualquier servidor Laravel antiguo antes de levantar el nuevo router.
+stop_legacy_laravel_server
+
 # Recuperación idempotente: una sesión inactiva nunca debe dejar a SIGET
 # apuntando a un PostgreSQL apagado. Se recupera solo lo que esté caído.
 start_postgres
