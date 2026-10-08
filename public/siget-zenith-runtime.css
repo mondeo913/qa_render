@@ -1421,3 +1421,200 @@ body.siget-body .progress{background:var(--muted)!important}
 body.siget-body .progress-bar{background:var(--primary)!important}
 body.siget-body .btn-outline-primary{--bs-btn-color:var(--primary);--bs-btn-border-color:var(--primary);--bs-btn-hover-bg:var(--primary);--bs-btn-hover-border-color:var(--primary);--bs-btn-hover-color:var(--primary-foreground)}
 
+
+
+/* ==========================================================================
+   Zenith final polish: neutral interaction + no text collisions
+   ========================================================================== */
+
+/* Textboxes stay neutral on hover/focus: no glow, halo or fluorescent ring. */
+body.siget-body input.form-control:hover,
+body.siget-body select.form-select:hover,
+body.siget-body textarea.form-control:hover,
+body.siget-body .input-group-text:hover,
+body.siget-body input.form-control:focus,
+body.siget-body select.form-select:focus,
+body.siget-body textarea.form-control:focus,
+body.siget-body input.form-control:focus-visible,
+body.siget-body select.form-select:focus-visible,
+body.siget-body textarea.form-control:focus-visible{
+  background:var(--card)!important;
+  color:var(--foreground)!important;
+  border-color:var(--border)!important;
+  box-shadow:none!important;
+  outline:none!important;
+}
+body.siget-body input.form-control:active,
+body.siget-body select.form-select:active,
+body.siget-body textarea.form-control:active{
+  box-shadow:none!important;
+}
+body.siget-body .btn:focus,
+body.siget-body .btn:focus-visible,
+body.siget-body .siget-icon-button:focus,
+body.siget-body .siget-icon-button:focus-visible{
+  box-shadow:none!important;
+  outline:2px solid color-mix(in srgb,var(--primary) 22%,transparent);
+  outline-offset:1px;
+}
+
+/* Full semantic palette. Every preset changes the complete accent family. */
+html[data-zenith-preset="default"]{
+  --primary:#0f7f7c;--primary-foreground:#fff;--ring:#0f7f7c;--accent:#e8f7f6;
+  --success:#3f7f55;--warning:#9b6a1d;--danger:#a94747;--info:#4d76b8;
+  --sidebar-active:#eaf5f4;
+}
+html[data-zenith-preset="ocean"]{
+  --primary:#3b6fc4;--primary-foreground:#fff;--ring:#3b6fc4;--accent:#edf4ff;
+  --success:#3f7f74;--warning:#9d7423;--danger:#a54d5a;--info:#4d76b8;
+  --sidebar-active:#edf3fc;
+}
+html[data-zenith-preset="sunset"]{
+  --primary:#b96531;--primary-foreground:#fff;--ring:#b96531;--accent:#fff1e9;
+  --success:#527854;--warning:#9a7025;--danger:#a95050;--info:#5d79a3;
+  --sidebar-active:#fbf1eb;
+}
+html[data-zenith-preset="forest"]{
+  --primary:#3f7d5a;--primary-foreground:#fff;--ring:#3f7d5a;--accent:#edf7f0;
+  --success:#3f7a55;--warning:#917026;--danger:#9f4d45;--info:#55759b;
+  --sidebar-active:#edf5ef;
+}
+html[data-zenith-preset="berry"]{
+  --primary:#87509a;--primary-foreground:#fff;--ring:#87509a;--accent:#f7eff9;
+  --success:#4c7d69;--warning:#96702b;--danger:#a24767;--info:#6474a8;
+  --sidebar-active:#f7eff8;
+}
+html[data-zenith-preset="slate"]{
+  --primary:#596474;--primary-foreground:#fff;--ring:#697688;--accent:#eef1f4;
+  --success:#5c7a69;--warning:#8c7636;--danger:#8b5a5d;--info:#64778e;
+  --sidebar-active:#eef1f4;
+}
+html[data-bs-theme="dark"][data-zenith-preset="default"]{--primary:#65c9c3;--primary-foreground:#102a2a;--ring:#65c9c3;--accent:#1d3434;--success:#78b78a;--warning:#d5ae64;--danger:#da8686;--info:#83a3d7;--sidebar-active:#1b3332}
+html[data-bs-theme="dark"][data-zenith-preset="ocean"]{--primary:#7fa9ee;--primary-foreground:#13233c;--ring:#7fa9ee;--accent:#1d2d45;--success:#82c7bb;--warning:#dbb968;--danger:#dd8b99;--info:#8db0e7;--sidebar-active:#1c2c42}
+html[data-bs-theme="dark"][data-zenith-preset="sunset"]{--primary:#e5a06f;--primary-foreground:#382015;--ring:#e5a06f;--accent:#38291f;--success:#91bd92;--warning:#dcb66b;--danger:#df9494;--info:#99add1;--sidebar-active:#382a21}
+html[data-bs-theme="dark"][data-zenith-preset="forest"]{--primary:#7fc39a;--primary-foreground:#10281b;--ring:#7fc39a;--accent:#1c3325;--success:#88c79d;--warning:#d5b36c;--danger:#d88d85;--info:#91abd0;--sidebar-active:#1a3224}
+html[data-bs-theme="dark"][data-zenith-preset="berry"]{--primary:#c893d1;--primary-foreground:#29152f;--ring:#c893d1;--accent:#33223a;--success:#86bca7;--warning:#d7b76a;--danger:#da8ba9;--info:#99aadd;--sidebar-active:#322039}
+html[data-bs-theme="dark"][data-zenith-preset="slate"]{--primary:#a7b1bf;--primary-foreground:#1a2029;--ring:#a7b1bf;--accent:#28303a;--success:#91ae9e;--warning:#ceb875;--danger:#d39a9d;--info:#9eafc1;--sidebar-active:#272f39}
+
+/* Cards / text: give long content room instead of clipping into neighboring rows. */
+body.siget-body .siget-card,
+body.siget-body .op-card,
+body.siget-body .di-panel,
+body.siget-body .exec-card,
+body.siget-body .exec-table-card{
+  overflow:hidden!important;
+}
+body.siget-body .siget-card h1,
+body.siget-body .siget-card h2,
+body.siget-body .siget-card h3,
+body.siget-body .siget-card h4,
+body.siget-body .op-card h3,
+body.siget-body .di-panel h3,
+body.siget-body .exec-card h3,
+body.siget-body table td,
+body.siget-body table th{
+  overflow-wrap:anywhere;
+  word-break:normal;
+}
+
+/* Tablero de cargas: readable cards, two-line titles, no squeezed metadata. */
+body.siget-body .siget-load-card{
+  height:158px!important;
+  min-height:158px!important;
+  max-height:158px!important;
+  padding:10px!important;
+}
+body.siget-body .siget-load-card h4{
+  height:auto!important;
+  min-height:34px!important;
+  max-height:36px!important;
+  margin:3px 0 4px!important;
+  font-size:14px!important;
+  line-height:17px!important;
+  white-space:normal!important;
+  overflow:hidden!important;
+  text-overflow:clip!important;
+  display:-webkit-box!important;
+  -webkit-box-orient:vertical!important;
+  -webkit-line-clamp:2!important;
+}
+body.siget-body .siget-load-agency{font-size:11px!important;line-height:1.15!important}
+body.siget-body .siget-load-card .load-card-badges{
+  height:auto!important;
+  min-height:19px!important;
+  max-height:38px!important;
+  overflow:hidden!important;
+  flex-wrap:wrap!important;
+}
+body.siget-body .siget-load-card .load-card-badges .badge{
+  height:18px!important;
+  font-size:10px!important;
+  line-height:14px!important;
+  padding:2px 5px!important;
+}
+body.siget-body .siget-load-card .siget-load-units{
+  height:auto!important;
+  max-height:28px!important;
+  min-height:13px!important;
+  font-size:11px!important;
+  line-height:14px!important;
+  white-space:normal!important;
+  overflow:hidden!important;
+  display:-webkit-box!important;
+  -webkit-box-orient:vertical!important;
+  -webkit-line-clamp:2!important;
+}
+body.siget-body .siget-load-card .siget-load-meta{
+  height:auto!important;
+  max-height:17px!important;
+  font-size:11px!important;
+  line-height:14px!important;
+  white-space:nowrap!important;
+}
+body.siget-body .siget-load-card .load-card-progress-label{
+  font-size:11px!important;
+  line-height:14px!important;
+}
+body.siget-body .siget-load-card .load-card-progress-label strong{font-size:12px!important}
+body.siget-body .siget-load-card .siget-load-footer .btn{font-size:11px!important;min-height:27px!important;height:27px!important}
+
+/* Intelligence KPI labels and panel copy must not collide. */
+body.siget-body .direction-intelligence .role-kpi-card{
+  min-height:86px!important;height:86px!important;
+  grid-template-rows:minmax(28px,auto) minmax(20px,1fr)!important;
+}
+body.siget-body .direction-intelligence .role-kpi-card small{
+  font-size:12px!important;
+  line-height:1.2!important;
+  overflow-wrap:anywhere!important;
+}
+body.siget-body .direction-intelligence .di-head p,
+body.siget-body .direction-intelligence .di-table td small{
+  line-height:1.35!important;
+}
+
+/* User/admin and review screens share the same readable row density. */
+body.siget-body .siget-admin-users .table td,
+body.siget-body .siget-admin-users .table th,
+body.siget-body .siget-file-manager .table td,
+body.siget-body .siget-file-manager .table th{
+  white-space:normal!important;
+  overflow-wrap:anywhere!important;
+}
+body.siget-body .siget-admin-users .card-header h2,
+body.siget-body .siget-file-section h2{font-size:16px!important;line-height:1.25!important}
+body.siget-body .siget-file-section h3{line-height:1.3!important}
+
+/* Do not let inline status colors turn the interface fluorescent. */
+body.siget-body [style*="background:#118fa0"],
+body.siget-body [style*="background:#13a2b1"],
+body.siget-body [style*="background:#4f9051"],
+body.siget-body [style*="background:#113a68"],
+body.siget-body [style*="background:#ec9f00"],
+body.siget-body [style*="background:#c63131"],
+body.siget-body [style*="background:#153f71"]{
+  background:var(--primary)!important;
+}
+body.siget-body [style*="color:var(--op-amber)"]{color:var(--warning)!important}
+body.siget-body [style*="color:var(--op-red)"]{color:var(--danger)!important}
+
