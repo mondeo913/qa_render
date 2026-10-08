@@ -1395,3 +1395,28 @@ html[data-zenith-density="comfortable"] body.siget-body .form-select{min-height:
   body.siget-body .siget-op-dashboard .op-evidence-table td{font-size:12px!important}
 }
 
+
+
+/* Zenith semantic colors: neutralize Bootstrap utility colors across SIGET. */
+body.siget-body .bg-primary,
+body.siget-body .text-bg-primary{background-color:var(--primary)!important;color:var(--primary-foreground)!important}
+body.siget-body .text-primary{color:var(--primary)!important}
+body.siget-body .border-primary{border-color:var(--primary)!important}
+body.siget-body .bg-success,
+body.siget-body .text-bg-success{background-color:var(--success)!important;color:#fff!important}
+body.siget-body .text-success{color:var(--success)!important}
+body.siget-body .bg-warning,
+body.siget-body .text-bg-warning{background-color:var(--warning)!important;color:#fff!important}
+body.siget-body .text-warning{color:var(--warning)!important}
+body.siget-body .bg-danger,
+body.siget-body .text-bg-danger{background-color:var(--danger)!important;color:#fff!important}
+body.siget-body .text-danger{color:var(--danger)!important}
+body.siget-body .bg-info,
+body.siget-body .text-bg-info{background-color:var(--info)!important;color:#fff!important}
+body.siget-body .text-info{color:var(--info)!important}
+body.siget-body .text-bg-light{background-color:var(--accent)!important;color:var(--foreground)!important}
+body.siget-body .text-secondary{color:var(--muted-foreground)!important}
+body.siget-body .progress{background:var(--muted)!important}
+body.siget-body .progress-bar{background:var(--primary)!important}
+body.siget-body .btn-outline-primary{--bs-btn-color:var(--primary);--bs-btn-border-color:var(--primary);--bs-btn-hover-bg:var(--primary);--bs-btn-hover-border-color:var(--primary);--bs-btn-hover-color:var(--primary-foreground)}
+
