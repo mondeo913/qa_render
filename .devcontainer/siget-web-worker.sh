@@ -18,10 +18,12 @@ if ! flock -n 9; then
 fi
 
 while true; do
-  echo "[$(date -Is)] Iniciando servidor Laravel en :8000." >> "${LOG_FILE}"
+  # Elimina cualquier servidor Laravel legacy antes de tomar :8000.
+  stop_legacy_laravel_server
+  echo "[$(date -Is)] Iniciando servidor Laravel SIGET en :8000." >> "${LOG_FILE}"
 
   set +e
-  /usr/local/bin/php -d display_errors=0 -S 0.0.0.0:8000 -t "${PROJECT_ROOT}/public" "${PROJECT_ROOT}/.devcontainer/laravel-router.php" >> "${LOG_FILE}" 2>&1
+  /usr/local/bin/php -d display_errors=0 -d display_startup_errors=0 -d log_errors=1 -S 0.0.0.0:8000 -t "${PROJECT_ROOT}/public" "${PROJECT_ROOT}/.devcontainer/laravel-router.php" >> "${LOG_FILE}" 2>&1
   RC=$?
   set -e
 
