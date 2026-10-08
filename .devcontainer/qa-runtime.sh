@@ -11,6 +11,24 @@ if [[ -f .env ]]; then
   if grep -q '^SESSION_EXPIRE_ON_CLOSE=' .env; then sed -i 's/^SESSION_EXPIRE_ON_CLOSE=.*/SESSION_EXPIRE_ON_CLOSE=false/' .env; else printf 'SESSION_EXPIRE_ON_CLOSE=false\n' >> .env; fi
 fi
 
+# Recompilar assets Vite cuando el código fuente cambió después del último build.
+# Esto evita servir un public/build obsoleto y hace visibles los cambios de interfaz
+# sin depender de un build manual después de cada modificación.
+if command -v npm >/dev/null 2>&1 && [[ -f package.json ]]; then
+  BUILD_MANIFEST="public/build/manifest.json"
+  NEED_BUILD=0
+  if [[ ! -f "$BUILD_MANIFEST" ]]; then
+    NEED_BUILD=1
+  elif find resources/css resources/js -type f -newer "$BUILD_MANIFEST" -print -quit 2>/dev/null | grep -q .; then
+    NEED_BUILD=1
+  fi
+
+  if [[ "$NEED_BUILD" -eq 1 ]]; then
+    echo "Detectados assets frontend nuevos; ejecutando npm run build..."
+    npm run build
+  fi
+fi
+
 # Recuperación idempotente: una sesión inactiva nunca debe dejar a SIGET
 # apuntando a un PostgreSQL apagado. Se recupera solo lo que esté caído.
 start_postgres
