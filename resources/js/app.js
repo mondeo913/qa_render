@@ -6,7 +6,7 @@ import interactionPlugin from '@fullcalendar/interaction';
 import bootstrap5Plugin from '@fullcalendar/bootstrap5';
 import Chart from 'chart.js/auto';
 
-const zenithPalettes = { default:['#0f9d9a','#3b82f6','#15803d','#b45309','#b42318','#7c5ce7','#0ea5e9','#64748b'], ocean:['#3577df','#4f8dff','#1596a6','#b7791f','#c2415c','#6d5bd0','#1d9bf0','#64748b'], sunset:['#d96b2b','#e98a3a','#3f8d58','#c58a21','#c74848','#8a5abf','#4b8fba','#6b7280'], forest:['#3f8f68','#2f7d5c','#2d7a4d','#a36a1c','#a83d35','#735ba8','#278f91','#64748b'], berry:['#9a4fa8','#7656c7','#2f8d76','#b5791b','#b43c5c','#b24f92','#407bbd','#64748b'], slate:['#4b5563','#64748b','#3f7f63','#a4771a','#a34646','#6b62a3','#4b82a6','#6b7280'] };
+const zenithPalettes = { default:['#18181b','#52525b','#71717a','#3f3f46','#52525b','#71717a','#52525b','#a1a1aa'], ocean:['#3577df','#4f8dff','#1596a6','#b7791f','#c2415c','#6d5bd0','#1d9bf0','#64748b'], sunset:['#d96b2b','#e98a3a','#3f8d58','#c58a21','#c74848','#8a5abf','#4b8fba','#6b7280'], forest:['#3f8f68','#2f7d5c','#2d7a4d','#a36a1c','#a83d35','#735ba8','#278f91','#64748b'], berry:['#9a4fa8','#7656c7','#2f8d76','#b5791b','#b43c5c','#b24f92','#407bbd','#64748b'], slate:['#4b5563','#64748b','#3f7f63','#a4771a','#a34646','#6b62a3','#4b82a6','#6b7280'] };
 let palette = zenithPalettes[document.documentElement.dataset.zenithPreset || 'default'] || zenithPalettes.default;
 const charts = [];
 const resolve = t => t === 'auto'
