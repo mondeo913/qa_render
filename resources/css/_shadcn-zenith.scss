@@ -2050,3 +2050,7 @@ html[data-zenith-density="comfortable"] body.siget-body{font-size:15px!important
 @media(max-width:520px){
   body.siget-body .siget-kanban{grid-template-columns:1fr!important}
 }
+
+/* Bootstrap compatibility: never restore its default focus ring or destructive color. */
+body.siget-body{--bs-focus-ring-color:transparent!important;--bs-focus-ring-width:0!important}
+html[data-zenith-preset="default"],html[data-zenith-preset="ocean"],html[data-zenith-preset="sunset"],html[data-zenith-preset="forest"],html[data-zenith-preset="berry"],html[data-zenith-preset="slate"]{--destructive:var(--danger)!important}
