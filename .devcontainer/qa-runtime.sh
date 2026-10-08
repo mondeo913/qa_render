@@ -25,7 +25,7 @@ if command -v npm >/dev/null 2>&1 && [[ -f package.json ]]; then
 
   if [[ "$NEED_BUILD" -eq 1 ]]; then
     echo "Detectados assets frontend nuevos; ejecutando npm run build..."
-    npm run build
+    npm run build || echo "ADVERTENCIA: no se pudo recompilar Vite; se conserva el último build disponible.";
   fi
 fi
 
