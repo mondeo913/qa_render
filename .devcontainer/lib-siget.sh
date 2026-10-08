@@ -331,11 +331,13 @@ stop_legacy_laravel_server() {
     [[ -z "${pid:-}" ]] && continue
     [[ "${pid}" == "$" ]] && continue
 
-    if [[ "${args}" == *"artisan serve"* && "${args}" == *"--port=8000"* ]]; then
-      echo "Deteniendo servidor Laravel legado (PID ${pid})..."
-      kill "${pid}" >/dev/null 2>&1 || true
-    elif [[ "${args}" == *"Illuminate/Foundation/resources/server.php"* && "${args}" == *"8000"* ]]; then
-      echo "Deteniendo router Laravel legado (PID ${pid})..."
+    # SIGET usa exclusivamente siget-web-worker.sh + php -S + laravel-router.php.
+    # Cualquier artisan serve o server.php en :8000 es un proceso legacy.
+    if [[ "${args}" == *"artisan serve"* ]] ||
+       [[ "${args}" == *"Illuminate/Foundation/resources/server.php"* ]] ||
+       ([[ "${args}" == *"php"* && "${args}" == *" -S "* ]] &&
+        [[ "${args}" == *":8000"* || "${args}" == *"--port=8000"* || "${args}" == *"--port 8000"* ]]); then
+      echo "Deteniendo servidor Laravel legado en :8000 (PID ${pid})..."
       kill "${pid}" >/dev/null 2>&1 || true
     fi
   done < <(ps -eo pid=,args= 2>/dev/null || true)
