@@ -47,4 +47,16 @@ else
 fi
 
 php artisan optimize:clear >/dev/null 2>&1 || true
+
+# Mantener un proceso externo a Supervisor supervisando toda la pila.
+# Esto permite recuperar Supervisor, Laravel, Mailpit y PostgreSQL aunque
+# Supervisor completo se caiga.
+WATCHDOG_SCRIPT="${PROJECT_ROOT}/.devcontainer/siget-watchdog.sh"
+WATCHDOG_LOG="${LOG_DIR}/siget-watchdog-launcher.log"
+if [[ -f "${WATCHDOG_SCRIPT}" ]]; then
+  chmod +x "${WATCHDOG_SCRIPT}" >/dev/null 2>&1 || true
+  nohup bash "${WATCHDOG_SCRIPT}" >> "${WATCHDOG_LOG}" 2>&1 &
+  echo "Watchdog SIGET verificado/iniciado en segundo plano."
+fi
+
 show_service_status
