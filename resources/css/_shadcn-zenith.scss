@@ -1,0 +1,828 @@
+/* ==========================================================================
+   SIGET · Zenith Shadcn UI
+   Visual layer única. Bootstrap queda solo como compatibilidad estructural.
+   Basado en tokens y patrones visuales de Zenith/Shadcn.
+   ========================================================================== */
+
+:root{
+  --background:oklch(0.985 0.002 230);
+  --foreground:oklch(0.155 0.015 230);
+  --card:oklch(1 0 0);
+  --card-foreground:oklch(0.155 0.015 230);
+  --popover:oklch(1 0 0);
+  --popover-foreground:oklch(0.155 0.015 230);
+  --primary:oklch(0.205 0 0);
+  --primary-foreground:oklch(0.985 0.002 230);
+  --secondary:oklch(0.96 0.005 230);
+  --secondary-foreground:oklch(0.205 0 0);
+  --muted:oklch(0.96 0.005 230);
+  --muted-foreground:oklch(0.556 0.015 230);
+  --accent:oklch(0.96 0.005 230);
+  --accent-foreground:oklch(0.205 0 0);
+  --destructive:oklch(0.577 0.245 27.325);
+  --border:oklch(0.922 0.005 230);
+  --input:oklch(0.922 0.005 230);
+  --ring:oklch(0.65 0.02 230);
+  --radius:0.65rem;
+
+  --background-soft:oklch(0.975 0.003 230);
+  --sidebar:oklch(0.99 0.001 230);
+  --sidebar-foreground:oklch(0.205 0 0);
+  --sidebar-border:oklch(0.922 0.005 230);
+  --sidebar-muted:oklch(0.556 0.015 230);
+  --sidebar-active:oklch(0.945 0.006 230);
+
+  --success:#15803d;
+  --warning:#b45309;
+  --danger:#b42318;
+  --info:#2563eb;
+
+  --shadow-xs:0 1px 2px rgba(15,23,42,.04);
+  --shadow-sm:0 1px 3px rgba(15,23,42,.06),0 1px 2px rgba(15,23,42,.03);
+  --shadow-md:0 8px 24px rgba(15,23,42,.06);
+  --sw:240px;
+}
+
+html[data-bs-theme="dark"]{
+  --background:oklch(0.145 0.01 230);
+  --foreground:oklch(0.985 0.002 230);
+  --card:oklch(0.175 0.012 230);
+  --card-foreground:oklch(0.985 0.002 230);
+  --popover:oklch(0.175 0.012 230);
+  --popover-foreground:oklch(0.985 0.002 230);
+  --primary:oklch(0.985 0.002 230);
+  --primary-foreground:oklch(0.175 0.012 230);
+  --secondary:oklch(0.225 0.012 230);
+  --secondary-foreground:oklch(0.985 0.002 230);
+  --muted:oklch(0.225 0.012 230);
+  --muted-foreground:oklch(0.68 0.012 230);
+  --accent:oklch(0.225 0.012 230);
+  --accent-foreground:oklch(0.985 0.002 230);
+  --destructive:oklch(0.704 0.191 22.216);
+  --border:oklch(0.28 0.012 230);
+  --input:oklch(0.28 0.012 230);
+  --ring:oklch(0.62 0.015 230);
+  --background-soft:oklch(0.155 0.01 230);
+  --sidebar:oklch(0.13 0.008 230);
+  --sidebar-foreground:oklch(0.985 0.002 230);
+  --sidebar-border:oklch(0.27 0.012 230);
+  --sidebar-muted:oklch(0.68 0.012 230);
+  --sidebar-active:oklch(0.20 0.012 230);
+  --shadow-xs:0 1px 2px rgba(0,0,0,.18);
+  --shadow-sm:0 2px 6px rgba(0,0,0,.20);
+  --shadow-md:0 10px 28px rgba(0,0,0,.24);
+}
+
+*{box-sizing:border-box}
+html,body{min-height:100%}
+
+body.siget-body{
+  margin:0;
+  min-height:100vh;
+  background:var(--background);
+  color:var(--foreground);
+  font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  font-size:14px;
+  line-height:1.45;
+  -webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;
+}
+
+body.siget-body *,
+body.siget-body *::before,
+body.siget-body *::after{border-color:var(--border)}
+
+body.siget-body a{color:inherit}
+body.siget-body button,
+body.siget-body input,
+body.siget-body select,
+body.siget-body textarea{font:inherit}
+
+.siget-shell{min-height:100vh;display:flex;background:var(--background)}
+
+.siget-sidebar{
+  position:fixed;
+  inset:0 auto 0 0;
+  z-index:1040;
+  width:var(--sw);
+  padding:14px 12px;
+  display:flex;
+  flex-direction:column;
+  overflow-y:auto;
+  color:var(--sidebar-foreground);
+  background:var(--sidebar);
+  border-right:1px solid var(--sidebar-border);
+  box-shadow:none;
+  transition:width .18s ease,transform .18s ease;
+}
+
+.siget-sidebar-head,
+.siget-brand,
+.siget-user-card,
+.siget-topbar,
+.siget-topbar-left,
+.siget-top-actions,
+.siget-top-user{display:flex;align-items:center}
+
+.siget-sidebar-head{min-height:40px}
+.siget-brand{gap:10px;min-width:0;flex:1;text-decoration:none}
+.siget-brand-mark{
+  width:34px;height:34px;flex:0 0 auto;
+  display:grid;place-items:center;
+  border:1px solid var(--border);
+  border-radius:9px;
+  background:var(--foreground);
+  color:var(--background);
+  font-size:17px;font-weight:800;
+}
+.siget-brand-seal{
+  width:34px;height:34px;flex:0 0 auto;
+  object-fit:contain;
+  border-radius:8px;
+}
+.siget-brand-copy strong,
+.siget-brand-copy small,
+.siget-user-card strong,
+.siget-user-card small,
+.siget-top-user strong,
+.siget-top-user small{
+  display:block;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.siget-brand-copy strong{font-size:14px;font-weight:700;letter-spacing:-.01em}
+.siget-brand-copy small{max-width:165px;color:var(--sidebar-muted);font-size:11px;line-height:1.2;white-space:normal}
+
+.siget-user-card{
+  gap:9px;
+  margin:12px 0 10px;
+  padding:9px;
+  border:1px solid var(--sidebar-border);
+  border-radius:10px;
+  background:transparent;
+}
+.siget-user-card strong{font-size:12px;font-weight:650}
+.siget-user-card small{max-width:176px;color:var(--sidebar-muted);font-size:10.5px}
+.siget-avatar{
+  width:32px;height:32px;flex:0 0 auto;
+  display:grid;place-items:center;
+  border:1px solid var(--border);
+  border-radius:9px;
+  background:var(--foreground);
+  color:var(--background);
+  font-weight:750;
+}
+.siget-avatar-sm{width:30px;height:30px;font-size:12px}
+
+.siget-nav{display:flex;flex-direction:column;gap:2px}
+.siget-nav a{
+  display:flex;align-items:center;gap:9px;
+  min-height:36px;
+  padding:7px 9px;
+  border-radius:8px;
+  color:var(--sidebar-muted);
+  text-decoration:none;
+  font-size:13px;
+  font-weight:500;
+}
+.siget-nav a:hover{color:var(--sidebar-foreground);background:var(--sidebar-active)}
+.siget-nav a.active{
+  color:var(--sidebar-foreground);
+  background:var(--sidebar-active);
+  box-shadow:inset 2px 0 var(--foreground);
+  font-weight:650;
+}
+.siget-nav i{width:17px;font-size:14px;text-align:center}
+
+.siget-sidebar-footer{
+  margin-top:auto;
+  padding-top:12px;
+  display:grid;
+  gap:7px;
+}
+.siget-sidebar-government{
+  display:flex;align-items:center;gap:8px;
+  padding:9px 3px;
+  border-top:1px solid var(--sidebar-border);
+}
+.siget-sidebar-government img{width:26px;height:29px;object-fit:contain;border-radius:6px}
+.siget-sidebar-government strong{display:block;font-size:12px}
+.siget-sidebar-government small{display:block;color:var(--sidebar-muted);font-size:10px}
+.siget-sidebar-system{
+  display:flex;align-items:center;gap:8px;
+  padding:8px 9px;
+  border:1px solid var(--sidebar-border);
+  border-radius:8px;
+  background:transparent;
+}
+.siget-sidebar-system strong{display:block;font-size:10.5px}
+.siget-sidebar-system small{display:block;color:var(--sidebar-muted);font-size:10px}
+.siget-status-dot{
+  width:7px;height:7px;flex:0 0 auto;border-radius:999px;
+  background:#22c55e;
+  box-shadow:0 0 0 3px rgba(34,197,94,.12);
+}
+.siget-sidebar-link{
+  color:var(--sidebar-muted);
+  text-decoration:none;
+  font-size:11px;
+}
+.siget-sidebar-link:hover{color:var(--sidebar-foreground)}
+
+.siget-main{
+  min-width:0;
+  width:calc(100% - var(--sw));
+  margin-left:var(--sw);
+}
+.siget-topbar{
+  position:sticky;
+  top:0;
+  z-index:1020;
+  min-height:60px;
+  padding:10px 16px;
+  justify-content:space-between;
+  gap:12px;
+  background:color-mix(in srgb,var(--card) 94%,transparent);
+  border-bottom:1px solid var(--border);
+  backdrop-filter:blur(10px);
+}
+.siget-topbar-left,.siget-top-actions{gap:8px}
+.siget-eyebrow{margin:0;color:var(--muted-foreground);font-size:10px;font-weight:600;letter-spacing:.03em;text-transform:uppercase}
+.siget-topbar h1{
+  margin:1px 0 0;
+  color:var(--foreground);
+  font-size:18px;
+  line-height:1.2;
+  font-weight:700;
+  letter-spacing:-.02em;
+}
+.siget-page-subtitle{margin:1px 0 0;color:var(--muted-foreground);font-size:12px}
+.siget-icon-button{
+  width:32px;height:32px;
+  border:1px solid var(--border);
+  border-radius:8px;
+  display:inline-grid;place-items:center;
+  background:var(--card);
+  color:var(--foreground);
+  box-shadow:var(--shadow-xs);
+}
+.siget-icon-button:hover{background:var(--accent)}
+.siget-global-search{
+  width:210px;height:32px;
+  display:flex;align-items:center;gap:7px;
+  padding:0 9px;
+  border:1px solid var(--border);
+  border-radius:8px;
+  background:var(--background-soft);
+}
+.siget-global-search input{
+  width:100%;border:0;outline:0;background:transparent;color:var(--foreground);font-size:12px;
+}
+.siget-global-search input::placeholder{color:var(--muted-foreground)}
+.siget-env-badge{
+  padding:4px 7px;
+  border:1px solid var(--border);
+  border-radius:7px;
+  background:var(--background-soft);
+  color:var(--foreground);
+  font-size:10px;
+  font-weight:650;
+}
+.siget-top-user{gap:7px}
+.siget-top-user strong{max-width:140px;font-size:11.5px;font-weight:650}
+.siget-top-user small{max-width:140px;color:var(--muted-foreground);font-size:10px}
+.siget-notification-count{
+  position:absolute;top:-5px;right:-5px;
+  min-width:16px;height:16px;padding:0 4px;
+  border-radius:999px;display:grid;place-items:center;
+  background:var(--foreground);color:var(--background);
+  font-size:9px;font-weight:700;border:2px solid var(--card);
+}
+
+.siget-content{
+  padding:16px 18px 20px;
+}
+.siget-content>.alert{margin-bottom:10px}
+
+.siget-card,
+.card.siget-card{
+  border:1px solid var(--border)!important;
+  border-radius:var(--radius)!important;
+  background:var(--card)!important;
+  box-shadow:var(--shadow-xs);
+  overflow:hidden;
+}
+.siget-card .card-header{
+  min-height:44px;
+  display:flex;align-items:center;justify-content:space-between;
+  gap:12px;
+  padding:8px 11px;
+  background:transparent;
+  border-bottom:1px solid var(--border);
+}
+.siget-card .card-header h2{margin:0;font-size:14px;font-weight:650;letter-spacing:-.01em}
+.siget-card .card-header p{margin:2px 0 0;color:var(--muted-foreground);font-size:11px;line-height:1.25}
+.siget-card .card-body{padding:11px}
+
+.form-label{
+  margin-bottom:4px;
+  color:var(--foreground);
+  font-size:12px;
+  font-weight:600;
+}
+.form-control,
+.form-select,
+.input-group-text{
+  min-height:33px;
+  padding:.32rem .55rem;
+  border:1px solid var(--input);
+  border-radius:8px!important;
+  background:var(--card)!important;
+  color:var(--foreground)!important;
+  font-size:12px!important;
+  box-shadow:none!important;
+}
+.input-group-text{display:flex;align-items:center}
+.form-control::placeholder{color:var(--muted-foreground)}
+.form-control:focus,
+.form-select:focus{
+  border-color:var(--ring)!important;
+  box-shadow:0 0 0 3px color-mix(in srgb,var(--ring) 15%,transparent)!important;
+}
+.form-check-label{font-size:12px}
+.form-text{margin-top:3px;color:var(--muted-foreground);font-size:10px;line-height:1.25}
+
+.btn{
+  --bs-btn-padding-y:.32rem;
+  --bs-btn-padding-x:.62rem;
+  min-height:32px;
+  border-radius:8px!important;
+  font-size:12px!important;
+  font-weight:600;
+  box-shadow:none!important;
+}
+.btn-primary{
+  --bs-btn-bg:var(--foreground);
+  --bs-btn-border-color:var(--foreground);
+  --bs-btn-hover-bg:color-mix(in srgb,var(--foreground) 88%,var(--background));
+  --bs-btn-hover-border-color:color-mix(in srgb,var(--foreground) 88%,var(--background));
+  --bs-btn-color:var(--background);
+}
+.btn-outline-primary,.btn-outline-secondary{
+  --bs-btn-color:var(--foreground);
+  --bs-btn-border-color:var(--border);
+  --bs-btn-hover-bg:var(--accent);
+  --bs-btn-hover-border-color:var(--border);
+  --bs-btn-hover-color:var(--foreground);
+}
+.btn-outline-light{
+  --bs-btn-color:var(--sidebar-foreground);
+  --bs-btn-border-color:var(--sidebar-border);
+  --bs-btn-hover-bg:var(--sidebar-active);
+  --bs-btn-hover-border-color:var(--sidebar-border);
+  --bs-btn-hover-color:var(--sidebar-foreground);
+}
+.btn-danger{
+  --bs-btn-bg:var(--destructive);
+  --bs-btn-border-color:var(--destructive);
+}
+.badge{
+  border-radius:6px!important;
+  padding:.20rem .42rem!important;
+  font-size:10px!important;
+  line-height:1.2!important;
+  font-weight:650!important;
+}
+.text-secondary{color:var(--muted-foreground)!important}
+
+.table{
+  --bs-table-bg:transparent;
+  --bs-table-color:var(--foreground);
+  --bs-table-border-color:var(--border);
+}
+.table thead th{
+  padding:7px 8px;
+  color:var(--muted-foreground);
+  font-size:10px;
+  font-weight:650;
+  letter-spacing:.03em;
+  text-transform:uppercase;
+  white-space:nowrap;
+}
+.table td{
+  padding:8px;
+  color:var(--foreground);
+  font-size:12px;
+  vertical-align:middle;
+}
+.table-hover tbody tr:hover{--bs-table-hover-bg:var(--accent)}
+
+.dropdown-menu{
+  --bs-dropdown-bg:var(--card);
+  --bs-dropdown-color:var(--foreground);
+  --bs-dropdown-border-color:var(--border);
+  --bs-dropdown-link-color:var(--foreground);
+  --bs-dropdown-link-hover-bg:var(--accent);
+  border-radius:9px!important;
+  box-shadow:var(--shadow-md)!important;
+  padding:5px!important;
+}
+.dropdown-item{
+  border-radius:6px;
+  padding:6px 8px;
+  font-size:12px;
+}
+.alert{
+  border:1px solid var(--border)!important;
+  border-radius:9px!important;
+  font-size:12px;
+}
+.modal-content{
+  border:1px solid var(--border)!important;
+  border-radius:var(--radius)!important;
+  background:var(--card)!important;
+  color:var(--foreground);
+  box-shadow:var(--shadow-md);
+}
+.list-group-item{background:var(--card);color:var(--foreground);border-color:var(--border)}
+
+.siget-hero{
+  padding:17px;
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  background:var(--card);
+  box-shadow:var(--shadow-xs);
+}
+.siget-hero h2{margin:0 0 5px;font-size:18px;line-height:1.2;font-weight:700}
+.siget-hero p{margin:0;color:var(--muted-foreground);font-size:12px}
+.siget-kpi{
+  min-height:76px;
+  padding:11px;
+  display:flex;align-items:center;gap:9px;
+  border:1px solid var(--border);
+  border-radius:10px;
+  background:var(--card);
+  box-shadow:var(--shadow-xs);
+}
+.siget-kpi-icon{width:32px;height:32px;border-radius:8px;display:grid;place-items:center;background:var(--accent);color:var(--foreground)}
+.siget-kpi small{display:block;color:var(--muted-foreground);font-size:11px}
+.siget-kpi strong{display:block;margin-top:1px;font-size:17px;line-height:1;font-weight:700}
+.siget-chart-wrap{min-height:220px}
+.siget-progress-row{grid-template-columns:minmax(160px,1.2fr) minmax(140px,1fr) 70px 80px;gap:10px;padding:9px 0}
+.siget-progress-row strong{font-size:12px}
+.siget-progress-row small{font-size:10.5px}
+
+.siget-dependency-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:8px}
+.siget-dependency-card{
+  display:block;
+  padding:9px;
+  border:1px solid var(--border);
+  border-radius:9px;
+  background:var(--card);
+  color:inherit;
+  text-decoration:none;
+}
+.siget-dependency-card:hover,
+.siget-dependency-card.active{background:var(--accent);border-color:var(--ring)}
+.siget-dependency-top{display:flex;align-items:center;gap:8px}
+.siget-dependency-logo{width:30px;height:30px;border-radius:7px;border:1px solid var(--border);background:var(--card);object-fit:contain}
+.siget-dependency-initials{display:grid;place-items:center;background:var(--foreground);color:var(--background);font-size:11px;font-weight:700}
+.siget-dependency-top strong{font-size:12px}
+.siget-dependency-top small{display:block;color:var(--muted-foreground);font-size:10px}
+.siget-dependency-stats{display:grid;grid-template-columns:1fr 1fr;gap:4px 8px;margin-top:7px;color:var(--muted-foreground);font-size:10.5px}
+.siget-dependency-stats b{color:var(--foreground)}
+.progress{height:5px!important;background:var(--muted)!important;border-radius:999px}
+.progress-bar{background:var(--foreground)!important;border-radius:999px}
+
+/* --------------------------------------------------------------------------
+   Tablero de cargas · compacto y a todo el ancho
+   -------------------------------------------------------------------------- */
+.board-direction-compact{width:100%;max-width:none;margin:0}
+.board-heading{margin-bottom:9px!important}
+.board-heading h2{font-size:17px!important;font-weight:700!important}
+.board-heading>div>p:not(.scope-label){font-size:12px}
+.scope-label{font-size:10px!important;color:var(--muted-foreground)}
+.board-kpis{
+  display:grid!important;
+  grid-template-columns:repeat(6,minmax(0,1fr))!important;
+  gap:7px!important;
+  margin:0 0 8px!important;
+}
+.board-kpis>div{min-width:0!important;width:auto!important;padding:0!important}
+.board-kpi{
+  width:100%;
+  min-height:54px!important;
+  height:54px!important;
+  display:grid!important;
+  grid-template-columns:26px minmax(0,1fr) auto!important;
+  align-items:center;
+  gap:6px;
+  padding:7px 8px!important;
+  border:1px solid var(--border);
+  border-radius:9px;
+  background:var(--card);
+  box-shadow:var(--shadow-xs);
+}
+.board-kpi-icon{width:26px;height:26px;display:grid;place-items:center;border-radius:7px;font-size:12px}
+.board-kpi small{min-width:0;color:var(--muted-foreground);font-size:11px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.board-kpi strong{font-size:15px;font-weight:700;line-height:1}
+
+#loadBoardFilters{
+  margin:0 0 6px!important;
+}
+#loadBoardFilters .card-body{padding:9px!important}
+#loadBoardFilters .row{--bs-gutter-x:.45rem;--bs-gutter-y:.40rem}
+#loadBoardFilters .form-label{font-size:11px!important}
+#loadBoardFilters .form-control,
+#loadBoardFilters .form-select,
+#loadBoardFilters .input-group-text{min-height:31px!important;font-size:11px!important}
+#loadBoardFilters .form-text{font-size:9.5px!important;margin-top:2px!important}
+#loadBoardFilters .board-period-segmented{
+  margin-top:3px!important;
+  padding-top:3px;
+  border-top:1px solid var(--border);
+}
+#loadBoardFilters .board-period-segmented .small{font-size:10px!important}
+#loadBoardFilters .board-period-segmented .btn{
+  min-height:25px!important;
+  padding:.18rem .40rem!important;
+  font-size:10px!important;
+}
+#loadBoardFilters #boardCustomRange{margin-top:3px!important}
+
+.siget-kanban{
+  display:grid!important;
+  grid-template-columns:repeat(4,minmax(0,1fr))!important;
+  gap:7px!important;
+  width:100%!important;
+  min-width:0!important;
+  max-width:none!important;
+  margin:0!important;
+  overflow:visible!important;
+  align-items:start;
+}
+.siget-kanban-column{
+  min-width:0!important;
+  width:100%!important;
+  height:clamp(310px,calc(100vh - 360px),500px)!important;
+  min-height:310px!important;
+  max-height:500px!important;
+  border:1px solid var(--border)!important;
+  border-radius:9px!important;
+  background:var(--background-soft)!important;
+  overflow:hidden!important;
+}
+.siget-kanban-column>header{
+  height:45px!important;
+  min-height:45px!important;
+  padding:6px 8px!important;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:6px;
+  background:var(--card)!important;
+  border-bottom:1px solid var(--border)!important;
+}
+.siget-kanban-column>header h3{margin:0;font-size:12px!important;font-weight:650!important;line-height:1.1}
+.siget-kanban-column>header p{margin:2px 0 0;color:var(--muted-foreground);font-size:9.5px!important;line-height:1.1}
+.siget-kanban-column>header>span{
+  width:21px;height:21px;min-width:21px;
+  display:grid;place-items:center;
+  border:1px solid var(--border);
+  border-radius:6px;
+  background:var(--accent);
+  color:var(--foreground);
+  font-size:10px;
+  font-weight:700;
+}
+.siget-kanban-stack{
+  height:calc(clamp(310px,calc(100vh - 360px),500px) - 45px)!important;
+  min-height:0!important;
+  padding:5px!important;
+  display:flex;
+  flex-direction:column;
+  gap:5px!important;
+  overflow-y:auto!important;
+}
+.siget-load-card{
+  flex:0 0 auto;
+  width:100%!important;
+  min-width:0!important;
+  height:124px!important;
+  min-height:124px!important;
+  max-height:124px!important;
+  padding:7px!important;
+  border:1px solid var(--border)!important;
+  border-left-width:2px!important;
+  border-radius:8px!important;
+  background:var(--card)!important;
+  box-shadow:var(--shadow-xs);
+  overflow:hidden!important;
+}
+.siget-load-card.is-overdue{border-left-color:var(--destructive)!important}
+.load-card-top{min-height:18px!important;height:18px!important;display:flex;align-items:flex-start;justify-content:space-between;gap:4px}
+.siget-load-agency{
+  display:block;
+  color:var(--muted-foreground);
+  font-size:9.5px!important;
+  line-height:1;
+  text-transform:uppercase;
+}
+.siget-load-card h4{
+  height:13px!important;
+  max-height:13px!important;
+  margin:1px 0 3px!important;
+  color:var(--foreground);
+  font-size:11px!important;
+  font-weight:650!important;
+  line-height:13px!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.siget-load-card .load-card-badges{display:flex;align-items:center;gap:2px;height:15px;min-height:15px;margin:2px 0!important;overflow:hidden}
+.siget-load-card .load-card-badges .badge{
+  height:14px!important;
+  padding:1px 4px!important;
+  font-size:8px!important;
+  line-height:12px!important;
+  white-space:nowrap;
+}
+.siget-load-card .siget-load-units{
+  height:11px!important;
+  max-height:11px!important;
+  color:var(--muted-foreground);
+  font-size:8.5px!important;
+  line-height:11px!important;
+  overflow:hidden!important;
+  white-space:nowrap;
+  text-overflow:ellipsis;
+}
+.siget-load-card .siget-load-meta{
+  height:11px!important;
+  max-height:11px!important;
+  display:flex!important;
+  gap:7px!important;
+  margin:2px 0 0!important;
+  color:var(--muted-foreground);
+  font-size:8.5px!important;
+  line-height:11px!important;
+  overflow:hidden;
+}
+.siget-load-card .load-card-progress-label{
+  height:11px!important;
+  margin:2px 0 1px!important;
+  display:flex!important;
+  align-items:center;
+  justify-content:space-between;
+  color:var(--muted-foreground);
+  font-size:8.5px!important;
+  line-height:11px!important;
+}
+.siget-load-card .load-card-progress-label strong{color:var(--foreground);font-size:9px!important}
+.siget-load-card .load-card-progress{height:3px!important;min-height:3px!important;margin:0!important}
+.siget-load-card .siget-load-footer{
+  height:19px!important;
+  margin:3px 0 0!important;
+  padding-top:2px!important;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:4px;
+  border-top:1px solid var(--border);
+}
+.siget-load-counters{display:flex;gap:5px;color:var(--muted-foreground);font-size:8px!important;white-space:nowrap}
+.siget-load-footer .btn{
+  min-height:18px!important;
+  height:18px!important;
+  padding:0 5px!important;
+  border-radius:5px!important;
+  font-size:8.5px!important;
+}
+.siget-assignees{
+  height:9px!important;
+  max-height:9px!important;
+  margin:1px 0 0!important;
+  color:var(--muted-foreground);
+  font-size:7.8px!important;
+  line-height:9px!important;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.siget-traffic{width:7px;height:7px;border-radius:999px;display:inline-block}
+.siget-kanban-empty{
+  min-height:55px!important;
+  height:55px!important;
+  padding:6px!important;
+  display:grid;
+  place-items:center;
+  border:1px dashed var(--border);
+  border-radius:8px;
+  color:var(--muted-foreground);
+  text-align:center;
+  font-size:10px!important;
+}
+.siget-kanban-todo>header{border-top:2px solid #71717a!important}
+.siget-kanban-progress>header{border-top:2px solid #71717a!important}
+.siget-kanban-review>header{border-top:2px solid #52525b!important}
+.siget-kanban-done>header{border-top:2px solid #27272a!important}
+
+.siget-priority-high,.siget-priority-alta{background:#fff1f2!important;color:#b42318!important;border-color:#fecdd3!important}
+.siget-priority-medium,.siget-priority-media{background:#fffbeb!important;color:#a16207!important;border-color:#fde68a!important}
+.siget-priority-low,.siget-priority-baja{background:#f0fdf4!important;color:#166534!important;border-color:#bbf7d0!important}
+.siget-status{background:var(--accent)!important;color:var(--foreground)!important;border:1px solid var(--border)!important}
+.text-bg-light{background:var(--accent)!important;color:var(--foreground)!important}
+.text-bg-danger{background:#fef2f2!important;color:#b42318!important}
+.text-bg-secondary{background:var(--accent)!important;color:var(--muted-foreground)!important}
+
+.siget-calendar-layout{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:14px}
+.siget-upcoming-list{display:grid;gap:7px}
+.siget-upcoming-event{padding:8px;border:1px solid var(--border);border-radius:8px;background:var(--card)}
+.siget-file-manager{display:grid;grid-template-columns:230px minmax(0,1fr);gap:12px}
+.siget-storage-card{padding:12px;border:1px solid var(--border);border-radius:10px;background:var(--card)}
+.siget-file-toolbar{padding:10px 12px;border-bottom:1px solid var(--border)}
+.siget-file-section{padding:12px}
+.siget-folder-grid,.siget-file-grid{gap:8px}
+.siget-folder-card,.siget-file-card{padding:10px;border:1px solid var(--border);border-radius:9px;background:var(--card)}
+.siget-folder-card strong,.siget-file-card strong{font-size:12px}
+.siget-folder-card small,.siget-file-card small{font-size:10px}
+
+.siget-auth-page{
+  min-height:100vh;
+  display:grid;
+  grid-template-columns:minmax(330px,.9fr) minmax(400px,1.1fr);
+  background:var(--background);
+}
+.siget-auth-brand-panel{
+  position:relative;
+  overflow:hidden;
+  padding:clamp(30px,6vw,72px);
+  display:flex;flex-direction:column;justify-content:center;
+  color:var(--foreground);
+  background:var(--background-soft);
+  border-right:1px solid var(--border);
+}
+.siget-auth-logo{display:flex;align-items:center;gap:10px;margin-bottom:28px}
+.siget-auth-logo .siget-brand-mark{background:var(--foreground);color:var(--background)}
+.siget-auth-brand-panel h1{font-size:clamp(26px,3vw,40px);font-weight:750;letter-spacing:-.04em}
+.siget-auth-brand-panel p,.siget-auth-benefit small{color:var(--muted-foreground);font-size:12px}
+.siget-auth-benefits{display:grid;gap:12px;margin-top:24px}
+.siget-auth-benefit{display:flex;gap:10px}
+.siget-auth-benefit i{width:30px;height:30px;display:grid;place-items:center;border:1px solid var(--border);border-radius:8px;background:var(--card)}
+.siget-auth-form-panel{display:grid;place-items:center;padding:28px}
+.siget-auth-card{width:min(440px,100%);padding:26px;border:1px solid var(--border);border-radius:12px;background:var(--card);box-shadow:var(--shadow-sm)}
+.siget-auth-card h2{font-size:20px;font-weight:700;letter-spacing:-.02em}
+.siget-auth-security{margin-top:14px;padding:10px;border:1px solid var(--border);border-radius:8px;background:var(--background-soft);color:var(--muted-foreground);font-size:10.5px}
+
+@media(max-width:1199px){
+  .board-kpis{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+}
+@media(max-width:991px){
+  .siget-sidebar{transform:translateX(-102%)}
+  body.siget-sidebar-open .siget-sidebar{transform:translateX(0)}
+  body.siget-sidebar-open .siget-sidebar-backdrop{display:block;position:fixed;inset:0;z-index:1035;background:rgba(15,23,42,.42)}
+  .siget-main{margin-left:0;width:100%}
+  .siget-sidebar{width:var(--sw)}
+  .siget-auth-page{grid-template-columns:1fr}
+  .siget-auth-brand-panel{min-height:250px;border-right:0;border-bottom:1px solid var(--border)}
+  .siget-file-manager{grid-template-columns:1fr}
+  .siget-calendar-layout{grid-template-columns:1fr}
+}
+@media(max-width:760px){
+  .siget-content{padding:12px}
+  .board-kpis{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  .siget-kanban{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  .siget-top-user{display:none}
+}
+@media(max-width:520px){
+  .board-kpis{grid-template-columns:1fr!important}
+  .siget-kanban{grid-template-columns:1fr!important}
+}
+@media(min-width:992px){
+  body.siget-sidebar-collapsed{--sw:72px}
+  body.siget-sidebar-collapsed .siget-brand-copy,
+  body.siget-sidebar-collapsed .siget-user-card>div:not(.siget-avatar),
+  body.siget-sidebar-collapsed .siget-nav span,
+  body.siget-sidebar-collapsed .siget-sidebar-footer{display:none}
+  body.siget-sidebar-collapsed .siget-brand,
+  body.siget-sidebar-collapsed .siget-user-card,
+  body.siget-sidebar-collapsed .siget-nav a{justify-content:center}
+}
+
+/* FullCalendar usa Bootstrap como plugin de integración, pero hereda Zenith. */
+.fc{
+  --fc-border-color:var(--border);
+  --fc-page-bg-color:var(--card);
+  --fc-neutral-bg-color:var(--background-soft);
+  --fc-today-bg-color:var(--accent);
+  --fc-button-bg-color:var(--foreground);
+  --fc-button-border-color:var(--foreground);
+  --fc-button-hover-bg-color:var(--muted-foreground);
+  --fc-button-hover-border-color:var(--muted-foreground);
+  --fc-event-bg-color:var(--foreground);
+  --fc-event-border-color:var(--foreground);
+  font-size:12px;
+}
+.fc .fc-toolbar-title{font-size:16px;font-weight:700}
+.fc .fc-button{font-size:11px!important;border-radius:7px!important;padding:4px 7px!important}
