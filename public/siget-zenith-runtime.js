@@ -1,6 +1,6 @@
 (()=> {
   const palettes = {
-    default: {primary:'#0f7f7c', foreground:'#ffffff', accent:'#e8f7f6', ring:'#0f7f7c', success:'#3f7f55', warning:'#9b6a1d', danger:'#a94747', info:'#4d76b8', sidebar:'#eaf5f4'},
+    default: {primary:'#18181b', foreground:'#ffffff', accent:'#f4f4f5', ring:'#71717a', success:'#52525b', warning:'#71717a', danger:'#52525b', info:'#52525b', sidebar:'#f4f4f5'},
     ocean: {primary:'#3b6fc4', foreground:'#ffffff', accent:'#edf4ff', ring:'#3b6fc4', success:'#3f7f74', warning:'#9d7423', danger:'#a54d5a', info:'#4d76b8', sidebar:'#edf3fc'},
     sunset: {primary:'#b96531', foreground:'#ffffff', accent:'#fff1e9', ring:'#b96531', success:'#527854', warning:'#9a7025', danger:'#a95050', info:'#5d79a3', sidebar:'#fbf1eb'},
     forest: {primary:'#3f7d5a', foreground:'#ffffff', accent:'#edf7f0', ring:'#3f7d5a', success:'#3f7a55', warning:'#917026', danger:'#9f4d45', info:'#55759b', sidebar:'#edf5ef'},
