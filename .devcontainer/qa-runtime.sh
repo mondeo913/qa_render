@@ -11,21 +11,27 @@ if [[ -f .env ]]; then
   if grep -q '^SESSION_EXPIRE_ON_CLOSE=' .env; then sed -i 's/^SESSION_EXPIRE_ON_CLOSE=.*/SESSION_EXPIRE_ON_CLOSE=false/' .env; else printf 'SESSION_EXPIRE_ON_CLOSE=false\n' >> .env; fi
 fi
 
-# Recompilar assets Vite cuando el código fuente cambió después del último build.
-# Esto evita servir un public/build obsoleto y hace visibles los cambios de interfaz
-# sin depender de un build manual después de cada modificación.
+# El build de Vite está ignorado por Git (/public/build), por lo que un checkout/reset
+# puede dejar un bundle de otra versión. Se ata el build al SHA exacto de main.
 if command -v npm >/dev/null 2>&1 && [[ -f package.json ]]; then
   BUILD_MANIFEST="public/build/manifest.json"
+  BUILD_STAMP="public/build/.siget-build-commit"
+  CURRENT_COMMIT="$(git rev-parse HEAD 2>/dev/null || true)"
+  BUILT_COMMIT="$(cat "$BUILD_STAMP" 2>/dev/null || true)"
   NEED_BUILD=0
-  if [[ ! -f "$BUILD_MANIFEST" ]]; then
-    NEED_BUILD=1
-  elif find resources/css resources/js -type f -newer "$BUILD_MANIFEST" -print -quit 2>/dev/null | grep -q .; then
+
+  if [[ ! -f "$BUILD_MANIFEST" || "$BUILT_COMMIT" != "$CURRENT_COMMIT" ]]; then
     NEED_BUILD=1
   fi
 
   if [[ "$NEED_BUILD" -eq 1 ]]; then
-    echo "Detectados assets frontend nuevos; ejecutando npm run build..."
-    npm run build || echo "ADVERTENCIA: no se pudo recompilar Vite; se conserva el último build disponible.";
+    echo "Build frontend no corresponde al commit ${CURRENT_COMMIT}; ejecutando npm run build..."
+    if npm run build; then
+      printf "%s\n" "$CURRENT_COMMIT" > "$BUILD_STAMP"
+      echo "Build Vite actualizado para ${CURRENT_COMMIT}."
+    else
+      echo "ERROR: npm run build falló; no se marcará el build como vigente."
+    fi
   fi
 fi
 
