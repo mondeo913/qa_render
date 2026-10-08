@@ -325,6 +325,24 @@ stderr_logfile=${LOG_DIR}/postgres-watchdog-supervisor-error.log
 EOF
 }
 
+stop_legacy_laravel_server() {
+  local pid args
+  while read -r pid args; do
+    [[ -z "${pid:-}" ]] && continue
+    [[ "${pid}" == "$" ]] && continue
+
+    if [[ "${args}" == *"artisan serve"* && "${args}" == *"--port=8000"* ]]; then
+      echo "Deteniendo servidor Laravel legado (PID ${pid})..."
+      kill "${pid}" >/dev/null 2>&1 || true
+    elif [[ "${args}" == *"Illuminate/Foundation/resources/server.php"* && "${args}" == *"8000"* ]]; then
+      echo "Deteniendo router Laravel legado (PID ${pid})..."
+      kill "${pid}" >/dev/null 2>&1 || true
+    fi
+  done < <(ps -eo pid=,args= 2>/dev/null || true)
+
+  sleep 1
+}
+
 supervisor_is_running() {
   [[ -f "${SUPERVISOR_PID}" ]] &&
     kill -0 "$(cat "${SUPERVISOR_PID}")" >/dev/null 2>&1
