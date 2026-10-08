@@ -1,4 +1,4 @@
-/* SIGET Zenith fallback visual runtime. Loaded after Vite to guarantee current UI tokens. */
+/* SIGET Zenith visual runtime mirror. */
 /* ==========================================================================
    SIGET · Zenith Shadcn UI
    Visual layer única. Bootstrap queda solo como compatibilidad estructural.
@@ -1267,3 +1267,157 @@ body.siget-body .badge.bg-primary{background:var(--primary)!important;color:var(
 .siget-choice-row button:hover,.siget-choice-row button.active{background:var(--accent);border-color:var(--ring);font-weight:650}
 .siget-customizer-foot{padding:12px 14px;border-top:1px solid var(--border)}
 @media(max-width:700px){.siget-customizer-panel{width:100%}}
+
+
+
+/* ==========================================================================
+   SIGET · FINAL UI STANDARD
+   Una sola escala legible para todos los módulos.
+   Este bloque tiene prioridad sobre reglas históricas compactas.
+   ========================================================================== */
+:root{
+  --ui-font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  --ui-text:14px;
+  --ui-small:12px;
+  --ui-label:13px;
+  --ui-title:20px;
+  --ui-card-title:15px;
+  --ui-table:13px;
+  --ui-muted:#667085;
+}
+html,body,body.siget-body,
+body.siget-body *{
+  font-family:var(--ui-font-family)!important;
+}
+body.siget-body{font-size:var(--ui-text)!important;line-height:1.45!important;color:var(--foreground)!important}
+body.siget-body .siget-content{font-size:var(--ui-text)!important}
+body.siget-body .siget-topbar h1{font-size:21px!important}
+body.siget-body .siget-page-subtitle{font-size:13px!important}
+body.siget-body .siget-nav a{font-size:13px!important}
+body.siget-body .siget-sidebar-link{font-size:12px!important}
+body.siget-body .siget-user-card strong{font-size:13px!important}
+body.siget-body .siget-user-card small{font-size:11px!important}
+body.siget-body .form-label,
+body.siget-body .form-check-label{font-size:13px!important}
+body.siget-body .form-control,
+body.siget-body .form-select,
+body.siget-body .input-group-text{font-size:13px!important;min-height:36px!important;height:36px!important}
+body.siget-body .btn{font-size:13px!important;min-height:35px!important;height:auto!important}
+body.siget-body .badge{font-size:11px!important}
+body.siget-body .table thead th{font-size:11px!important}
+body.siget-body .table td{font-size:var(--ui-table)!important}
+
+body.siget-body .siget-card .card-header{min-height:48px!important;padding:9px 12px!important}
+body.siget-body .siget-card .card-header h2{font-size:var(--ui-card-title)!important}
+body.siget-body .siget-card .card-header p{font-size:12px!important}
+body.siget-body .siget-card .card-body{font-size:14px!important}
+
+body.siget-body .siget-op-dashboard,
+body.siget-body .exec,
+body.siget-body .direction-intelligence,
+body.siget-body .siget-admin-users{font-size:14px!important}
+
+body.siget-body .siget-op-dashboard .op-heading-copy h2,
+body.siget-body .exec-title h2,
+body.siget-body .direction-intelligence .di-head h3{font-size:16px!important}
+body.siget-body .siget-op-dashboard .op-heading-copy p,
+body.siget-body .exec-title p,
+body.siget-body .direction-intelligence .di-head p{font-size:12px!important}
+
+body.siget-body .siget-op-dashboard .op-filter-control select,
+body.siget-body .siget-op-dashboard .op-advanced .form-control,
+body.siget-body .siget-op-dashboard .op-advanced .form-select,
+body.siget-body .siget-op-dashboard .op-filter-actions .btn{font-size:13px!important}
+
+body.siget-body .siget-op-dashboard .op-kpi-label{font-size:12px!important}
+body.siget-body .siget-op-dashboard .op-kpi-value{font-size:19px!important}
+body.siget-body .siget-op-dashboard .op-kpi-meta{font-size:11px!important}
+body.siget-body .siget-op-dashboard .op-card-head h3{font-size:14px!important}
+body.siget-body .siget-op-dashboard .op-card-head p{font-size:12px!important}
+body.siget-body .siget-op-dashboard .op-bar-row,
+body.siget-body .siget-op-dashboard .op-resp-row{font-size:12px!important}
+body.siget-body .siget-op-dashboard .op-resp-row strong,
+body.siget-body .siget-op-dashboard .op-bar-value{font-size:12px!important}
+body.siget-body .siget-op-dashboard .op-evidence-table{font-size:13px!important}
+body.siget-body .siget-op-dashboard .op-evidence-table th{font-size:11px!important}
+body.siget-body .siget-op-dashboard .op-evidence-table td{font-size:13px!important}
+
+body.siget-body .direction-intelligence .di-filters label{font-size:12px!important}
+body.siget-body .direction-intelligence .di-filters select,
+body.siget-body .direction-intelligence .di-filters input,
+body.siget-body .direction-intelligence .di-filters .btn{font-size:13px!important;min-height:36px!important;height:36px!important}
+body.siget-body .direction-intelligence .role-kpi-card small{font-size:12px!important}
+body.siget-body .direction-intelligence .role-kpi-card strong{font-size:19px!important}
+body.siget-body .direction-intelligence .di-panel{min-height:265px!important}
+body.siget-body .direction-intelligence .di-head{padding:10px 12px!important}
+body.siget-body .direction-intelligence .di-chart{height:225px!important;min-height:225px!important}
+body.siget-body .direction-intelligence .di-table,
+body.siget-body .direction-intelligence .di-table td{font-size:12px!important}
+body.siget-body .direction-intelligence .di-table th{font-size:11px!important}
+body.siget-body .direction-intelligence .di-badge{font-size:10px!important}
+body.siget-body .direction-intelligence .di-empty{font-size:12px!important}
+
+body.siget-body .siget-admin-users .card-header h2{font-size:16px!important}
+body.siget-body .siget-admin-users .card-header p{font-size:12px!important}
+body.siget-body .siget-admin-users .table th{font-size:11px!important;padding:7px 8px!important}
+body.siget-body .siget-admin-users .table td{font-size:13px!important;padding:8px!important}
+body.siget-body .siget-admin-users .btn{font-size:12px!important;min-height:34px!important;height:34px!important}
+body.siget-body .siget-admin-users .form-control,
+body.siget-body .siget-admin-users .form-select{font-size:13px!important;min-height:36px!important;height:36px!important}
+
+body.siget-body .siget-op-dashboard .op-kpi-icon{
+  background:var(--accent)!important;
+  color:var(--primary)!important;
+}
+body.siget-body .siget-op-dashboard .op-kpi-progress span{
+  background:var(--primary)!important;
+}
+body.siget-body .siget-op-dashboard .op-heading-meta,
+body.siget-body .siget-op-dashboard .op-heading-meta *{
+  color:var(--muted-foreground)!important;
+}
+body.siget-body .siget-op-dashboard .op-scope-badge{
+  color:var(--foreground)!important;
+  background:var(--background-soft)!important;
+  border-color:var(--border)!important;
+}
+
+html[data-zenith-density="compact"] body.siget-body{font-size:14px!important}
+html[data-zenith-density="compact"] body.siget-body .form-control,
+html[data-zenith-density="compact"] body.siget-body .form-select{min-height:34px!important;height:34px!important}
+html[data-zenith-density="comfortable"] body.siget-body{font-size:15px!important}
+html[data-zenith-density="comfortable"] body.siget-body .form-control,
+html[data-zenith-density="comfortable"] body.siget-body .form-select{min-height:38px!important;height:38px!important}
+
+@media(max-width:760px){
+  body.siget-body{font-size:14px!important}
+  body.siget-body .siget-topbar h1{font-size:19px!important}
+  body.siget-body .siget-op-dashboard .op-evidence-table,
+  body.siget-body .siget-op-dashboard .op-evidence-table td{font-size:12px!important}
+}
+
+
+
+/* Zenith semantic colors: neutralize Bootstrap utility colors across SIGET. */
+body.siget-body .bg-primary,
+body.siget-body .text-bg-primary{background-color:var(--primary)!important;color:var(--primary-foreground)!important}
+body.siget-body .text-primary{color:var(--primary)!important}
+body.siget-body .border-primary{border-color:var(--primary)!important}
+body.siget-body .bg-success,
+body.siget-body .text-bg-success{background-color:var(--success)!important;color:#fff!important}
+body.siget-body .text-success{color:var(--success)!important}
+body.siget-body .bg-warning,
+body.siget-body .text-bg-warning{background-color:var(--warning)!important;color:#fff!important}
+body.siget-body .text-warning{color:var(--warning)!important}
+body.siget-body .bg-danger,
+body.siget-body .text-bg-danger{background-color:var(--danger)!important;color:#fff!important}
+body.siget-body .text-danger{color:var(--danger)!important}
+body.siget-body .bg-info,
+body.siget-body .text-bg-info{background-color:var(--info)!important;color:#fff!important}
+body.siget-body .text-info{color:var(--info)!important}
+body.siget-body .text-bg-light{background-color:var(--accent)!important;color:var(--foreground)!important}
+body.siget-body .text-secondary{color:var(--muted-foreground)!important}
+body.siget-body .progress{background:var(--muted)!important}
+body.siget-body .progress-bar{background:var(--primary)!important}
+body.siget-body .btn-outline-primary{--bs-btn-color:var(--primary);--bs-btn-border-color:var(--primary);--bs-btn-hover-bg:var(--primary);--bs-btn-hover-border-color:var(--primary);--bs-btn-hover-color:var(--primary-foreground)}
+
