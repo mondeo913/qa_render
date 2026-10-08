@@ -982,3 +982,238 @@ body.siget-body textarea{font:inherit}
 @media(max-width:1100px){.siget-op-dashboard .op-filterbar{grid-template-columns:repeat(2,minmax(0,1fr))}.siget-op-dashboard .op-grid-top,.siget-op-dashboard .op-grid-bottom{grid-template-columns:1fr 1fr}.exec-grid{grid-template-columns:1fr 1fr}.exec-grid>.exec-card:last-child{grid-column:1/-1}}
 @media(max-width:760px){.siget-op-dashboard .op-filterbar,.siget-op-dashboard .op-grid-top,.siget-op-dashboard .op-grid-bottom,.exec-grid{grid-template-columns:1fr}.exec-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.direction-intelligence .di-chart-grid,.direction-intelligence .di-chart-grid-primary,.direction-intelligence .di-chart-grid-secondary,.direction-intelligence .di-chart-grid-tertiary{grid-template-columns:1fr}.direction-intelligence .di-chart{height:210px;min-height:210px}}
 @media(max-width:700px){.siget-op-dashboard .op-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.siget-op-dashboard .op-funnel-wrap{grid-template-columns:1fr}.exec-header{display:block}.exec-header-actions{justify-content:flex-start;margin-top:7px}.direction-intelligence{padding:9px}}
+
+/* ==========================================================================
+   SIGET · Unified Zenith typography scale v2
+   A single readable scale for every module. Module-specific legacy sizing
+   is intentionally overridden here so Dashboard, Intelligence, Users and
+   Load Board render at the same baseline.
+   ========================================================================== */
+
+:root{
+  --zenith-font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  --zenith-font-size:15px;
+  --zenith-size-xs:11px;
+  --zenith-size-sm:12px;
+  --zenith-size-md:14px;
+  --zenith-size-lg:16px;
+  --zenith-size-xl:20px;
+  --zenith-line-tight:1.2;
+  --zenith-line-normal:1.45;
+}
+
+html,
+body,
+body.siget-body{
+  font-family:var(--zenith-font-family)!important;
+  font-size:var(--zenith-font-size)!important;
+  line-height:var(--zenith-line-normal)!important;
+}
+
+body.siget-body .siget-sidebar,
+body.siget-body .siget-main,
+body.siget-body .siget-content,
+body.siget-body .siget-topbar,
+body.siget-body .siget-sidebar *{
+  font-family:var(--zenith-font-family);
+}
+
+body.siget-body .siget-nav a{font-size:14px!important;line-height:1.25!important}
+body.siget-body .siget-nav i{font-size:15px!important}
+body.siget-body .siget-brand-copy strong{font-size:15px!important}
+body.siget-body .siget-brand-copy small{font-size:11px!important}
+body.siget-body .siget-user-card strong{font-size:13px!important}
+body.siget-body .siget-user-card small{font-size:11px!important}
+body.siget-body .siget-sidebar-government strong{font-size:13px!important}
+body.siget-body .siget-sidebar-government small{font-size:11px!important}
+body.siget-body .siget-sidebar-link{font-size:12px!important}
+
+body.siget-body .siget-eyebrow{font-size:11px!important}
+body.siget-body .siget-topbar h1{font-size:21px!important;line-height:1.15!important}
+body.siget-body .siget-page-subtitle{font-size:13px!important}
+body.siget-body .siget-global-search input{font-size:13px!important}
+body.siget-body .siget-top-user strong{font-size:13px!important}
+body.siget-body .siget-top-user small{font-size:11px!important}
+body.siget-body .siget-env-badge{font-size:11px!important}
+
+body.siget-body .siget-content{font-size:15px!important}
+body.siget-body .siget-card .card-header h2{font-size:16px!important}
+body.siget-body .siget-card .card-header p{font-size:12px!important}
+body.siget-body .siget-card .card-body{font-size:14px!important}
+body.siget-body .form-label{font-size:13px!important}
+body.siget-body .form-control,
+body.siget-body .form-select,
+body.siget-body .input-group-text{font-size:13px!important;min-height:36px!important}
+body.siget-body .btn{font-size:13px!important;min-height:35px!important}
+body.siget-body .form-check-label{font-size:13px!important}
+body.siget-body .form-text{font-size:11px!important}
+body.siget-body .badge{font-size:11px!important}
+body.siget-body .table thead th{font-size:11px!important}
+body.siget-body .table td{font-size:13px!important}
+
+/* --------------------------------------------------------------------------
+   Tablero de cargas: readable, still compact.
+   -------------------------------------------------------------------------- */
+body.siget-body .board-heading h2{font-size:20px!important}
+body.siget-body .board-heading>div>p:not(.scope-label){font-size:13px!important}
+body.siget-body .scope-label{font-size:11px!important}
+
+body.siget-body .board-kpi{
+  min-height:62px!important;
+  height:62px!important;
+}
+body.siget-body .board-kpi small{font-size:12px!important}
+body.siget-body .board-kpi strong{font-size:18px!important}
+body.siget-body .board-kpi-icon{width:30px!important;height:30px!important;font-size:13px!important}
+
+body.siget-body #loadBoardFilters .form-label{font-size:12px!important}
+body.siget-body #loadBoardFilters .form-control,
+body.siget-body #loadBoardFilters .form-select,
+body.siget-body #loadBoardFilters .input-group-text{min-height:34px!important;height:34px!important;font-size:12px!important}
+body.siget-body #loadBoardFilters .form-text{font-size:10.5px!important}
+body.siget-body #loadBoardFilters .board-period-segmented .small{font-size:11px!important}
+body.siget-body #loadBoardFilters .board-period-segmented .btn{
+  min-height:30px!important;
+  height:30px!important;
+  font-size:11px!important;
+}
+
+body.siget-body .siget-kanban-column>header{
+  height:50px!important;
+  min-height:50px!important;
+  padding:7px 10px!important;
+}
+body.siget-body .siget-kanban-column>header h3{font-size:14px!important;line-height:1.15!important}
+body.siget-body .siget-kanban-column>header p{font-size:11px!important;line-height:1.2!important}
+body.siget-body .siget-kanban-column>header>span{
+  width:24px!important;height:24px!important;min-width:24px!important;font-size:11px!important
+}
+body.siget-body .siget-kanban-stack{
+  height:calc(clamp(310px,calc(100vh - 365px),500px) - 50px)!important;
+}
+
+body.siget-body .siget-load-card{
+  height:136px!important;
+  min-height:136px!important;
+  max-height:136px!important;
+  padding:9px!important;
+}
+body.siget-body .load-card-top{min-height:21px!important;height:21px!important}
+body.siget-body .siget-load-agency{font-size:11px!important;line-height:1.05!important}
+body.siget-body .siget-load-card h4{
+  height:18px!important;
+  max-height:18px!important;
+  margin:2px 0 3px!important;
+  font-size:13px!important;
+  line-height:18px!important;
+}
+body.siget-body .siget-load-card .load-card-badges{
+  height:19px!important;
+  min-height:19px!important;
+  gap:3px!important;
+  margin:2px 0!important;
+}
+body.siget-body .siget-load-card .load-card-badges .badge{
+  height:17px!important;
+  padding:2px 5px!important;
+  font-size:10px!important;
+  line-height:13px!important;
+}
+body.siget-body .siget-load-card .siget-load-units{
+  height:13px!important;
+  max-height:13px!important;
+  font-size:10px!important;
+  line-height:13px!important;
+}
+body.siget-body .siget-load-card .siget-load-meta{
+  height:14px!important;
+  max-height:14px!important;
+  font-size:10px!important;
+  line-height:14px!important;
+  gap:8px!important;
+}
+body.siget-body .siget-load-card .load-card-progress-label{
+  height:14px!important;
+  margin:2px 0 2px!important;
+  font-size:10px!important;
+  line-height:14px!important;
+}
+body.siget-body .siget-load-card .load-card-progress-label strong{font-size:11px!important}
+body.siget-body .siget-load-card .load-card-progress{height:4px!important;min-height:4px!important}
+body.siget-body .siget-load-card .siget-load-footer{
+  height:21px!important;
+  margin:4px 0 0!important;
+  padding-top:3px!important;
+}
+body.siget-body .siget-load-counters{font-size:10px!important;gap:6px!important}
+body.siget-body .siget-load-footer .btn{
+  min-height:24px!important;
+  height:24px!important;
+  padding:0 7px!important;
+  font-size:10px!important;
+}
+body.siget-body .siget-assignees{
+  height:12px!important;
+  max-height:12px!important;
+  font-size:9px!important;
+  line-height:12px!important;
+}
+body.siget-body .siget-kanban-empty{font-size:12px!important;min-height:60px!important;height:60px!important}
+
+/* --------------------------------------------------------------------------
+   Dashboard ejecutivo, Inteligencia y Usuarios: same readable baseline.
+   -------------------------------------------------------------------------- */
+body.siget-body .exec,
+body.siget-body .direction-intelligence{font-size:14px!important}
+body.siget-body .exec-title h2{font-size:20px!important}
+body.siget-body .exec-title p{font-size:13px!important}
+body.siget-body .exec-title small{font-size:11px!important}
+body.siget-body .exec-overline{font-size:11px!important}
+body.siget-body .exec-scope{font-size:11px!important}
+body.siget-body .exec-actions .btn{font-size:12px!important}
+body.siget-body .exec-filters>.row>div>label{font-size:11px!important}
+body.siget-body .exec-filters>.row .form-select,
+body.siget-body .exec-filters>.row .form-control{font-size:12px!important;height:35px!important;min-height:35px!important}
+body.siget-body .exec-period{font-size:11px!important}
+body.siget-body .exec-period button{font-size:11px!important}
+
+body.siget-body .exec-kpi{height:78px!important;padding:9px!important}
+body.siget-body .exec-kpi label{font-size:11px!important}
+body.siget-body .exec-kpi strong{font-size:19px!important}
+body.siget-body .exec-kpi-icon{width:31px!important;height:31px!important;font-size:12px!important}
+body.siget-body .exec-card h3{font-size:14px!important}
+body.siget-body .exec-card .card-sub{font-size:11px!important}
+body.siget-body .exec-table{font-size:11px!important}
+body.siget-body .exec-table th{font-size:10px!important}
+body.siget-body .exec-table td{font-size:11px!important}
+body.siget-body .exec-badge{font-size:10px!important}
+
+body.siget-body .direction-intelligence .di-filters label{font-size:11px!important}
+body.siget-body .direction-intelligence .di-filters select,
+body.siget-body .direction-intelligence .di-filters input{font-size:12px!important;min-height:34px!important;height:34px!important}
+body.siget-body .direction-intelligence .di-filters .btn{font-size:12px!important;min-height:34px!important;height:34px!important}
+body.siget-body .direction-intelligence .role-kpi-card{height:78px!important;min-height:78px!important;padding:9px!important}
+body.siget-body .direction-intelligence .role-kpi-card small{font-size:11px!important}
+body.siget-body .direction-intelligence .role-kpi-card strong{font-size:19px!important}
+body.siget-body .direction-intelligence .role-kpi-icon{width:31px!important;height:31px!important;font-size:12px!important}
+body.siget-body .direction-intelligence .di-head h3{font-size:14px!important}
+body.siget-body .direction-intelligence .di-head p{font-size:11px!important}
+body.siget-body .direction-intelligence .di-table{font-size:11px!important}
+body.siget-body .direction-intelligence .di-table th{font-size:10px!important}
+body.siget-body .direction-intelligence .di-table td{font-size:11px!important}
+body.siget-body .direction-intelligence .di-badge{font-size:10px!important}
+body.siget-body .direction-intelligence .di-empty{font-size:11px!important}
+
+body.siget-body .siget-admin-users .card-header h2{font-size:15px!important}
+body.siget-body .siget-admin-users .card-header p{font-size:11px!important}
+body.siget-body .siget-admin-users .table th{font-size:10px!important}
+body.siget-body .siget-admin-users .table td{font-size:12px!important}
+body.siget-body .siget-admin-users .btn{font-size:11px!important;min-height:30px!important;height:30px!important}
+body.siget-body .siget-admin-users .form-control,
+body.siget-body .siget-admin-users .form-select{font-size:12px!important;min-height:33px!important;height:33px!important}
+
+@media(max-width:760px){
+  html,body,body.siget-body{font-size:14px!important}
+  body.siget-body .siget-topbar h1{font-size:19px!important}
+  body.siget-body .siget-load-card{height:138px!important;min-height:138px!important;max-height:138px!important}
+}
