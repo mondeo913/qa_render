@@ -68,6 +68,8 @@ if command -v npm >/dev/null 2>&1 && [[ -f package.json ]]; then
   fi
 fi
 
+stop_legacy_laravel_server
+
 echo
 echo "2) Verificando Supervisor y servicios SIGET..."
 if ! supervisor_is_running; then
