@@ -6,7 +6,8 @@ import interactionPlugin from '@fullcalendar/interaction';
 import bootstrap5Plugin from '@fullcalendar/bootstrap5';
 import Chart from 'chart.js/auto';
 
-const palette = ['#0db8c9','#3b82f6','#22a06b','#f59e0b','#d64550','#7c5ce7','#0ea5e9','#64748b'];
+const zenithPalettes = { default:['#0f9d9a','#3b82f6','#15803d','#b45309','#b42318','#7c5ce7','#0ea5e9','#64748b'], ocean:['#3577df','#4f8dff','#1596a6','#b7791f','#c2415c','#6d5bd0','#1d9bf0','#64748b'], sunset:['#d96b2b','#e98a3a','#3f8d58','#c58a21','#c74848','#8a5abf','#4b8fba','#6b7280'], forest:['#3f8f68','#2f7d5c','#2d7a4d','#a36a1c','#a83d35','#735ba8','#278f91','#64748b'], berry:['#9a4fa8','#7656c7','#2f8d76','#b5791b','#b43c5c','#b24f92','#407bbd','#64748b'], slate:['#4b5563','#64748b','#3f7f63','#a4771a','#a34646','#6b62a3','#4b82a6','#6b7280'] };
+let palette = zenithPalettes[document.documentElement.dataset.zenithPreset || 'default'] || zenithPalettes.default;
 const charts = [];
 const resolve = t => t === 'auto'
     ? (matchMedia('(prefers-color-scheme:dark)').matches ? 'dark' : 'light')
@@ -45,6 +46,62 @@ function sidebar() {
     if (!matchMedia('(max-width:991px)').matches && localStorage.getItem('siget-sidebar-collapsed') === '1') document.body.classList.add('siget-sidebar-collapsed');
 }
 
+function setupZenithCustomizer() {
+    const root = document.querySelector('[data-zenith-customizer]');
+    const open = document.querySelector('[data-zenith-customizer-toggle]');
+    if (!root) return;
+    const saved = {
+        preset: localStorage.getItem('zenith-preset') || document.documentElement.dataset.zenithPreset || 'default',
+        density: localStorage.getItem('zenith-density') || document.documentElement.dataset.zenithDensity || 'default',
+        container: localStorage.getItem('zenith-container') || document.documentElement.dataset.zenithContainer || 'fluid',
+        radius: localStorage.getItem('zenith-radius') || document.documentElement.dataset.zenithRadius || 'default'
+    };
+    const sync = () => {
+        root.querySelectorAll('[data-zenith-preset]').forEach(x => x.classList.toggle('active', x.dataset.zenithPreset === saved.preset));
+        root.querySelectorAll('[data-zenith-density]').forEach(x => x.classList.toggle('active', x.dataset.zenithDensity === saved.density));
+        root.querySelectorAll('[data-zenith-container]').forEach(x => x.classList.toggle('active', x.dataset.zenithContainer === saved.container));
+        root.querySelectorAll('[data-zenith-radius]').forEach(x => x.classList.toggle('active', x.dataset.zenithRadius === saved.radius));
+    };
+    const repaintCharts = () => {
+        palette = zenithPalettes[saved.preset] || zenithPalettes.default;
+        charts.forEach(chart => {
+            (chart.data?.datasets || []).forEach((d,i) => {
+                const label = String(d.label || '').toLowerCase();
+                let color = palette[i % palette.length];
+                if (label.includes('cierre')) color = palette[4];
+                if (label.includes('cumplimiento')) color = palette[2];
+                d.borderColor = color;
+                if (d.type === 'line' || chart.config.type === 'line') { d.backgroundColor = color; d.pointBackgroundColor = color; }
+                else if (!d.backgroundColor || String(d.backgroundColor).startsWith('#')) d.backgroundColor = color;
+            });
+            chart.update();
+        });
+    };
+    const apply = (kind, value) => {
+        const allowed = { preset:['default','ocean','sunset','forest','berry','slate'], density:['compact','default','comfortable'], container:['fluid','boxed'], radius:['compact','default','soft'] };
+        if (!allowed[kind] || !allowed[kind].includes(value)) return;
+        saved[kind] = value;
+        localStorage.setItem('zenith-' + kind, value);
+        document.documentElement.dataset['zenith' + kind.charAt(0).toUpperCase() + kind.slice(1)] = value;
+        if (kind === 'preset') repaintCharts();
+        sync();
+    };
+    const toggle = value => { root.classList.toggle('is-open', value); root.setAttribute('aria-hidden', value ? 'false' : 'true'); };
+    document.documentElement.dataset.zenithPreset = saved.preset;
+    document.documentElement.dataset.zenithDensity = saved.density;
+    document.documentElement.dataset.zenithContainer = saved.container;
+    document.documentElement.dataset.zenithRadius = saved.radius;
+    palette = zenithPalettes[saved.preset] || zenithPalettes.default;
+    sync();
+    open?.addEventListener('click', () => toggle(true));
+    root.querySelectorAll('[data-zenith-customizer-close]').forEach(x => x.addEventListener('click', () => toggle(false)));
+    root.querySelectorAll('[data-zenith-preset]').forEach(x => x.addEventListener('click', () => apply('preset', x.dataset.zenithPreset)));
+    root.querySelectorAll('[data-zenith-density]').forEach(x => x.addEventListener('click', () => apply('density', x.dataset.zenithDensity)));
+    root.querySelectorAll('[data-zenith-container]').forEach(x => x.addEventListener('click', () => apply('container', x.dataset.zenithContainer)));
+    root.querySelectorAll('[data-zenith-radius]').forEach(x => x.addEventListener('click', () => apply('radius', x.dataset.zenithRadius)));
+    root.querySelector('[data-zenith-reset]')?.addEventListener('click', () => { apply('preset','default'); apply('density','default'); apply('container','fluid'); apply('radius','default'); });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') toggle(false); });
+}
 function passwords() {
     document.querySelectorAll('[data-password-toggle]').forEach(b => b.addEventListener('click', () => {
         const i = document.getElementById(b.dataset.passwordToggle);
@@ -231,4 +288,4 @@ function upgradeInstitutionalTrends() {
 
 function calendar(){const e=document.getElementById('sigetCalendar');if(!e)return;const a=document.getElementById('calendarAgency');let dates=new Set;const load=async(s,t)=>{const u=new URL(e.dataset.programmedUrl,location.origin);u.searchParams.set('start',s.toISOString());u.searchParams.set('end',t.toISOString());if(a?.value)u.searchParams.set('contracting_agency_id',a.value);const r=await fetch(u,{headers:{Accept:'application/json'}});if(r.ok)dates=new Set((await r.json()).dates||[])};const c=new Calendar(e,{plugins:[dayGridPlugin,interactionPlugin,bootstrap5Plugin],themeSystem:'bootstrap5',locale:'es',initialView:'dayGridMonth',height:'auto',firstDay:1,headerToolbar:{left:'prev,next today',center:'title',right:'dayGridMonth,dayGridWeek'},buttonText:{today:'Hoy',month:'Mes',week:'Semana'},events:{url:e.dataset.eventsUrl,extraParams:()=>({contracting_agency_id:a?.value||''})},datesSet:async i=>load(i.start,i.end),dayCellDidMount:i=>{const d=i.date.toISOString().slice(0,10);if(!dates.has(d)){i.el.classList.add('fc-day-disabled-by-siget');i.el.title='Día sin carga programada en la pauta confirmada.'}},eventDidMount:i=>i.el.title=`${i.event.extendedProps.status} · ${i.event.extendedProps.completion}%`,eventClick:i=>{i.jsEvent.preventDefault();if(i.event.extendedProps.url)location.href=i.event.extendedProps.url}});c.render();a?.addEventListener('change',()=>c.refetchEvents())}
 
-document.addEventListener('DOMContentLoaded',()=>{setupTheme();sidebar();passwords();files();renderCharts();setupReportTabAnimations();requestAnimationFrame(()=>requestAnimationFrame(upgradeInstitutionalTrends));calendar();document.querySelectorAll('form[data-confirm-close]').forEach(f=>f.addEventListener('submit',e=>{if(!confirm('Esta acción validará y cerrará el expediente. ¿Continuar?'))e.preventDefault()}))});
+document.addEventListener('DOMContentLoaded',()=>{setupTheme();setupZenithCustomizer();sidebar();passwords();files();renderCharts();setupReportTabAnimations();requestAnimationFrame(()=>requestAnimationFrame(upgradeInstitutionalTrends));calendar();document.querySelectorAll('form[data-confirm-close]').forEach(f=>f.addEventListener('submit',e=>{if(!confirm('Esta acción validará y cerrará el expediente. ¿Continuar?'))e.preventDefault()}))});
