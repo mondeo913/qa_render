@@ -56,6 +56,18 @@ else
   fi
 fi
 
+# Recompilar assets frontend durante la recuperación para evitar servir
+# un public/build desactualizado.
+if command -v npm >/dev/null 2>&1 && [[ -f package.json ]]; then
+  echo
+  echo "1.5) Verificando assets frontend..."
+  if npm run build; then
+    echo "OK assets frontend compilados."
+  else
+    echo "ADVERTENCIA: npm run build falló; se conservará el último build disponible." >&2
+  fi
+fi
+
 echo
 echo "2) Verificando Supervisor y servicios SIGET..."
 if ! supervisor_is_running; then
