@@ -1618,3 +1618,20 @@ body.siget-body [style*="background:#153f71"]{
 body.siget-body [style*="color:var(--op-amber)"]{color:var(--warning)!important}
 body.siget-body [style*="color:var(--op-red)"]{color:var(--danger)!important}
 
+
+
+/* Use the complete semantic palette by role instead of one fluorescent accent. */
+body.siget-body .siget-op-dashboard .op-kpis>.op-kpi:nth-child(1) .op-kpi-icon,
+body.siget-body .siget-op-dashboard .op-kpis>.op-kpi:nth-child(2) .op-kpi-icon,
+body.siget-body .siget-op-dashboard .op-kpis>.op-kpi:nth-child(4) .op-kpi-icon{color:var(--primary)!important}
+body.siget-body .siget-op-dashboard .op-kpis>.op-kpi:nth-child(3) .op-kpi-icon{color:var(--success)!important}
+body.siget-body .siget-op-dashboard .op-kpis>.op-kpi:nth-child(5) .op-kpi-icon{color:var(--warning)!important}
+body.siget-body .siget-op-dashboard .op-kpis>.op-kpi:nth-child(6) .op-kpi-icon,
+body.siget-body .siget-op-dashboard .op-kpis>.op-kpi:nth-child(7) .op-kpi-icon{color:var(--danger)!important}
+body.siget-body .siget-op-dashboard .op-kpis>.op-kpi:nth-child(8) .op-kpi-icon{color:var(--info)!important}
+body.siget-body .siget-op-dashboard .op-kpi:nth-child(1) .op-kpi-progress span{background:var(--primary)!important}
+body.siget-body .siget-op-dashboard .op-filter-control,
+body.siget-body .siget-op-dashboard .op-advanced{
+  box-shadow:var(--shadow-xs)!important;
+}
+
