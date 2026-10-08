@@ -91,8 +91,6 @@ ensure_mailpit() {
 
 log "Watchdog SIGET iniciado. Intervalo=${INTERVAL}s."
 
-  stop_legacy_laravel_server
-
 while true; do
   # PostgreSQL tiene su propio watchdog bajo Supervisor, pero este watchdog
   # también lo recupera cuando Supervisor completo está caído.
