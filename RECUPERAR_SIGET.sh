@@ -77,7 +77,14 @@ if ! curl -fsS --max-time 20 "http://127.0.0.1:8000/up" >/dev/null 2>&1; then
   supervisorctl -c "${SUPERVISOR_CONFIG}" restart siget-web >/dev/null 2>&1 || true
 fi
 
-wait_for_http "http://127.0.0.1:8000/up" "SIGET" 60
+if ! wait_for_http "http://127.0.0.1:8000/up" "SIGET" 60; then
+  echo
+  echo "ADVERTENCIA: SIGET todavía no responde; el watchdog continuará intentando recuperarlo."
+  echo "Últimas líneas del worker web:"
+  tail -n 80 "${LOG_DIR}/web-worker-supervisor.log" 2>/dev/null || true
+  echo "Últimas líneas de Supervisor:"
+  tail -n 80 "${LOG_DIR}/supervisord.log" 2>/dev/null || true
+fi
 
 
 # Arrancar el watchdog ANTES de esperar HTTP. Así puede recuperar Laravel
