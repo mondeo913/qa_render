@@ -2054,3 +2054,221 @@ html[data-zenith-density="comfortable"] body.siget-body{font-size:15px!important
 /* Bootstrap compatibility: never restore its default focus ring or destructive color. */
 body.siget-body{--bs-focus-ring-color:transparent!important;--bs-focus-ring-width:0!important}
 html[data-zenith-preset="default"],html[data-zenith-preset="ocean"],html[data-zenith-preset="sunset"],html[data-zenith-preset="forest"],html[data-zenith-preset="berry"],html[data-zenith-preset="slate"]{--destructive:var(--danger)!important}
+
+
+/* ==========================================================================
+   SIGET · Zenith interaction contract v2
+   Última capa global: interacción neutra, sin glow ni fluorescencia,
+   y bloques de indicadores sin colisiones de texto.
+   ========================================================================== */
+
+/* 1) Sidebar / menú: hover y focus sobrios, sin halo, sin brillo. */
+body.siget-body .siget-nav a,
+body.siget-body .siget-nav a:hover,
+body.siget-body .siget-nav a:focus,
+body.siget-body .siget-nav a:focus-visible,
+body.siget-body .siget-nav a.active{
+  outline:none!important;
+  box-shadow:none!important;
+  text-shadow:none!important;
+}
+body.siget-body .siget-nav a:hover,
+body.siget-body .siget-nav a:focus,
+body.siget-body .siget-nav a:focus-visible{
+  color:var(--sidebar-foreground)!important;
+  background:color-mix(in srgb,var(--sidebar-foreground) 5%,var(--sidebar))!important;
+}
+body.siget-body .siget-nav a.active{
+  color:var(--sidebar-foreground)!important;
+  background:color-mix(in srgb,var(--sidebar-foreground) 7%,var(--sidebar))!important;
+  box-shadow:inset 2px 0 var(--border)!important;
+}
+
+/* 2) Menús desplegables y controles de navegación. */
+body.siget-body .dropdown-menu .dropdown-item,
+body.siget-body .dropdown-menu .dropdown-item:hover,
+body.siget-body .dropdown-menu .dropdown-item:focus,
+body.siget-body .dropdown-menu .dropdown-item:active,
+body.siget-body .siget-icon-button:hover,
+body.siget-body .siget-icon-button:focus,
+body.siget-body .siget-icon-button:focus-visible{
+  outline:none!important;
+  box-shadow:none!important;
+}
+body.siget-body .dropdown-menu .dropdown-item:hover,
+body.siget-body .dropdown-menu .dropdown-item:focus,
+body.siget-body .dropdown-menu .dropdown-item:active{
+  background:color-mix(in srgb,var(--foreground) 5%,var(--card))!important;
+  color:var(--foreground)!important;
+}
+body.siget-body .siget-icon-button:hover{
+  background:color-mix(in srgb,var(--foreground) 4%,var(--card))!important;
+  color:var(--foreground)!important;
+}
+
+/* 3) Tarjetas/enlaces interactivos: hover discreto. */
+body.siget-body .siget-dependency-card:hover,
+body.siget-body .siget-dependency-card.active{
+  background:color-mix(in srgb,var(--primary) 5%,var(--card))!important;
+  border-color:var(--border)!important;
+  box-shadow:none!important;
+}
+body.siget-body .siget-preset:hover,
+body.siget-body .siget-preset.active,
+body.siget-body .siget-choice-row button:hover,
+body.siget-body .siget-choice-row button.active{
+  background:color-mix(in srgb,var(--primary) 5%,var(--card))!important;
+  border-color:var(--border)!important;
+  color:var(--foreground)!important;
+  box-shadow:none!important;
+}
+body.siget-body .siget-preset span{
+  box-shadow:inset 0 0 0 2px var(--card),0 0 0 1px var(--border)!important;
+}
+
+/* 4) Botones: ningún hover/focus genera halo fluorescente. */
+body.siget-body .btn:hover,
+body.siget-body .btn:focus,
+body.siget-body .btn:focus-visible,
+body.siget-body .btn:active{
+  box-shadow:none!important;
+  text-shadow:none!important;
+}
+body.siget-body .btn-outline-primary:hover,
+body.siget-body .btn-outline-primary:focus,
+body.siget-body .btn-outline-primary:focus-visible{
+  background:color-mix(in srgb,var(--primary) 6%,var(--card))!important;
+  border-color:var(--border)!important;
+  color:var(--foreground)!important;
+}
+body.siget-body .btn-outline-secondary:hover,
+body.siget-body .btn-outline-secondary:focus,
+body.siget-body .btn-outline-secondary:focus-visible{
+  background:color-mix(in srgb,var(--foreground) 4%,var(--card))!important;
+  border-color:var(--border)!important;
+  color:var(--foreground)!important;
+}
+
+/* 5) Formularios: foco completamente neutro. */
+body.siget-body input,
+body.siget-body select,
+body.siget-body textarea,
+body.siget-body .form-control,
+body.siget-body .form-select,
+body.siget-body .input-group-text,
+body.siget-body input:hover,
+body.siget-body select:hover,
+body.siget-body textarea:hover,
+body.siget-body input:focus,
+body.siget-body select:focus,
+body.siget-body textarea:focus,
+body.siget-body input:focus-visible,
+body.siget-body select:focus-visible,
+body.siget-body textarea:focus-visible{
+  outline:none!important;
+  box-shadow:none!important;
+}
+body.siget-body input:focus,
+body.siget-body select:focus,
+body.siget-body textarea:focus,
+body.siget-body .form-control:focus,
+body.siget-body .form-select:focus{
+  border-color:var(--border)!important;
+  background:var(--card)!important;
+}
+
+/* 6) KPI tablero: evitar que etiqueta y valor se encimen. */
+body.siget-body .board-kpis{
+  grid-template-columns:repeat(6,minmax(118px,1fr))!important;
+  align-items:stretch!important;
+}
+body.siget-body .board-kpi{
+  min-width:0!important;
+  min-height:62px!important;
+  height:62px!important;
+  grid-template-columns:30px minmax(0,1fr) auto!important;
+  gap:7px!important;
+  overflow:hidden!important;
+}
+body.siget-body .board-kpi small{
+  min-width:0!important;
+  max-width:none!important;
+  white-space:normal!important;
+  overflow:visible!important;
+  text-overflow:clip!important;
+  overflow-wrap:anywhere!important;
+  line-height:1.15!important;
+}
+body.siget-body .board-kpi strong{
+  min-width:24px!important;
+  white-space:nowrap!important;
+  text-align:right!important;
+}
+
+/* 7) KPI operativo: etiquetas y cifras ocupan zonas distintas. */
+body.siget-body .siget-op-dashboard .op-kpis{
+  grid-template-columns:repeat(8,minmax(0,1fr))!important;
+  gap:7px!important;
+}
+body.siget-body .siget-op-dashboard .op-kpi{
+  min-width:0!important;
+  min-height:78px!important;
+  height:78px!important;
+  padding:9px!important;
+  overflow:hidden!important;
+  grid-template-columns:31px minmax(0,1fr)!important;
+  grid-template-rows:minmax(28px,auto) auto!important;
+  align-items:center!important;
+}
+body.siget-body .siget-op-dashboard .op-kpi-icon{
+  width:31px!important;
+  height:31px!important;
+  background:var(--accent)!important;
+  color:var(--primary)!important;
+  box-shadow:none!important;
+}
+body.siget-body .siget-op-dashboard .op-kpi-label{
+  min-width:0!important;
+  white-space:normal!important;
+  overflow-wrap:anywhere!important;
+  line-height:1.15!important;
+  align-self:end!important;
+}
+body.siget-body .siget-op-dashboard .op-kpi-value{
+  min-width:0!important;
+  white-space:nowrap!important;
+  line-height:1!important;
+  margin-top:2px!important;
+}
+body.siget-body .siget-op-dashboard .op-kpi-progress{
+  margin-top:4px!important;
+}
+
+/* 8) General: no sombras de interacción ni transiciones que simulen glow. */
+body.siget-body .siget-nav *,
+body.siget-body .dropdown-menu *,
+body.siget-body .btn *,
+body.siget-body .form-control *,
+body.siget-body .form-select *{
+  text-shadow:none!important;
+}
+body.siget-body a:hover:not(.siget-dependency-card):not(.siget-nav a),
+body.siget-body a:focus-visible:not(.siget-dependency-card):not(.siget-nav a){
+  text-decoration-thickness:1px;
+}
+
+/* Breakpoints para evitar amontonamiento en anchos reducidos. */
+@media(max-width:1500px){
+  body.siget-body .board-kpis{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+  body.siget-body .siget-op-dashboard .op-kpis{grid-template-columns:repeat(4,minmax(0,1fr))!important}
+}
+@media(max-width:900px){
+  body.siget-body .board-kpis{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+}
+@media(max-width:760px){
+  body.siget-body .siget-op-dashboard .op-kpis{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+}
+@media(max-width:520px){
+  body.siget-body .board-kpis,
+  body.siget-body .siget-op-dashboard .op-kpis{grid-template-columns:1fr!important}
+}
