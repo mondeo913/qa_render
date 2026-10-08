@@ -265,7 +265,7 @@ serverurl=unix://${SUPERVISOR_SOCKET}
 
 [program:siget-web]
 directory=${PROJECT_ROOT}
-command=/usr/local/bin/php artisan serve --host=0.0.0.0 --port=8000
+command=/usr/bin/env bash ${PROJECT_ROOT}/.devcontainer/siget-web-worker.sh
 autostart=true
 autorestart=true
 startsecs=2
