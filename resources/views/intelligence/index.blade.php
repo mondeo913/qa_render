@@ -204,12 +204,16 @@
     const rawStatus=@json($analytics['status_distribution'] ?? []);
     const direction=@json($directions->take(10)->values());
     const responsibles=@json($responsibles->take(10)->values());
-    const text='#eaf2f7', muted='#8195a8', grid='rgba(255,255,255,.08)', cyan='#21c6d8', blue='#4f7cff', green='#35c77a', red='#ef4655', yellow='#e9b949';
+    const dark=document.documentElement.dataset.bsTheme==='dark';
+    const text=dark?'#e2e8f0':'#344054', muted=dark?'#94a3b8':'#667085', grid=dark?'rgba(148,163,184,.16)':'rgba(15,23,42,.10)';
+    const palettes={default:['#0f7f7c','#3b72c4','#4a8758','#a66b22','#ad3b42'],ocean:['#3b6fc4','#4d83d1','#438a84','#a27427','#aa4655'],sunset:['#b95f29','#bf7430','#558052','#a0782e','#ac4e4e'],forest:['#3e7d5c','#4c7fa1','#467d52','#96702b','#9c4540'],berry:['#87509a','#6260ad','#548270','#a5792b','#a24767'],slate:['#596474','#687789','#5f806c','#8a7538','#86575a']};
+    const cp=palettes[document.documentElement.dataset.zenithPreset||'default']||palettes.default;
+    const cyan=cp[0], blue=cp[1], green=cp[2], red=cp[4], yellow=cp[3];
 
     function chart(id,type,data,options={}){
         const el=document.getElementById(id);
         if(!el || typeof Chart==='undefined') return;
-        new Chart(el,{type,data,options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:text,boxWidth:9,font:{size:9}}}},scales:{x:{ticks:{color:muted,font:{size:9}},grid:{color:grid}},y:{ticks:{color:muted,font:{size:9}},grid:{color:grid},beginAtZero:true}},...options}});
+        new Chart(el,{type,data,options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:text,boxWidth:9,font:{size:11}}}},scales:{x:{ticks:{color:muted,font:{size:11}},grid:{color:grid}},y:{ticks:{color:muted,font:{size:11}},grid:{color:grid},beginAtZero:true}},...options}});
     }
 
     chart('directionIntelligenceTrend','line',{
@@ -229,7 +233,7 @@
             ['OBSERVADA','EN_REVISION_INSTITUCIONAL'].includes(key)?'En revisión':'En operación';
         status[label]=(status[label]||0)+Number(value||0);
     });
-    chart('directionIntelligenceStatus','doughnut',{labels:Object.keys(status),datasets:[{data:Object.values(status),backgroundColor:[green,red,blue,yellow,cyan],borderWidth:0}]},{cutout:'68%',plugins:{legend:{position:'bottom',labels:{color:text,boxWidth:9,font:{size:9}}}}});
+    chart('directionIntelligenceStatus','doughnut',{labels:Object.keys(status),datasets:[{data:Object.values(status),backgroundColor:[green,red,blue,yellow,cyan],borderWidth:0}]},{cutout:'68%',plugins:{legend:{position:'bottom',labels:{color:text,boxWidth:9,font:{size:11}}}}});
 
     chart('directionIntelligenceUnit','bar',{
         labels:direction.map(x=>x.name||x.unit||'Dirección'),
@@ -237,7 +241,7 @@
             {label:'Cargas',data:direction.map(x=>Number(x.total||0)),backgroundColor:cyan,borderRadius:5},
             {label:'Cumplimiento %',data:direction.map(x=>Number(x.percentage||0)),backgroundColor:yellow,borderRadius:5}
         ]
-    },{plugins:{legend:{position:'bottom',labels:{color:text,boxWidth:9,font:{size:9}}}}});
+    },{plugins:{legend:{position:'bottom',labels:{color:text,boxWidth:9,font:{size:11}}}}});
 
     chart('directionIntelligenceResponsible','bar',{
         labels:responsibles.map(x=>x.responsible||'Sin asignar'),
@@ -245,7 +249,7 @@
             {label:'Esperadas',data:responsibles.map(x=>Number(x.expected||0)),backgroundColor:cyan,borderRadius:4},
             {label:'Enviadas',data:responsibles.map(x=>Number(x.received||0)),backgroundColor:green,borderRadius:4}
         ]
-    },{indexAxis:'y',plugins:{legend:{position:'bottom',labels:{color:text,boxWidth:9,font:{size:9}}}}});
+    },{indexAxis:'y',plugins:{legend:{position:'bottom',labels:{color:text,boxWidth:9,font:{size:11}}}}});
 })();
 </script>
 @else
