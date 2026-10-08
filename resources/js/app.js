@@ -164,36 +164,9 @@ function setupReportTabAnimations() {
 }
 
 function installTrendStyles() {
-    if (document.getElementById('siget-trend-modern-styles')) return;
-    const style = document.createElement('style');
-    style.id = 'siget-trend-modern-styles';
-    style.textContent = `
-        .siget-trend-modern{background:linear-gradient(180deg,#07131f 0%,#091522 100%);border:1px solid rgba(90,140,190,.22);border-radius:16px;color:#edf5fb;overflow:hidden}
-        .siget-trend-modern .stm-head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;padding:18px 20px 12px;border-bottom:1px solid rgba(255,255,255,.08)}
-        .siget-trend-modern .stm-title{font-size:1.05rem;font-weight:700;color:#fff;margin:0}
-        .siget-trend-modern .stm-sub{font-size:.72rem;color:#8ea5b9;margin-top:4px}
-        .siget-trend-modern .stm-question{font-size:.74rem;color:#d8e3ec;margin-top:5px}
-        .siget-trend-modern .stm-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;padding:14px 18px}
-        .siget-trend-modern .stm-kpi{background:linear-gradient(145deg,#0d1d2d,#0a1724);border:1px solid rgba(255,255,255,.08);border-radius:11px;padding:11px 12px;min-height:78px}
-        .siget-trend-modern .stm-kpi-label{font-size:.63rem;color:#8fa5b8}
-        .siget-trend-modern .stm-kpi-value{font-size:1.35rem;font-weight:700;color:#fff;margin-top:3px}
-        .siget-trend-modern .stm-kpi-note{font-size:.6rem;color:#55d48b;margin-top:4px}
-        .siget-trend-modern .stm-kpi-note.warn{color:#ffb93f}
-        .siget-trend-modern .stm-chart{height:370px;padding:0 18px 12px}
-        .siget-trend-modern .stm-chart canvas{width:100%!important;height:100%!important}
-        .siget-trend-modern .stm-read{margin:0 18px 12px;padding:11px 14px;border:1px solid rgba(65,133,220,.28);background:linear-gradient(90deg,rgba(21,83,148,.18),rgba(11,34,56,.22));border-radius:10px;font-size:.68rem;color:#c8d8e7}
-        .siget-trend-modern .stm-read strong{color:#5da8ff}
-        .siget-trend-modern .stm-footer{display:grid;grid-template-columns:1fr 1fr 1fr 1.2fr 1fr;gap:0;border-top:1px solid rgba(255,255,255,.07);background:rgba(5,15,25,.45)}
-        .siget-trend-modern .stm-foot-item{padding:12px 14px;border-right:1px solid rgba(255,255,255,.07)}
-        .siget-trend-modern .stm-foot-item:last-child{border-right:0}
-        .siget-trend-modern .stm-foot-title{font-size:.66rem;font-weight:700}
-        .siget-trend-modern .stm-foot-text{font-size:.59rem;color:#8fa5b8;margin-top:3px;line-height:1.35}
-        .siget-trend-modern .blue{color:#4f8dff}.siget-trend-modern .red{color:#ff5260}.siget-trend-modern .green{color:#37cf7d}.siget-trend-modern .gold{color:#f5b62e}
-        @media(max-width:900px){.siget-trend-modern .stm-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.siget-trend-modern .stm-footer{grid-template-columns:1fr 1fr}.siget-trend-modern .stm-chart{height:310px}}
-    `;
-    document.head.appendChild(style);
+    // El sistema visual Zenith/Shadcn vive exclusivamente en app.scss.
+    // Se conserva la función por compatibilidad con el flujo de gráficas.
 }
-
 function buildTrendDataFromChart(chart) {
     if (!chart?.data) return null;
     const labels = chart.data.labels || [];
