@@ -21,7 +21,7 @@ while true; do
   echo "[$(date -Is)] Iniciando servidor Laravel en :8000." >> "${LOG_FILE}"
 
   set +e
-  /usr/local/bin/php artisan serve --host=0.0.0.0 --port=8000 >> "${LOG_FILE}" 2>&1
+  /usr/local/bin/php -d display_errors=0 -S 0.0.0.0:8000 -t "${PROJECT_ROOT}/public" "${PROJECT_ROOT}/.devcontainer/laravel-router.php" >> "${LOG_FILE}" 2>&1
   RC=$?
   set -e
 
