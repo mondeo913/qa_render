@@ -2,7 +2,7 @@
 @section('title','Usuarios')
 @section('page-title','Administración de usuarios')
 @section('content')
-<div class="row g-4">
+<div class="row g-4 siget-admin-users">
 <div class="col-xl-4"><div class="card siget-card"><div class="card-header"><div><h2>Nuevo usuario</h2><p>Cuenta, rol y alcance base</p></div></div><div class="card-body"><form method="POST" action="{{ route('admin.users.store') }}">@csrf
 <div class="mb-2"><input name="name" class="form-control" placeholder="Nombre" required></div>
 <div class="mb-2"><input name="email" type="email" class="form-control" placeholder="Correo" required></div>
