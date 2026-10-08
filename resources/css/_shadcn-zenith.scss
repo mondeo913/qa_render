@@ -2961,3 +2961,188 @@ body.siget-body .siget-choice-row button.active{
   }
   body.siget-body .siget-topbar h1{font-size:18px!important}
 }
+
+
+/* ==========================================================================
+   Zenith parity v3 — achromatic default
+   ========================================================================== */
+html[data-zenith-preset="default"]{
+  --primary:#18181b!important;
+  --primary-foreground:#ffffff!important;
+  --ring:#71717a!important;
+  --accent:#f4f4f5!important;
+  --accent-foreground:#18181b!important;
+  --success:#52525b!important;
+  --warning:#71717a!important;
+  --danger:#52525b!important;
+  --info:#52525b!important;
+  --sidebar-active:#f4f4f5!important;
+}
+html[data-bs-theme="dark"][data-zenith-preset="default"]{
+  --primary:#fafafa!important;
+  --primary-foreground:#18181b!important;
+  --ring:#a1a1aa!important;
+  --accent:#27272a!important;
+  --accent-foreground:#fafafa!important;
+  --success:#a1a1aa!important;
+  --warning:#a1a1aa!important;
+  --danger:#a1a1aa!important;
+  --info:#a1a1aa!important;
+  --sidebar-active:#27272a!important;
+}
+
+/* Never use saturated legacy status fills on the load board. */
+body.siget-body .siget-priority-high,
+body.siget-body .siget-priority-alta,
+body.siget-body .siget-priority-medium,
+body.siget-body .siget-priority-media,
+body.siget-body .siget-priority-low,
+body.siget-body .siget-priority-baja,
+body.siget-body .siget-status,
+body.siget-body .siget-load-card .badge{
+  background:var(--accent)!important;
+  color:var(--foreground)!important;
+  border-color:var(--border)!important;
+}
+body.siget-body .siget-load-card .badge.text-bg-danger,
+body.siget-body .siget-load-card .badge.text-bg-warning,
+body.siget-body .siget-load-card .badge.text-bg-success,
+body.siget-body .siget-load-card .badge.text-bg-info,
+body.siget-body .siget-load-card .badge.text-bg-secondary{
+  background:var(--accent)!important;
+  color:var(--foreground)!important;
+  border-color:var(--border)!important;
+}
+
+/* Traffic-light indicators become muted status dots, not fluorescent UI. */
+body.siget-body .siget-traffic{
+  width:8px!important;
+  height:8px!important;
+  border:1px solid var(--border)!important;
+  box-shadow:none!important;
+}
+body.siget-body .siget-traffic-red,
+body.siget-body .siget-traffic-danger,
+body.siget-body .siget-traffic-yellow,
+body.siget-body .siget-traffic-warning,
+body.siget-body .siget-traffic-green,
+body.siget-body .siget-traffic-success,
+body.siget-body .siget-traffic-gray{
+  background:var(--muted-foreground)!important;
+}
+
+/* Reports: same Zenith canvas, no separate visual language. */
+body.siget-body .report-shell{
+  background:transparent!important;
+  color:var(--foreground)!important;
+  font-size:14px!important;
+}
+body.siget-body .report-hero{
+  background:var(--card)!important;
+  color:var(--foreground)!important;
+  border:1px solid var(--border)!important;
+  border-radius:10px!important;
+  padding:16px 18px!important;
+  box-shadow:var(--shadow-xs)!important;
+}
+body.siget-body .report-hero h2,
+body.siget-body .report-hero p,
+body.siget-body .report-eyebrow{
+  color:var(--foreground)!important;
+}
+body.siget-body .report-hero p{color:var(--muted-foreground)!important}
+body.siget-body .report-eyebrow{
+  font-size:10px!important;
+  letter-spacing:.06em!important;
+}
+body.siget-body .report-box,
+body.siget-body .report-nav a,
+body.siget-body .report-kpi,
+body.siget-body .report-paper,
+body.siget-body .builder-option,
+body.siget-body .builder-preview{
+  background:var(--card)!important;
+  color:var(--foreground)!important;
+  border-color:var(--border)!important;
+  border-radius:9px!important;
+  box-shadow:var(--shadow-xs)!important;
+}
+body.siget-body .report-toolbar{padding:12px!important}
+body.siget-body .report-nav{gap:6px!important}
+body.siget-body .report-nav a{
+  padding:7px 10px!important;
+  font-size:12px!important;
+  font-weight:600!important;
+}
+body.siget-body .report-nav a.active{
+  background:var(--primary)!important;
+  border-color:var(--primary)!important;
+  color:var(--primary-foreground)!important;
+}
+body.siget-body .report-kpis{
+  gap:7px!important;
+}
+body.siget-body .report-kpi{
+  padding:10px!important;
+}
+body.siget-body .report-kpi small,
+body.siget-body .report-kpi em{
+  color:var(--muted-foreground)!important;
+  font-size:11px!important;
+}
+body.siget-body .report-kpi strong{
+  font-size:19px!important;
+}
+body.siget-body .report-kpi.green,
+body.siget-body .report-kpi.amber,
+body.siget-body .report-kpi.red{
+  border-left:3px solid var(--border)!important;
+}
+body.siget-body .report-table{
+  color:var(--foreground)!important;
+  font-size:12px!important;
+}
+body.siget-body .report-table th{
+  background:var(--background-soft)!important;
+  color:var(--muted-foreground)!important;
+  border-color:var(--border)!important;
+  font-size:11px!important;
+}
+body.siget-body .report-table td{
+  background:var(--card)!important;
+  color:var(--foreground)!important;
+  border-color:var(--border)!important;
+  font-size:12px!important;
+}
+body.siget-body .report-section-title,
+body.siget-body .paper-head{
+  background:var(--background-soft)!important;
+  color:var(--foreground)!important;
+}
+body.siget-body .report-section-title,
+body.siget-body .paper-head h3,
+body.siget-body .paper-head p{
+  color:var(--foreground)!important;
+}
+body.siget-body .report-subtitle,
+body.siget-body .report-total{
+  background:var(--background-soft)!important;
+  color:var(--muted-foreground)!important;
+  border-color:var(--border)!important;
+}
+body.siget-body .report-total strong{color:var(--foreground)!important}
+body.siget-body .badge.ok,
+body.siget-body .badge.warn,
+body.siget-body .badge.danger,
+body.siget-body .badge.info{
+  background:var(--accent)!important;
+  color:var(--foreground)!important;
+  border:1px solid var(--border)!important;
+}
+body.siget-body .report-preview{padding:12px!important}
+body.siget-body .report-section{border-color:var(--border)!important}
+body.siget-body .report-period-segmented{
+  padding:8px!important;
+  border-top:1px solid var(--border)!important;
+  color:var(--muted-foreground)!important;
+}
