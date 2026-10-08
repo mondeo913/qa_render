@@ -82,5 +82,14 @@ wait_for_http "http://127.0.0.1:8000/up" "SIGET" 60
 echo
 show_service_status
 echo
+
+WATCHDOG_SCRIPT="${ROOT}/.devcontainer/siget-watchdog.sh"
+WATCHDOG_LOG="${LOG_DIR}/siget-watchdog-launcher.log"
+if [[ -f "${WATCHDOG_SCRIPT}" ]]; then
+  chmod +x "${WATCHDOG_SCRIPT}" >/dev/null 2>&1 || true
+  nohup bash "${WATCHDOG_SCRIPT}" >> "${WATCHDOG_LOG}" 2>&1 &
+  echo "Watchdog SIGET activo en segundo plano."
+fi
+
 echo "SIGET disponible: $(app_url)/iniciar-sesion"
 echo "La base persistente NO se borra ni se reinicializa durante esta recuperación."
