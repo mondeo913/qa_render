@@ -219,6 +219,150 @@ body.siget-body.siget-zenith .siget-dependency-card{
 body.siget-body.siget-zenith .siget-dependency-logo{width:32px;height:32px;border-radius:8px}
 body.siget-body.siget-zenith .siget-dependency-stats{margin-top:7px;font-size:.58rem;gap:4px 8px}
 
+/* SIGET Zenith — escala tipográfica y tablero de cargas */
+body.siget-body.siget-zenith{
+  font-size:.88rem;
+  line-height:1.35;
+}
+body.siget-body.siget-zenith .siget-nav a{font-size:.78rem}
+body.siget-body.siget-zenith .siget-sidebar-government strong{font-size:.80rem}
+body.siget-body.siget-zenith .siget-sidebar-government small,
+body.siget-body.siget-zenith .siget-sidebar-system small,
+body.siget-body.siget-zenith .siget-sidebar-link{font-size:.62rem}
+body.siget-body.siget-zenith .siget-card .card-header h2{font-size:.86rem}
+body.siget-body.siget-zenith .siget-card .card-header p{font-size:.65rem}
+body.siget-body.siget-zenith .form-label{font-size:.68rem;font-weight:650}
+body.siget-body.siget-zenith .form-control,
+body.siget-body.siget-zenith .form-select,
+body.siget-body.siget-zenith .input-group-text{font-size:.70rem}
+body.siget-body.siget-zenith .btn{font-size:.67rem}
+body.siget-body.siget-zenith .table thead th{font-size:.62rem}
+body.siget-body.siget-zenith .table td{font-size:.68rem}
+
+/* Las métricas son tarjetas horizontales, nunca una lista vertical. */
+body.siget-body.siget-zenith .board-kpis{
+  display:grid;
+  grid-template-columns:repeat(6,minmax(0,1fr));
+  gap:8px!important;
+  margin:0 0 12px!important;
+}
+body.siget-body.siget-zenith .board-kpis>div{
+  min-width:0;
+  width:auto!important;
+  padding:0!important;
+}
+body.siget-body.siget-zenith .board-kpi{
+  min-height:62px;
+  height:62px;
+  display:grid;
+  grid-template-columns:28px minmax(0,1fr) auto;
+  align-items:center;
+  gap:7px;
+  padding:8px 9px;
+  border:1px solid var(--border);
+  border-radius:9px;
+  background:var(--surface);
+  box-shadow:0 1px 3px rgba(15,23,42,.04);
+}
+body.siget-body.siget-zenith .board-kpi-icon{
+  width:28px;height:28px;
+  display:grid;place-items:center;
+  border-radius:7px;
+  font-size:.70rem;
+}
+body.siget-body.siget-zenith .board-kpi small{
+  min-width:0;
+  color:var(--muted);
+  font-size:.62rem;
+  font-weight:650;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+body.siget-body.siget-zenith .board-kpi strong{
+  font-size:1rem;
+  line-height:1;
+  font-weight:800;
+}
+body.siget-body.siget-zenith .board-heading h2{font-size:1.02rem}
+body.siget-body.siget-zenith .board-heading>div>p:not(.scope-label){font-size:.68rem;color:var(--muted)}
+body.siget-body.siget-zenith .scope-label{font-size:.58rem}
+
+/* El expediente es la unidad visual principal: compacto, pero legible y proporcional. */
+body.siget-body.siget-zenith .siget-kanban{
+  gap:8px;
+}
+body.siget-body.siget-zenith .siget-kanban-column{
+  height:clamp(300px,48vh,410px);
+  min-height:300px;
+  max-height:410px;
+  border-radius:9px;
+}
+body.siget-body.siget-zenith .siget-kanban-column>header{
+  height:50px;
+  min-height:50px;
+  padding:7px 9px;
+}
+body.siget-body.siget-zenith .siget-kanban-column>header h3{font-size:.76rem}
+body.siget-body.siget-zenith .siget-kanban-column>header p{font-size:.55rem}
+body.siget-body.siget-zenith .siget-kanban-stack{
+  height:calc(clamp(300px,48vh,410px) - 50px);
+  padding:5px;
+  gap:5px;
+}
+body.siget-body.siget-zenith .siget-load-card{
+  height:118px;
+  min-height:118px;
+  max-height:118px;
+  padding:6px 7px;
+  border-radius:7px;
+}
+body.siget-body.siget-zenith .siget-load-card .load-card-top{height:20px;min-height:20px}
+body.siget-body.siget-zenith .siget-load-agency{font-size:.46rem}
+body.siget-body.siget-zenith .siget-load-card h4{
+  height:14px;max-height:14px;
+  margin:1px 0 0;
+  font-size:.62rem;
+  line-height:14px;
+}
+body.siget-body.siget-zenith .siget-load-card .load-card-badges{
+  height:15px;min-height:15px;
+  margin:2px 0;
+}
+body.siget-body.siget-zenith .siget-load-card .load-card-badges .badge{
+  height:14px;padding:0 4px;
+  font-size:.42rem;line-height:13px;
+}
+body.siget-body.siget-zenith .siget-load-card .siget-load-units{
+  height:11px;max-height:11px;font-size:.43rem;line-height:11px;
+}
+body.siget-body.siget-zenith .siget-load-card .siget-load-meta{
+  height:11px;max-height:11px;
+  font-size:.42rem;line-height:11px;
+}
+body.siget-body.siget-zenith .siget-load-card .load-card-progress-label{
+  height:11px;margin:1px 0;font-size:.42rem;line-height:11px;
+}
+body.siget-body.siget-zenith .siget-load-card .load-card-progress-label strong{font-size:.45rem}
+body.siget-body.siget-zenith .siget-load-card .siget-load-footer{
+  height:17px;margin:2px 0 0;padding-top:2px;
+}
+body.siget-body.siget-zenith .siget-load-counters{font-size:.40rem}
+body.siget-body.siget-zenith .siget-load-footer .btn{
+  height:17px;min-height:17px;font-size:.40rem;padding:0 5px
+}
+body.siget-body.siget-zenith .siget-assignees{font-size:.38rem}
+
+@media(max-width:1199px){
+  body.siget-body.siget-zenith .board-kpis{grid-template-columns:repeat(3,minmax(0,1fr))}
+}
+@media(max-width:760px){
+  body.siget-body.siget-zenith .board-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:520px){
+  body.siget-body.siget-zenith .board-kpis{grid-template-columns:1fr}
+}
+
 body.siget-body.siget-zenith .siget-kanban{
   display:grid;
   grid-template-columns:repeat(4,minmax(0,1fr));
