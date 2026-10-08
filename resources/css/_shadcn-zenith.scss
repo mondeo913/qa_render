@@ -3146,3 +3146,49 @@ body.siget-body .report-period-segmented{
   border-top:1px solid var(--border)!important;
   color:var(--muted-foreground)!important;
 }
+
+
+/* Final neutralization of residual bright indicators. */
+body.siget-body .siget-status-dot{
+  background:var(--muted-foreground)!important;
+  box-shadow:none!important;
+}
+body.siget-body .siget-traffic{
+  background:var(--muted-foreground)!important;
+  border-color:var(--border)!important;
+  box-shadow:none!important;
+}
+body.siget-body .op-legend-dot,
+body.siget-body .op-day .signal,
+body.siget-body .fc .fc-daygrid-event-dot{
+  background:var(--muted-foreground)!important;
+  border-color:var(--border)!important;
+  box-shadow:none!important;
+}
+body.siget-body .siget-kanban-todo>header,
+body.siget-body .siget-kanban-progress>header,
+body.siget-body .siget-kanban-review>header,
+body.siget-body .siget-kanban-done>header{
+  border-top-color:var(--border)!important;
+}
+
+/* Zenith container and radius options must affect every main page consistently. */
+html[data-zenith-container="boxed"] body.siget-body .siget-content{
+  max-width:1500px!important;
+  margin-left:auto!important;
+  margin-right:auto!important;
+}
+html[data-zenith-radius="compact"] body.siget-body .card,
+html[data-zenith-radius="compact"] body.siget-body .siget-card,
+html[data-zenith-radius="compact"] body.siget-body .op-card,
+html[data-zenith-radius="compact"] body.siget-body .exec-card,
+html[data-zenith-radius="compact"] body.siget-body .di-panel{
+  border-radius:7px!important;
+}
+html[data-zenith-radius="soft"] body.siget-body .card,
+html[data-zenith-radius="soft"] body.siget-body .siget-card,
+html[data-zenith-radius="soft"] body.siget-body .op-card,
+html[data-zenith-radius="soft"] body.siget-body .exec-card,
+html[data-zenith-radius="soft"] body.siget-body .di-panel{
+  border-radius:12px!important;
+}
