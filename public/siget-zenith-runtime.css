@@ -1635,3 +1635,159 @@ body.siget-body .siget-op-dashboard .op-advanced{
   box-shadow:var(--shadow-xs)!important;
 }
 
+
+
+/* ==========================================================================
+   Final collision fix
+   ========================================================================== */
+
+/* Neutral text fields on every browser, including Chromium autofill. */
+body.siget-body input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+body.siget-body select,
+body.siget-body textarea{
+  outline:none!important;
+  -webkit-appearance:none;
+  appearance:none;
+}
+body.siget-body input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):hover,
+body.siget-body input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):focus,
+body.siget-body input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):focus-visible,
+body.siget-body select:hover,
+body.siget-body select:focus,
+body.siget-body select:focus-visible,
+body.siget-body textarea:hover,
+body.siget-body textarea:focus,
+body.siget-body textarea:focus-visible{
+  outline:none!important;
+  border-color:var(--border)!important;
+  box-shadow:none!important;
+  background-color:var(--card)!important;
+}
+body.siget-body input:-webkit-autofill,
+body.siget-body input:-webkit-autofill:hover,
+body.siget-body input:-webkit-autofill:focus,
+body.siget-body textarea:-webkit-autofill,
+body.siget-body textarea:-webkit-autofill:hover,
+body.siget-body textarea:-webkit-autofill:focus{
+  -webkit-box-shadow:0 0 0 1000px var(--card) inset!important;
+  box-shadow:0 0 0 1000px var(--card) inset!important;
+  -webkit-text-fill-color:var(--foreground)!important;
+  border-color:var(--border)!important;
+  outline:none!important;
+}
+
+/* Kanban: flexible top block prevents the title from entering the badge row. */
+body.siget-body .siget-load-card{
+  height:170px!important;
+  min-height:170px!important;
+  max-height:170px!important;
+  padding:8px!important;
+  display:flex!important;
+  flex-direction:column!important;
+}
+body.siget-body .siget-load-card .load-card-top{
+  height:auto!important;
+  min-height:0!important;
+  flex:0 0 auto!important;
+  align-items:flex-start!important;
+}
+body.siget-body .siget-load-card .load-card-title{
+  min-width:0!important;
+  flex:1 1 auto!important;
+}
+body.siget-body .siget-load-card h4{
+  min-height:30px!important;
+  max-height:30px!important;
+  margin:2px 0 3px!important;
+  font-size:13px!important;
+  line-height:15px!important;
+}
+body.siget-body .siget-load-agency{font-size:10.5px!important;line-height:13px!important}
+body.siget-body .siget-load-card .load-card-badges{
+  flex:0 0 auto!important;
+  height:19px!important;
+  min-height:19px!important;
+  max-height:19px!important;
+  flex-wrap:nowrap!important;
+  margin:2px 0!important;
+}
+body.siget-body .siget-load-card .load-card-badges .badge{
+  flex:0 1 auto!important;
+  max-width:100%!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+}
+body.siget-body .siget-load-card .siget-load-units{
+  flex:0 0 auto!important;
+  height:13px!important;
+  min-height:13px!important;
+  max-height:13px!important;
+  font-size:10.5px!important;
+  line-height:13px!important;
+  display:block!important;
+  white-space:nowrap!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+}
+body.siget-body .siget-load-card .siget-load-meta{
+  flex:0 0 auto!important;
+  height:14px!important;
+  min-height:14px!important;
+  max-height:14px!important;
+  font-size:10px!important;
+  line-height:14px!important;
+  white-space:nowrap!important;
+}
+body.siget-body .siget-load-card .load-card-progress-label{
+  flex:0 0 auto!important;
+  height:14px!important;
+  min-height:14px!important;
+  margin:2px 0 1px!important;
+  font-size:10px!important;
+  line-height:14px!important;
+}
+body.siget-body .siget-load-card .load-card-progress{
+  flex:0 0 auto!important;
+  height:4px!important;
+  min-height:4px!important;
+}
+body.siget-body .siget-load-card .siget-load-footer{
+  flex:0 0 auto!important;
+  height:24px!important;
+  min-height:24px!important;
+  margin:3px 0 0!important;
+  padding-top:3px!important;
+}
+body.siget-body .siget-load-counters{font-size:9.5px!important}
+body.siget-body .siget-load-footer .btn{height:24px!important;min-height:24px!important;font-size:10px!important}
+body.siget-body .siget-load-card .siget-assignees{
+  flex:0 0 auto!important;
+  height:11px!important;
+  min-height:11px!important;
+  max-height:11px!important;
+  margin:1px 0 0!important;
+  font-size:9px!important;
+  line-height:11px!important;
+}
+
+/* Common text blocks: consistent line rhythm and no forced one-line clipping. */
+body.siget-body .direction-intelligence .di-head h3,
+body.siget-body .exec-card h3,
+body.siget-body .op-card-head h3,
+body.siget-body .siget-file-section h2,
+body.siget-body .siget-file-section h3{
+  line-height:1.25!important;
+  overflow-wrap:anywhere!important;
+}
+body.siget-body .direction-intelligence .di-head p,
+body.siget-body .exec-card .card-sub,
+body.siget-body .op-card-head p,
+body.siget-body .siget-file-section p{
+  line-height:1.4!important;
+  overflow-wrap:anywhere!important;
+}
+body.siget-body td,
+body.siget-body th{
+  line-height:1.35!important;
+}
+
