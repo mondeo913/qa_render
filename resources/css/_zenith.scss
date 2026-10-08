@@ -288,228 +288,110 @@ body.siget-body.siget-zenith .board-heading h2{font-size:1.02rem}
 body.siget-body.siget-zenith .board-heading>div>p:not(.scope-label){font-size:.68rem;color:var(--muted)}
 body.siget-body.siget-zenith .scope-label{font-size:.58rem}
 
-/* El expediente es la unidad visual principal: compacto, pero legible y proporcional. */
+/* Tablero de cargas: compacto, legible y aprovechando toda la pantalla. */
+body.siget-body.siget-zenith .siget-content{padding:16px 18px 20px}
+body.siget-body.siget-zenith .board-heading{margin-bottom:10px!important}
+body.siget-body.siget-zenith .board-heading h2{font-size:1.08rem;line-height:1.2}
+body.siget-body.siget-zenith .board-heading>div>p:not(.scope-label){font-size:.76rem;line-height:1.35}
+body.siget-body.siget-zenith .scope-label{font-size:.66rem}
+body.siget-body.siget-zenith .board-heading .btn{font-size:.76rem;padding:.42rem .68rem}
+
+body.siget-body.siget-zenith .board-kpis{
+  display:grid;
+  grid-template-columns:repeat(6,minmax(0,1fr));
+  gap:9px!important;
+  margin:0 0 10px!important;
+}
+body.siget-body.siget-zenith .board-kpis>div{min-width:0;width:auto!important;padding:0!important}
+body.siget-body.siget-zenith .board-kpi{
+  min-height:58px;height:58px;
+  display:grid;grid-template-columns:30px minmax(0,1fr) auto;
+  align-items:center;gap:8px;padding:8px 10px;
+  border:1px solid var(--border);border-radius:9px;
+  background:var(--surface);box-shadow:0 1px 3px rgba(15,23,42,.04);
+}
+body.siget-body.siget-zenith .board-kpi-icon{width:30px;height:30px;display:grid;place-items:center;border-radius:7px;font-size:.76rem}
+body.siget-body.siget-zenith .board-kpi small{min-width:0;color:var(--muted);font-size:.72rem;font-weight:650;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+body.siget-body.siget-zenith .board-kpi strong{font-size:1.05rem;line-height:1;font-weight:800}
+
+body.siget-body.siget-zenith #loadBoardFilters{
+  margin-bottom:10px!important;
+  border-radius:9px!important;
+}
+body.siget-body.siget-zenith #loadBoardFilters .card-body{padding:12px}
+body.siget-body.siget-zenith #loadBoardFilters .form-label{font-size:.74rem;margin-bottom:4px}
+body.siget-body.siget-zenith #loadBoardFilters .form-control,
+body.siget-body.siget-zenith #loadBoardFilters .form-select,
+body.siget-body.siget-zenith #loadBoardFilters .input-group-text{font-size:.76rem;min-height:34px;padding:.35rem .55rem}
+body.siget-body.siget-zenith #loadBoardFilters .form-text{font-size:.64rem;line-height:1.25;margin-top:3px}
+body.siget-body.siget-zenith .board-period-segmented{margin-top:7px!important}
+body.siget-body.siget-zenith .board-period-segmented .btn{font-size:.68rem;padding:.28rem .48rem}
+body.siget-body.siget-zenith .board-period-segmented .small{font-size:.68rem}
+
+body.siget-body.siget-zenith .siget-dependency-grid{gap:8px}
+body.siget-body.siget-zenith .siget-dependency-card{padding:9px;border-radius:9px}
+body.siget-body.siget-zenith .siget-dependency-logo{width:32px;height:32px;border-radius:8px}
+body.siget-body.siget-zenith .siget-dependency-top{gap:8px}
+body.siget-body.siget-zenith .siget-dependency-top strong{font-size:.75rem}
+body.siget-body.siget-zenith .siget-dependency-top small{font-size:.60rem}
+body.siget-body.siget-zenith .siget-dependency-stats{margin-top:7px;font-size:.64rem;gap:4px 7px}
+body.siget-body.siget-zenith .siget-dependency-card .progress{height:4px;margin-top:7px!important}
+body.siget-body.siget-zenith .siget-dependency-card .small{font-size:.60rem}
+
 body.siget-body.siget-zenith .siget-kanban{
-  gap:8px;
+  display:grid;grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:9px;width:100%;min-width:0;max-width:none;overflow:visible;align-items:start;
 }
 body.siget-body.siget-zenith .siget-kanban-column{
-  height:clamp(300px,48vh,410px);
-  min-height:300px;
-  max-height:410px;
-  border-radius:9px;
+  width:100%;min-width:0;max-width:none;
+  height:clamp(360px,calc(100vh - 430px),620px);
+  min-height:360px;max-height:620px;
+  margin:0;border-radius:10px;background:var(--surface2);
 }
 body.siget-body.siget-zenith .siget-kanban-column>header{
-  height:50px;
-  min-height:50px;
-  padding:7px 9px;
+  min-height:54px;height:54px;padding:8px 10px;gap:7px;
 }
-body.siget-body.siget-zenith .siget-kanban-column>header h3{font-size:.76rem}
-body.siget-body.siget-zenith .siget-kanban-column>header p{font-size:.55rem}
+body.siget-body.siget-zenith .siget-kanban-column>header h3{font-size:.82rem;line-height:1.15}
+body.siget-body.siget-zenith .siget-kanban-column>header p{margin-top:3px;font-size:.64rem;line-height:1.2}
+body.siget-body.siget-zenith .siget-kanban-column>header>span{width:24px;min-width:24px;height:24px;border-radius:7px;font-size:.62rem}
 body.siget-body.siget-zenith .siget-kanban-stack{
-  height:calc(clamp(300px,48vh,410px) - 50px);
-  padding:5px;
-  gap:5px;
+  height:calc(clamp(360px,calc(100vh - 430px),620px) - 54px);
+  max-height:none;padding:7px;gap:7px;overflow-y:auto;
 }
 body.siget-body.siget-zenith .siget-load-card{
-  height:118px;
-  min-height:118px;
-  max-height:118px;
-  padding:6px 7px;
-  border-radius:7px;
+  width:100%;height:154px;min-height:154px;max-height:154px;
+  padding:9px;border-radius:8px;box-shadow:0 1px 2px rgba(15,23,42,.04);
 }
-body.siget-body.siget-zenith .siget-load-card .load-card-top{height:20px;min-height:20px}
-body.siget-body.siget-zenith .siget-load-agency{font-size:.46rem}
-body.siget-body.siget-zenith .siget-load-card h4{
-  height:14px;max-height:14px;
-  margin:1px 0 0;
-  font-size:.62rem;
-  line-height:14px;
-}
-body.siget-body.siget-zenith .siget-load-card .load-card-badges{
-  height:15px;min-height:15px;
-  margin:2px 0;
-}
-body.siget-body.siget-zenith .siget-load-card .load-card-badges .badge{
-  height:14px;padding:0 4px;
-  font-size:.42rem;line-height:13px;
-}
-body.siget-body.siget-zenith .siget-load-card .siget-load-units{
-  height:11px;max-height:11px;font-size:.43rem;line-height:11px;
-}
-body.siget-body.siget-zenith .siget-load-card .siget-load-meta{
-  height:11px;max-height:11px;
-  font-size:.42rem;line-height:11px;
-}
-body.siget-body.siget-zenith .siget-load-card .load-card-progress-label{
-  height:11px;margin:1px 0;font-size:.42rem;line-height:11px;
-}
-body.siget-body.siget-zenith .siget-load-card .load-card-progress-label strong{font-size:.45rem}
-body.siget-body.siget-zenith .siget-load-card .siget-load-footer{
-  height:17px;margin:2px 0 0;padding-top:2px;
-}
-body.siget-body.siget-zenith .siget-load-counters{font-size:.40rem}
-body.siget-body.siget-zenith .siget-load-footer .btn{
-  height:17px;min-height:17px;font-size:.40rem;padding:0 5px
-}
-body.siget-body.siget-zenith .siget-assignees{font-size:.38rem}
+body.siget-body.siget-zenith .siget-load-card .load-card-top{height:27px;min-height:27px;gap:5px}
+body.siget-body.siget-zenith .siget-load-agency{font-size:.62rem;line-height:1.1}
+body.siget-body.siget-zenith .siget-load-card h4{height:17px;max-height:17px;margin:2px 0 0;font-size:.76rem;line-height:17px}
+body.siget-body.siget-zenith .siget-load-card .siget-traffic{width:9px;height:9px}
+body.siget-body.siget-zenith .siget-load-card .load-card-badges{height:19px;min-height:19px;margin:4px 0;gap:3px}
+body.siget-body.siget-zenith .siget-load-card .load-card-badges .badge{height:18px;padding:0 5px;font-size:.57rem;line-height:17px}
+body.siget-body.siget-zenith .siget-load-card .siget-load-units{height:18px;max-height:18px;font-size:.57rem;line-height:18px}
+body.siget-body.siget-zenith .siget-load-card .siget-load-meta{height:18px;max-height:18px;margin:2px 0 0;gap:5px;font-size:.56rem;line-height:18px}
+body.siget-body.siget-zenith .siget-load-card .load-card-progress-label{height:18px;margin:2px 0;font-size:.56rem;line-height:18px}
+body.siget-body.siget-zenith .siget-load-card .load-card-progress-label strong{font-size:.62rem}
+body.siget-body.siget-zenith .siget-load-card .load-card-progress{height:4px;min-height:4px}
+body.siget-body.siget-zenith .siget-load-card .siget-load-footer{height:24px;margin:4px 0 0;padding-top:4px;gap:5px}
+body.siget-body.siget-zenith .siget-load-counters{gap:7px;font-size:.54rem}
+body.siget-body.siget-zenith .siget-load-footer .btn{height:22px;min-height:22px;padding:0 7px;border-radius:5px;font-size:.56rem}
+body.siget-body.siget-zenith .siget-assignees{height:18px;max-height:18px;margin:2px 0 0;font-size:.52rem;line-height:18px}
+body.siget-body.siget-zenith .siget-kanban-empty{min-height:70px;height:70px;padding:8px;font-size:.60rem}
 
 @media(max-width:1199px){
   body.siget-body.siget-zenith .board-kpis{grid-template-columns:repeat(3,minmax(0,1fr))}
+  body.siget-body.siget-zenith .siget-kanban{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
 @media(max-width:760px){
   body.siget-body.siget-zenith .board-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
+@media(max-width:640px){
+  body.siget-body.siget-zenith .siget-kanban{grid-template-columns:1fr}
+}
 @media(max-width:520px){
   body.siget-body.siget-zenith .board-kpis{grid-template-columns:1fr}
 }
-
-body.siget-body.siget-zenith .siget-kanban{
-  display:grid;
-  grid-template-columns:repeat(4,minmax(0,1fr));
-  gap:9px;
-  width:100%;
-  min-width:0;
-  max-width:none;
-  overflow:visible;
-  align-items:start;
-}
-body.siget-body.siget-zenith .siget-kanban-column{
-  width:100%;
-  min-width:0;
-  max-width:none;
-  height:clamp(245px,42vh,330px);
-  min-height:245px;
-  max-height:330px;
-  margin:0;
-  border-radius:10px;
-  background:var(--surface2);
-}
-body.siget-body.siget-zenith .siget-kanban-column>header{
-  height:48px;
-  min-height:48px;
-  max-height:48px;
-  padding:7px 8px;
-  gap:6px;
-}
-body.siget-body.siget-zenith .siget-kanban-column>header h3{
-  font-size:.72rem;
-  line-height:1.05;
-}
-body.siget-body.siget-zenith .siget-kanban-column>header p{
-  margin-top:2px;
-  font-size:.51rem;
-  line-height:1.1;
-}
-body.siget-body.siget-zenith .siget-kanban-column>header>span{
-  width:21px;
-  min-width:21px;
-  height:21px;
-  border-radius:6px;
-  font-size:.53rem;
-}
-body.siget-body.siget-zenith .siget-kanban-stack{
-  height:calc(clamp(245px,42vh,330px) - 48px);
-  max-height:none;
-  padding:5px;
-  gap:5px;
-  overflow-y:auto;
-}
-body.siget-body.siget-zenith .siget-load-card{
-  width:100%;
-  height:104px;
-  min-height:104px;
-  max-height:104px;
-  padding:5px;
-  border-radius:7px;
-  box-shadow:0 1px 2px rgba(15,23,42,.04);
-}
-body.siget-body.siget-zenith .siget-load-card .load-card-top{
-  height:19px;
-  min-height:19px;
-  gap:4px;
-}
-body.siget-body.siget-zenith .siget-load-agency{
-  font-size:.42rem;
-  line-height:1;
-}
-body.siget-body.siget-zenith .siget-load-card h4{
-  height:12px;
-  max-height:12px;
-  margin:1px 0 0;
-  font-size:.54rem;
-  line-height:12px;
-}
-body.siget-body.siget-zenith .siget-load-card .siget-traffic{
-  width:7px;height:7px;
-}
-body.siget-body.siget-zenith .siget-load-card .load-card-badges{
-  height:13px;
-  min-height:13px;
-  margin:2px 0;
-  gap:2px;
-}
-body.siget-body.siget-zenith .siget-load-card .load-card-badges .badge{
-  height:12px;
-  padding:0 3px;
-  font-size:.37rem;
-  line-height:11px;
-}
-body.siget-body.siget-zenith .siget-load-card .siget-load-units{
-  height:9px;
-  max-height:9px;
-  font-size:.37rem;
-  line-height:9px;
-}
-body.siget-body.siget-zenith .siget-load-card .siget-load-meta{
-  height:9px;
-  max-height:9px;
-  margin:1px 0 0;
-  gap:4px;
-  font-size:.35rem;
-  line-height:9px;
-}
-body.siget-body.siget-zenith .siget-load-card .load-card-progress-label{
-  height:9px;
-  margin:1px 0;
-  font-size:.35rem;
-  line-height:9px;
-}
-body.siget-body.siget-zenith .siget-load-card .load-card-progress-label strong{font-size:.40rem}
-body.siget-body.siget-zenith .siget-load-card .load-card-progress{
-  height:2px;
-  min-height:2px;
-}
-body.siget-body.siget-zenith .siget-load-card .siget-load-footer{
-  height:15px;
-  margin:2px 0 0;
-  padding-top:2px;
-  gap:3px;
-}
-body.siget-body.siget-zenith .siget-load-counters{gap:4px;font-size:.34rem}
-body.siget-body.siget-zenith .siget-load-footer .btn{
-  height:15px;
-  min-height:15px;
-  padding:0 4px;
-  border-radius:4px;
-  font-size:.36rem;
-}
-body.siget-body.siget-zenith .siget-assignees{
-  height:8px;
-  max-height:8px;
-  margin:1px 0 0;
-  font-size:.32rem;
-  line-height:8px;
-}
-body.siget-body.siget-zenith .siget-kanban-empty{
-  min-height:48px;
-  height:48px;
-  padding:6px;
-  font-size:.43rem;
-}
-body.siget-body.siget-zenith .siget-kanban-todo>header{border-top:3px solid #94a3b8}
-body.siget-body.siget-zenith .siget-kanban-progress>header{border-top:3px solid #38bdf8}
-body.siget-body.siget-zenith .siget-kanban-review>header{border-top:3px solid #f59e0b}
-body.siget-body.siget-zenith .siget-kanban-done>header{border-top:3px solid #22c55e}
 
 body.siget-body.siget-zenith .siget-calendar-layout{gap:12px}
 body.siget-body.siget-zenith .siget-upcoming-event{padding:8px;border-radius:8px}
