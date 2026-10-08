@@ -592,3 +592,118 @@ body.siget-body.siget-zenith .board-direction-compact .siget-kanban-empty{
     grid-template-columns:1fr!important;
   }
 }
+
+
+/* SIGET — escala tipográfica global final */
+body.siget-body.siget-zenith{
+  font-size:.95rem!important;
+  line-height:1.35;
+}
+body.siget-body.siget-zenith .siget-nav a{
+  font-size:.86rem!important;
+  padding:8px 10px;
+}
+body.siget-body.siget-zenith .siget-nav i{font-size:.88rem}
+body.siget-body.siget-zenith .siget-brand-copy strong{font-size:.84rem!important}
+body.siget-body.siget-zenith .siget-brand-copy small{font-size:.62rem!important}
+body.siget-body.siget-zenith .siget-user-card strong{font-size:.80rem!important}
+body.siget-body.siget-zenith .siget-user-card small{font-size:.64rem!important}
+body.siget-body.siget-zenith .siget-sidebar-government strong{font-size:.84rem!important}
+body.siget-body.siget-zenith .siget-sidebar-government small{font-size:.60rem!important}
+body.siget-body.siget-zenith .siget-sidebar-system strong{font-size:.68rem!important}
+body.siget-body.siget-zenith .siget-sidebar-system small{font-size:.60rem!important}
+body.siget-body.siget-zenith .siget-sidebar-link{font-size:.66rem!important}
+body.siget-body.siget-zenith .siget-topbar h1{font-size:1.16rem!important}
+body.siget-body.siget-zenith .siget-eyebrow{font-size:.60rem!important}
+body.siget-body.siget-zenith .siget-page-subtitle{font-size:.70rem!important}
+body.siget-body.siget-zenith .siget-global-search input{font-size:.74rem!important}
+body.siget-body.siget-zenith .siget-env-badge{font-size:.58rem!important}
+body.siget-body.siget-zenith .siget-top-user strong{font-size:.68rem!important}
+body.siget-body.siget-zenith .siget-top-user small{font-size:.60rem!important}
+body.siget-body.siget-zenith .form-label{font-size:.76rem!important}
+body.siget-body.siget-zenith .form-control,
+body.siget-body.siget-zenith .form-select,
+body.siget-body.siget-zenith .input-group-text{font-size:.82rem!important}
+body.siget-body.siget-zenith .btn{font-size:.78rem!important}
+body.siget-body.siget-zenith .badge{font-size:.62rem!important}
+body.siget-body.siget-zenith .table thead th{font-size:.70rem!important}
+body.siget-body.siget-zenith .table td{font-size:.74rem!important}
+body.siget-body.siget-zenith .siget-card .card-header h2{font-size:.92rem!important}
+body.siget-body.siget-zenith .siget-card .card-header p{font-size:.70rem!important}
+
+/* Tablero — cuatro columnas completas dentro del viewport */
+body.siget-body.siget-zenith .board-direction-compact .siget-kanban{
+  display:grid!important;
+  grid-template-columns:repeat(4,minmax(0,1fr))!important;
+  width:100%!important;
+  min-width:0!important;
+  gap:7px!important;
+  overflow:visible!important;
+  margin:0!important;
+}
+body.siget-body.siget-zenith .board-direction-compact .siget-kanban-column{
+  min-width:0!important;
+  width:100%!important;
+}
+body.siget-body.siget-zenith .board-direction-compact .siget-load-card{
+  min-width:0!important;
+  height:148px!important;
+  min-height:148px!important;
+  max-height:148px!important;
+  padding:7px!important;
+}
+body.siget-body.siget-zenith .board-direction-compact .siget-load-agency{
+  font-size:.68rem!important;
+}
+body.siget-body.siget-zenith .board-direction-compact .siget-load-card h4{
+  font-size:.80rem!important;
+  line-height:1.08!important;
+  max-height:2.16em!important;
+  margin:2px 0 3px!important;
+}
+body.siget-body.siget-zenith .board-direction-compact .siget-load-card .load-card-badges .badge{
+  font-size:.60rem!important;
+}
+body.siget-body.siget-zenith .board-direction-compact .siget-load-card .siget-load-units{
+  font-size:.60rem!important;
+  line-height:1.08!important;
+}
+body.siget-body.siget-zenith .board-direction-compact .siget-load-card .siget-load-meta{
+  font-size:.59rem!important;
+  line-height:1.08!important;
+}
+body.siget-body.siget-zenith .board-direction-compact .siget-load-card .load-card-progress-label{
+  font-size:.61rem!important;
+}
+body.siget-body.siget-zenith .board-direction-compact .siget-load-card .load-card-progress-label strong{
+  font-size:.67rem!important;
+}
+body.siget-body.siget-zenith .board-direction-compact .siget-load-counters{
+  font-size:.58rem!important;
+}
+body.siget-body.siget-zenith .board-direction-compact .siget-load-footer .btn{
+  font-size:.60rem!important;
+}
+body.siget-body.siget-zenith .board-direction-compact .siget-assignees{
+  font-size:.57rem!important;
+}
+body.siget-body.siget-zenith .board-direction-compact .siget-kanban-column>header h3{
+  font-size:.86rem!important;
+}
+body.siget-body.siget-zenith .board-direction-compact .siget-kanban-column>header p{
+  font-size:.66rem!important;
+}
+body.siget-body.siget-zenith .board-direction-compact .siget-kanban-column>header>span{
+  font-size:.62rem!important;
+}
+
+@media(max-width:760px){
+  body.siget-body.siget-zenith .board-direction-compact .siget-kanban{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  }
+}
+@media(max-width:520px){
+  body.siget-body.siget-zenith .board-direction-compact .siget-kanban{
+    grid-template-columns:1fr!important;
+  }
+}
