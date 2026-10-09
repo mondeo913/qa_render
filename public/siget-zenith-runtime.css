@@ -3193,3 +3193,375 @@ html[data-zenith-radius="soft"] body.siget-body .exec-card,
 html[data-zenith-radius="soft"] body.siget-body .di-panel{
   border-radius:12px!important;
 }
+
+
+/* ==========================================================================
+   SIGET correction from real Kanban screenshot — 2026-10-09
+   Larger legible type and neutral Zenith surfaces, independent of old themes.
+   ========================================================================== */
+
+/* The work board must not inherit the old colored Bootstrap statuses. */
+body.siget-body .board-direction-compact{
+  font-size:14px!important;
+}
+body.siget-body .board-heading h2{
+  font-size:21px!important;
+  line-height:1.25!important;
+}
+body.siget-body .board-heading>div>p:not(.scope-label){
+  font-size:13px!important;
+  line-height:1.45!important;
+}
+body.siget-body .scope-label{
+  font-size:11px!important;
+}
+body.siget-body .board-kpi{
+  height:68px!important;
+  min-height:68px!important;
+  padding:9px 10px!important;
+  grid-template-columns:31px minmax(0,1fr) auto!important;
+}
+body.siget-body .board-kpi small{
+  font-size:12px!important;
+  line-height:1.2!important;
+}
+body.siget-body .board-kpi strong{
+  font-size:19px!important;
+  font-variant-numeric:tabular-nums;
+}
+body.siget-body .siget-kanban-column>header{
+  height:62px!important;
+  min-height:62px!important;
+  padding:9px 11px!important;
+  border-top:1px solid var(--border)!important;
+  background:var(--card)!important;
+}
+body.siget-body .siget-kanban-column>header h3{
+  font-size:15px!important;
+  line-height:1.25!important;
+  font-weight:650!important;
+}
+body.siget-body .siget-kanban-column>header p{
+  margin-top:3px!important;
+  font-size:12px!important;
+  line-height:1.3!important;
+}
+body.siget-body .siget-kanban-column>header>span{
+  width:26px!important;
+  height:26px!important;
+  min-width:26px!important;
+  border:1px solid var(--border)!important;
+  background:var(--background-soft)!important;
+  color:var(--foreground)!important;
+  font-size:12px!important;
+}
+
+/* Card content is readable at normal desktop zoom. */
+body.siget-body .siget-load-card{
+  height:190px!important;
+  min-height:190px!important;
+  max-height:190px!important;
+  padding:10px!important;
+  border:1px solid var(--border)!important;
+  border-left:1px solid var(--border)!important;
+  border-radius:9px!important;
+  background:var(--card)!important;
+  box-shadow:none!important;
+  overflow:hidden!important;
+}
+body.siget-body .siget-load-card.is-overdue{
+  border-left:1px solid var(--border)!important;
+}
+body.siget-body .siget-load-card .load-card-top{
+  height:auto!important;
+  min-height:0!important;
+  align-items:flex-start!important;
+  gap:8px!important;
+}
+body.siget-body .siget-load-card .load-card-title{
+  min-width:0!important;
+  flex:1 1 auto!important;
+}
+body.siget-body .siget-load-card .siget-load-agency{
+  font-size:12px!important;
+  line-height:1.3!important;
+  font-weight:500!important;
+  text-transform:none!important;
+  overflow-wrap:anywhere!important;
+}
+body.siget-body .siget-load-card h4{
+  height:auto!important;
+  min-height:34px!important;
+  max-height:36px!important;
+  margin:2px 0 5px!important;
+  font-size:14px!important;
+  line-height:17px!important;
+  font-weight:650!important;
+  letter-spacing:0!important;
+  white-space:normal!important;
+  overflow:hidden!important;
+  overflow-wrap:anywhere!important;
+  display:-webkit-box!important;
+  -webkit-box-orient:vertical!important;
+  -webkit-line-clamp:2!important;
+}
+body.siget-body .siget-load-card .load-card-badges{
+  height:auto!important;
+  min-height:22px!important;
+  max-height:none!important;
+  margin:4px 0!important;
+  gap:4px!important;
+  flex-wrap:wrap!important;
+  overflow:visible!important;
+}
+body.siget-body .siget-load-card .load-card-badges .badge,
+body.siget-body .siget-load-card .badge,
+body.siget-body .siget-kanban-empty .badge{
+  min-height:21px!important;
+  height:auto!important;
+  padding:3px 7px!important;
+  border:1px solid var(--border)!important;
+  border-radius:6px!important;
+  background:var(--background-soft)!important;
+  color:var(--foreground)!important;
+  font-size:11px!important;
+  line-height:1.25!important;
+  font-weight:550!important;
+  white-space:normal!important;
+}
+body.siget-body .siget-load-card .siget-load-units{
+  height:auto!important;
+  min-height:15px!important;
+  max-height:30px!important;
+  margin-top:4px!important;
+  font-size:12px!important;
+  line-height:1.3!important;
+  color:var(--muted-foreground)!important;
+  white-space:normal!important;
+  overflow:hidden!important;
+  overflow-wrap:anywhere!important;
+}
+body.siget-body .siget-load-card .siget-load-meta{
+  height:auto!important;
+  min-height:16px!important;
+  max-height:32px!important;
+  margin-top:4px!important;
+  display:flex!important;
+  flex-wrap:wrap!important;
+  gap:4px 10px!important;
+  font-size:12px!important;
+  line-height:1.35!important;
+  color:var(--muted-foreground)!important;
+  white-space:normal!important;
+  overflow:visible!important;
+}
+body.siget-body .siget-load-card .load-card-progress-label{
+  height:auto!important;
+  min-height:17px!important;
+  margin:4px 0 3px!important;
+  font-size:12px!important;
+  line-height:1.3!important;
+  color:var(--muted-foreground)!important;
+}
+body.siget-body .siget-load-card .load-card-progress-label strong{
+  font-size:12px!important;
+  color:var(--foreground)!important;
+}
+body.siget-body .siget-load-card .siget-load-progress,
+body.siget-body .siget-load-card .load-card-progress{
+  height:5px!important;
+  min-height:5px!important;
+  background:var(--muted)!important;
+  border-radius:99px!important;
+  box-shadow:none!important;
+}
+body.siget-body .siget-load-card .load-card-progress .progress-bar,
+body.siget-body .siget-load-card .siget-load-progress .progress-bar{
+  background:var(--muted-foreground)!important;
+  border-radius:99px!important;
+  box-shadow:none!important;
+}
+body.siget-body .siget-load-card .siget-load-footer{
+  height:27px!important;
+  min-height:27px!important;
+  margin-top:5px!important;
+  padding-top:4px!important;
+  border-top:1px solid var(--border)!important;
+}
+body.siget-body .siget-load-card .siget-load-counters{
+  gap:8px!important;
+  font-size:11px!important;
+  line-height:1.2!important;
+  color:var(--muted-foreground)!important;
+}
+body.siget-body .siget-load-card .siget-load-footer .btn{
+  height:27px!important;
+  min-height:27px!important;
+  padding:3px 8px!important;
+  font-size:11px!important;
+}
+body.siget-body .siget-load-card .siget-assignees{
+  height:auto!important;
+  min-height:13px!important;
+  max-height:26px!important;
+  margin-top:3px!important;
+  font-size:11px!important;
+  line-height:1.3!important;
+  color:var(--muted-foreground)!important;
+  white-space:normal!important;
+  overflow:hidden!important;
+}
+body.siget-body .siget-kanban-empty{
+  min-height:68px!important;
+  height:auto!important;
+  padding:14px!important;
+  font-size:13px!important;
+  line-height:1.4!important;
+  border:1px dashed var(--border)!important;
+  background:var(--card)!important;
+  color:var(--muted-foreground)!important;
+}
+
+/* Absolutely no bright status/focus effects in the board, even when an old
+   Berry/Ocean preset is stored in browser localStorage. */
+body.siget-body .siget-load-card .badge[class*="bg-"],
+body.siget-body .siget-load-card .badge[class*="text-bg-"],
+body.siget-body .siget-load-card .siget-priority-high,
+body.siget-body .siget-load-card .siget-priority-alta,
+body.siget-body .siget-load-card .siget-priority-medium,
+body.siget-body .siget-load-card .siget-priority-media,
+body.siget-body .siget-load-card .siget-priority-low,
+body.siget-body .siget-load-card .siget-priority-baja,
+body.siget-body .siget-load-card .siget-status{
+  background:var(--background-soft)!important;
+  color:var(--foreground)!important;
+  border-color:var(--border)!important;
+}
+body.siget-body .siget-load-card .siget-traffic,
+body.siget-body .siget-load-card .siget-traffic-red,
+body.siget-body .siget-load-card .siget-traffic-green,
+body.siget-body .siget-load-card .siget-traffic-yellow,
+body.siget-body .siget-load-card .siget-traffic-warning,
+body.siget-body .siget-load-card .siget-traffic-success,
+body.siget-body .siget-load-card .siget-traffic-danger,
+body.siget-body .siget-load-card .siget-traffic-gray{
+  background:var(--muted-foreground)!important;
+  border:1px solid var(--border)!important;
+  box-shadow:none!important;
+}
+body.siget-body .siget-kanban-todo>header,
+body.siget-body .siget-kanban-progress>header,
+body.siget-body .siget-kanban-review>header,
+body.siget-body .siget-kanban-done>header{
+  border-top:1px solid var(--border)!important;
+}
+
+/* Remove Bootstrap's vivid fills and hover halos across all SIGET modules. */
+body.siget-body .badge[class*="bg-"],
+body.siget-body .badge[class*="text-bg-"],
+body.siget-body .badge.bg-success,
+body.siget-body .badge.bg-warning,
+body.siget-body .badge.bg-danger,
+body.siget-body .badge.bg-info{
+  background:var(--background-soft)!important;
+  color:var(--foreground)!important;
+  border-color:var(--border)!important;
+}
+body.siget-body .btn-success,
+body.siget-body .btn-warning,
+body.siget-body .btn-danger,
+body.siget-body .btn-info,
+body.siget-body .btn-outline-success,
+body.siget-body .btn-outline-warning,
+body.siget-body .btn-outline-danger,
+body.siget-body .btn-outline-info{
+  background:transparent!important;
+  border-color:var(--border)!important;
+  color:var(--foreground)!important;
+}
+body.siget-body .btn-success:hover,
+body.siget-body .btn-warning:hover,
+body.siget-body .btn-danger:hover,
+body.siget-body .btn-info:hover,
+body.siget-body .btn-outline-success:hover,
+body.siget-body .btn-outline-warning:hover,
+body.siget-body .btn-outline-danger:hover,
+body.siget-body .btn-outline-info:hover,
+body.siget-body .btn-success:focus,
+body.siget-body .btn-warning:focus,
+body.siget-body .btn-danger:focus,
+body.siget-body .btn-info:focus,
+body.siget-body .btn-outline-success:focus,
+body.siget-body .btn-outline-warning:focus,
+body.siget-body .btn-outline-danger:focus,
+body.siget-body .btn-outline-info:focus{
+  background:color-mix(in srgb,var(--foreground) 5%,var(--card))!important;
+  border-color:var(--border)!important;
+  color:var(--foreground)!important;
+  box-shadow:none!important;
+}
+body.siget-body .form-control:focus,
+body.siget-body .form-select:focus,
+body.siget-body textarea:focus,
+body.siget-body input:focus,
+body.siget-body button:focus,
+body.siget-body a:focus,
+body.siget-body *:focus-visible{
+  outline:none!important;
+  box-shadow:none!important;
+}
+
+/* Bring older tiny-text widgets up to the system's readable baseline. */
+body.siget-body .siget-op-dashboard .op-bar-row,
+body.siget-body .siget-op-dashboard .op-resp-row,
+body.siget-body .siget-op-dashboard .op-resp-row strong,
+body.siget-body .siget-op-dashboard .op-bar-value,
+body.siget-body .siget-op-dashboard .op-funnel-table,
+body.siget-body .siget-op-dashboard .op-funnel-table .rowline,
+body.siget-body .siget-op-dashboard .op-evidence-table,
+body.siget-body .siget-op-dashboard .op-evidence-table td,
+body.siget-body .exec-table,
+body.siget-body .exec-table td,
+body.siget-body .direction-intelligence .di-table,
+body.siget-body .direction-intelligence .di-table td,
+body.siget-body .siget-admin-users .table td,
+body.siget-body .siget-file-manager .table td{
+  font-size:12px!important;
+  line-height:1.4!important;
+}
+body.siget-body .siget-op-dashboard .op-evidence-table th,
+body.siget-body .exec-table th,
+body.siget-body .direction-intelligence .di-table th,
+body.siget-body .siget-admin-users .table th,
+body.siget-body .siget-file-manager .table th{
+  font-size:11px!important;
+  line-height:1.35!important;
+}
+body.siget-body .siget-op-dashboard .op-card-head h3,
+body.siget-body .exec-card h3,
+body.siget-body .direction-intelligence .di-head h3{
+  font-size:15px!important;
+  line-height:1.3!important;
+}
+body.siget-body .siget-op-dashboard .op-card-head p,
+body.siget-body .exec-card .card-sub,
+body.siget-body .direction-intelligence .di-head p{
+  font-size:12px!important;
+  line-height:1.4!important;
+}
+
+/* Responsive KPI/kanban typography. */
+@media(max-width:1500px){
+  body.siget-body .board-kpis{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+}
+@media(max-width:900px){
+  body.siget-body .siget-load-card{height:198px!important;min-height:198px!important;max-height:198px!important}
+}
+@media(max-width:760px){
+  body.siget-body .board-kpis{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  body.siget-body .siget-load-card{height:auto!important;min-height:185px!important;max-height:none!important}
+  body.siget-body .siget-kanban-column>header h3{font-size:14px!important}
+}
+@media(max-width:520px){
+  body.siget-body .board-kpis{grid-template-columns:1fr!important}
+}
