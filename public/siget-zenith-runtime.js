@@ -1,4 +1,12 @@
 (()=> {
+  // One-time visual migration: older saved presets used saturated accents that
+  // conflict with the reference Zenith achromatic interface. Keep density,
+  // container, radius and the light/dark preference untouched.
+  const visualVersion = 'zenith-2026-10-09-readable-v2';
+  if (localStorage.getItem('zenith-visual-version') !== visualVersion) {
+    localStorage.setItem('zenith-preset', 'default');
+    localStorage.setItem('zenith-visual-version', visualVersion);
+  }
   const palettes = {
     default: {primary:'#18181b', foreground:'#ffffff', accent:'#f4f4f5', ring:'#71717a', success:'#52525b', warning:'#71717a', danger:'#52525b', info:'#52525b', sidebar:'#f4f4f5'},
     ocean: {primary:'#3b6fc4', foreground:'#ffffff', accent:'#edf4ff', ring:'#3b6fc4', success:'#3f7f74', warning:'#9d7423', danger:'#a54d5a', info:'#4d76b8', sidebar:'#edf3fc'},
