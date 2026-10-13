@@ -32,7 +32,8 @@ class AdminController extends Controller
 
         return view('admin.users', [
             'users' => User::query()
-                ->with(['role', 'agency', 'organizationalUnit'])
+                ->with(['role', 'agency', 'organizationalUnit', 'scopes.agency'])
+                ->where(fn ($query) => $query->whereNull('metadata->qa_retired')->orWhere('metadata->qa_retired', false))
                 ->orderBy('name')
                 ->paginate(30),
             'roles' => Role::query()->where('active', true)->orderBy('name')->get(),
@@ -70,6 +71,7 @@ class AdminController extends Controller
     public function updateUser(Request $request, User $user): RedirectResponse
     {
         $this->authorizeAdmin($request, 'users.manage');
+        abort_if(($user->metadata['qa_retired'] ?? false) === true, 422, 'Esta cuenta fue consolidada; utilice la cuenta general del perfil.');
 
         $data = $request->validate([
             'name' => ['required', 'string', 'max:200'],
@@ -122,6 +124,7 @@ class AdminController extends Controller
     public function toggleUser(Request $request, User $user): RedirectResponse
     {
         $this->authorizeAdmin($request, 'users.manage');
+        abort_if(($user->metadata['qa_retired'] ?? false) === true, 422, 'Esta cuenta fue consolidada; utilice la cuenta general del perfil.');
 
         abort_if($user->is($request->user()), 422, 'No puede desactivar su propia cuenta.');
 

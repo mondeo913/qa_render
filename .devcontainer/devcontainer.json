@@ -1,5 +1,5 @@
 {
-  "name": "SIGET K2 QA",
+  "name": "SIGET QA",
   "build": {
     "dockerfile": "Dockerfile.k2",
     "context": "..",
@@ -9,7 +9,10 @@
   },
   "remoteUser": "vscode",
   "updateRemoteUserUID": true,
-  "forwardPorts": [8000, 8025],
+  "forwardPorts": [
+    8000,
+    8025
+  ],
   "portsAttributes": {
     "8000": {
       "label": "SIGET K2 QA",
@@ -52,7 +55,7 @@
     }
   },
   "postCreateCommand": "bash .devcontainer/install-siget.sh",
-  "postStartCommand": "bash .devcontainer/repair-runtime.sh && bash .devcontainer/qa-runtime.sh",
+  "postStartCommand": "bash .devcontainer/qa-runtime.sh",
   "postAttachCommand": "bash .devcontainer/qa-runtime.sh",
   "waitFor": "postCreateCommand"
 }

@@ -1,4 +1,4 @@
-.PHONY: install start test diagnose stop verify
+.PHONY: install start test diagnose stop verify validate
 
 install:
 	bash ./.devcontainer/install-siget.sh
@@ -14,6 +14,9 @@ diagnose:
 
 stop:
 	bash ./DETENER_SIGET.sh
+
+validate:
+	bash ./VALIDAR_SIGET_QA.sh
 
 verify:
 	bash ./.devcontainer/verify-siget.sh

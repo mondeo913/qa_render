@@ -1,135 +1,52 @@
-# Guía paso a paso — SIGET en GitHub Codespaces
+# Codespaces — Guía vigente de SIGET
 
-## 1. Crear el repositorio
+## Crear o actualizar
 
-Cree un repositorio privado en GitHub. No agregue README ni plantilla para evitar conflictos.
+1. Abrir `mondeo913/qa_render` en GitHub, rama `main`.
+2. Seleccionar **Code → Codespaces → Create codespace on main**.
+3. En un Codespace existente, actualizar primero el código sin descartar cambios propios y ejecutar **Codespaces: Rebuild Container** desde la paleta de comandos.
+4. Esperar a que termine la instalación y abrir el puerto 8000. Mailpit utiliza el 8025 para correo de prueba.
 
-## 2. Cargar SIGET
+No subir ZIP de versiones anteriores ni ejecutar instaladores de otras entregas.
 
-Descomprima el paquete. Suba todo su contenido a la raíz del repositorio. Debe observar:
+## Una sola ruta de arranque
 
-```text
-.devcontainer/
-app/
-database/
-resources/
-routes/
-artisan
-composer.json
-package.json
-README.md
-```
+`devcontainer.json` usa `Dockerfile.k2` para preparar PHP, PostgreSQL, Supervisor y Mailpit; la característica Node proporciona Node 22.
 
-No cree una carpeta adicional llamada `SIGET_CODESPACES_QA_COMPLETO_V1` dentro del repositorio.
+| Momento | Entrada |
+|---|---|
+| Crear el contenedor | `.devcontainer/install-siget.sh` |
+| Iniciar el Codespace | `.devcontainer/qa-runtime.sh` |
+| Volver a adjuntar el editor | `.devcontainer/qa-runtime.sh` |
+| Recuperación manual | `bash INICIAR_SIGET.sh` o `bash RECUPERAR_SIGET.sh` |
 
-## 3. Crear el Codespace
+La recuperación manual delega al mismo runtime. Ese runtime usa el instalador si falta la marca de instalación, verifica el build del commit, recupera PostgreSQL, inicia Supervisor y comprueba la respuesta web y Mailpit. La recuperación de PID obsoleto se centraliza en `lib-siget.sh`; no hay un segundo script de reparación.
 
-En GitHub:
+## Servicios y persistencia
 
-1. Abra el repositorio.
-2. Pulse **Code**.
-3. Abra la pestaña **Codespaces**.
-4. Pulse **Create codespace on main**.
+- Aplicación: puerto 8000, `/iniciar-sesion`.
+- Correo QA Mailpit: puerto 8025.
+- PostgreSQL: instancia local privada en el contenedor.
+- Cola y scheduler: procesos de Supervisor.
+- Watchdogs: recuperación de PostgreSQL y de la pila de servicios; no son archivos antiguos prescindibles.
+- Datos de PostgreSQL, Mailpit y logs: `.codespace/`, fuera del control de versiones.
 
-GitHub leerá `.devcontainer/devcontainer.json`, construirá PHP 8.3 y levantará PostgreSQL y Mailpit.
+La recuperación de un entorno ya instalado no reconstruye la base. `REINICIAR_DATOS_QA.sh --confirmar` existe para reinicializar deliberadamente un entorno de demostración y elimina sus datos; no forma parte del arranque ni de la actualización normal.
 
-## 4. Esperar la preparación
+## Acceso y comprobación
 
-El proceso automático:
+Ejecutar `bash MOSTRAR_URLS.sh`. Consultar `.codespace/ACCESOS.txt` para las cuentas QA y comprobar usuarios y roles en Administración. No utilizar credenciales de demostración en producción.
 
-1. Instala Composer.
-2. Instala Node 22.
-3. Instala dependencias PHP y frontend.
-4. Crea `.env`.
-5. Espera PostgreSQL.
-6. Ejecuta migraciones y seeders.
-7. Compila Vite.
-8. Inicia web, queue y scheduler.
-9. Reenvía los puertos 8000 y 8025.
-
-## 5. Abrir SIGET
-
-Abra la pestaña **Ports**. Localice:
-
-- `8000 — SIGET QA`
-- `8025 — Correo QA - Mailpit`
-
-Pulse el icono del globo en el puerto 8000.
-
-## 6. Credenciales
-
-Abra:
-
-```text
-.codespace/ACCESOS.txt
-```
-
-La contraseña inicial para todos los usuarios es:
-
-```text
-SigetQA_2026_Cambiar!
-```
-
-## 7. Probar
-
-En la terminal:
-
-```bash
-./codespace-test.sh
-```
-
-Debe finalizar con:
-
-```text
-PRUEBAS QA BASICAS: APROBADAS
-```
-
-## 8. Ver correos
-
-Abra el puerto 8025. Los correos generados por SIGET aparecerán en Mailpit; no se enviarán a destinatarios externos.
-
-## 9. Reiniciar datos
-
-```bash
-./codespace-reset.sh
-```
-
-Esto reconstruye la base QA con los usuarios y cargas demostrativas.
-
-## 10. Diagnóstico
-
-```bash
-./codespace-diagnose.sh
-```
-
-El reporte queda en `.codespace/diagnostico-FECHA-HORA.txt`.
-
-## Problemas frecuentes
-
-### No abre el puerto 8000
-
-```bash
-make start
+```sh
+make verify
+make test
 make diagnose
 ```
 
-### Error de base de datos
+`make test` ejecuta PHPUnit, estado de datos QA y comprobaciones de la aplicación y Mailpit. Para la validación integral de QA con migraciones, permisos, pruebas, Vite y cachés, ejecutar `make validate`.
 
-```bash
-pg_isready -h db -U siget -d siget_qa
-php artisan migrate:status
-```
+Los reportes de verificación se generan fuera del código versionado. Si el entorno no inicia, revisar `.codespace/logs/` con el diagnóstico; no importar otro paquete encima del repositorio.
 
-### Interfaz sin estilos
+## Alcance de la validación
 
-```bash
-npm install
-npm run build
-php artisan optimize:clear
-```
-
-### Worker detenido
-
-```bash
-supervisorctl -c .devcontainer/supervisord.conf restart siget-queue
-```
+GitHub Actions prueba código, compilación y el flujo institucional con PostgreSQL. Una reconstrucción real de Codespaces y su prueba manual siguen siendo necesarias para aceptar el entorno del usuario. Los servicios de este contenedor son de QA; no sustituyen el wizard ni la infraestructura de las máquinas virtuales.

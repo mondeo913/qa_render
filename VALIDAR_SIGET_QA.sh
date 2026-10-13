@@ -7,7 +7,7 @@ mkdir -p "$REPORT_DIR"
 LOG="$REPORT_DIR/certificacion-$(date +%Y%m%d-%H%M%S).log"
 exec > >(tee -a "$LOG") 2>&1
 
-echo "=== SIGET K2: certificación visual y funcional ==="
+echo "=== SIGET: validación integral de QA ==="
 echo "Inicio: $(date -Is)"
 
 php -r 'foreach(["dom","mbstring","xml","xmlwriter","pdo_pgsql"] as $e){if(!extension_loaded($e)){fwrite(STDERR,"Falta extensión PHP: $e\n");exit(2);}} echo "Extensiones PHP requeridas: OK\n";'
@@ -32,5 +32,5 @@ php artisan route:cache
 php artisan siget:qa-status || true
 
 echo "Fin: $(date -Is)"
-echo "K2_CERTIFICACION_OK"
+echo "SIGET_VALIDACION_QA_OK"
 echo "Reporte: $LOG"

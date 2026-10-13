@@ -18,6 +18,10 @@ SUPERVISOR_PID="${STATE_DIR}/supervisord.pid"
 export PGPASSWORD
 
 assert_php_extensions() {
+  if ! command -v php >/dev/null 2>&1; then
+    echo "PHP no está disponible en este contenedor. Ejecute: Codespaces: Rebuild Container." >&2
+    return 1
+  fi
   local required_extensions=(
     bcmath
     dom
@@ -90,24 +94,29 @@ ensure_directories() {
 }
 
 find_postgres_bin() {
-  local initdb_path
-
-  initdb_path="$(
-    command -v initdb 2>/dev/null || \
-    find /usr/libexec/postgresql* /usr/lib/postgresql* \
-      -maxdepth 3 \
-      -type f \
-      -name initdb 2>/dev/null |
-    sort -V |
-    tail -n 1
-  )"
-
-  if [[ -z "${initdb_path}" ]]; then
-    echo "No se encontró initdb de PostgreSQL." >&2
+  local expected="${SIGET_POSTGRES_MAJOR:-16}" candidate version major path_bin=""
+  if [[ -f "${PGDATA}/PG_VERSION" ]]; then
+    expected="$(cat "${PGDATA}/PG_VERSION")"
+  fi
+  if [[ ! "${expected}" =~ ^[0-9]+$ ]]; then
+    echo "PG_VERSION no es válido; no se modificará el directorio de datos." >&2
     return 1
   fi
-
-  dirname "${initdb_path}"
+  if command -v initdb >/dev/null 2>&1; then
+    path_bin="$(dirname "$(command -v initdb)")"
+  fi
+  for candidate in "${SIGET_POSTGRES_BIN:-}" "${path_bin}" /usr/lib/postgresql/*/bin /usr/libexec/postgresql* /usr/local/pgsql/bin /usr/local/bin /usr/bin; do
+    [[ -n "${candidate}" && -x "${candidate}/postgres" && -x "${candidate}/initdb" && -x "${candidate}/pg_ctl" ]] || continue
+    version="$("${candidate}/postgres" --version 2>/dev/null)" || continue
+    major="$(printf '%s' "${version}" | sed -nE 's/.*PostgreSQL\) ([0-9]+).*/\1/p')"
+    if [[ "${major}" == "${expected}" ]]; then
+      printf '%s\n' "${candidate}"
+      return 0
+    fi
+  done
+  echo "Faltan binarios compatibles de PostgreSQL ${expected}. Se conserva ${PGDATA}." >&2
+  echo "Actualice el código y ejecute Codespaces: Rebuild Container; no reinicialice la base." >&2
+  return 1
 }
 
 postgres_is_ready() {
@@ -123,6 +132,11 @@ clear_stale_postmaster_pid() {
     return 0
   fi
   if postgres_is_ready; then
+    return 0
+  fi
+  local live_pid=""
+  read -r live_pid < "${PGDATA}/postmaster.pid" || true
+  if [[ "${live_pid}" =~ ^[0-9]+$ ]] && kill -0 "${live_pid}" 2>/dev/null; then
     return 0
   fi
   local pg_ctl=""
@@ -142,13 +156,16 @@ clear_stale_postmaster_pid() {
 
 initialize_postgres() {
   local pg_bin password_file
-  pg_bin="$(find_postgres_bin)"
-  ensure_directories
+  pg_bin="$(find_postgres_bin)" || return 1
+  ensure_directories || return 1
 
   if [[ ! -f "${PGDATA}/PG_VERSION" ]]; then
     echo "Inicializando PostgreSQL persistente..."
 
-    rm -rf "${PGDATA}"
+    if [[ -d "${PGDATA}" && -n "$(find "${PGDATA}" -mindepth 1 -maxdepth 1 -print -quit)" ]]; then
+      echo "El directorio PostgreSQL contiene datos sin PG_VERSION; se conserva para recuperación." >&2
+      return 1
+    fi
     mkdir -p "${PGDATA}"
 
     password_file="${STATE_DIR}/postgres-password.tmp"
@@ -162,7 +179,7 @@ initialize_postgres() {
       --auth-local=trust \
       --auth-host=scram-sha-256 \
       --encoding=UTF8 \
-      --locale=C.UTF-8
+      --locale=C.UTF-8 || { rm -f "${password_file}"; return 1; }
 
     rm -f "${password_file}"
 
@@ -179,10 +196,10 @@ EOF
 
 start_postgres() {
   local pg_bin
-  pg_bin="$(find_postgres_bin)"
+  pg_bin="$(find_postgres_bin)" || return 1
 
-  clear_stale_postmaster_pid
-  initialize_postgres
+  clear_stale_postmaster_pid || return 1
+  initialize_postgres || return 1
 
   if ! postgres_is_ready; then
     echo "Iniciando PostgreSQL..."

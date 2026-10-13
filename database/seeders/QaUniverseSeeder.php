@@ -4,10 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\CalendarImport;
 use App\Models\ContractingAgency;
-use App\Models\Role;
 use App\Models\ScheduledLoad;
-use App\Models\User;
-use App\Models\UserScope;
 use App\Services\CalendarImportService;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Seeder;
@@ -38,7 +35,7 @@ class QaUniverseSeeder extends Seeder
             }
 
             $this->cleanQaOperationalData();
-            $users = $this->createQaUsers($agencies);
+            $users = $this->createQaUsers();
             $this->seedPautasThroughRealFlow($agencies, $users);
         });
     }
@@ -65,127 +62,11 @@ class QaUniverseSeeder extends Seeder
             CalendarImport::query()->whereIn('id', $qaImportIds)->delete();
         }
 
-        UserScope::query()
-            ->whereHas('user', fn ($query) =>
-                $query->whereRaw("COALESCE(metadata->>'qa','false') = 'true'")
-            )
-            ->delete();
-
-        $canonicalEmails = [
-            'admin@siget.local',
-            'director.general@siget.local',
-            'director@siget.local',
-            'director.produccion@siget.local',
-            'enlace@siget.local',
-            'operador.monitoreo@siget.local',
-            'operacion.programacion@siget.local',
-            'fiscalizador@siget.local',
-            'director.monitoreo.IPAB@siget.local',
-            'director.produccion.IPAB@siget.local',
-            'enlace.IPAB@siget.local',
-            'operador.monitoreo.IPAB@siget.local',
-            'operacion.programacion.IPAB@siget.local',
-            'fiscalizador.IPAB@siget.local',
-        ];
-
-        $duplicateUsers = User::query()
-            ->whereRaw("COALESCE(metadata->>'qa','false') = 'true'")
-            ->whereNotIn('email', $canonicalEmails)
-            ->get();
-
-        $canonicalByRole = User::query()
-            ->whereIn('email', $canonicalEmails)
-            ->with('role')
-            ->get()
-            ->keyBy(fn (User $user) => $user->role?->code ?? 'ADMINISTRADOR');
-
-        foreach ($duplicateUsers as $user) {
-            $replacement = $canonicalByRole->get($user->role?->code) ?? $canonicalByRole->get('ADMINISTRADOR');
-            if (!$replacement) {
-                continue;
-            }
-
-            $references = DB::select(<<<'SQL'
-                SELECT tc.table_name, kcu.column_name
-                FROM information_schema.table_constraints tc
-                JOIN information_schema.key_column_usage kcu
-                  ON tc.constraint_name = kcu.constraint_name
-                 AND tc.constraint_schema = kcu.constraint_schema
-                JOIN information_schema.constraint_column_usage ccu
-                  ON tc.constraint_name = ccu.constraint_name
-                 AND tc.constraint_schema = ccu.constraint_schema
-                WHERE tc.constraint_type = 'FOREIGN KEY'
-                  AND ccu.table_name = 'users'
-                  AND ccu.column_name = 'id'
-                  AND tc.table_name NOT IN ('users','user_scopes')
-            SQL);
-
-            foreach ($references as $reference) {
-                DB::table($reference->table_name)
-                    ->where($reference->column_name, $user->id)
-                    ->update([$reference->column_name => $replacement->id]);
-            }
-
-            $user->delete();
-        }
     }
 
-    private function createQaUsers($agencies): array
+    private function createQaUsers(): array
     {
-        $password = env('SIGET_QA_PASSWORD', 'SigetQA_2026_Cambiar!');
-        $users = [];
-
-        $globalDefinitions = [
-            ['ADMINISTRADOR', 'admin@siget.local', 'Administrador QA', null],
-            ['DIRECTOR_GENERAL', 'director.general@siget.local', 'Director General QA', null],
-        ];
-
-        foreach ($globalDefinitions as [$roleCode, $email, $name, $unit]) {
-            $users[$email] = $this->upsertQaUser($roleCode, $email, $name, $unit?->id, $password);
-        }
-
-        foreach ($agencies as $agency) {
-            $dirTransmission = $agency->units->firstWhere('code', 'DIR_A');
-            $dirProgramming = $agency->units->firstWhere('code', 'DIR_B');
-
-            $definitions = [
-                ['DIRECTOR_TRANSMISION', $agency->code === 'IMSS' ? 'director@siget.local' : 'director.monitoreo.IPAB@siget.local', "Director de Transmisión QA {$agency->code}", $dirTransmission],
-                ['DIRECTOR_PROGRAMACION_CONTINUIDAD', $agency->code === 'IMSS' ? 'director.produccion@siget.local' : 'director.produccion.IPAB@siget.local', "Director de Programación y Continuidad QA {$agency->code}", $dirProgramming],
-                ['ENLACE_INSTITUCIONAL', $agency->code === 'IMSS' ? 'enlace@siget.local' : 'enlace.IPAB@siget.local', "Enlace Institucional QA {$agency->code}", $dirTransmission],
-                ['OPERADOR_TRANSMISION', $agency->code === 'IMSS' ? 'operador.monitoreo@siget.local' : 'operador.monitoreo.IPAB@siget.local', "Operador de Transmisión QA {$agency->code}", $dirTransmission],
-                ['OPERADOR_PROGRAMACION_CONTINUIDAD', $agency->code === 'IMSS' ? 'operacion.programacion@siget.local' : 'operacion.programacion.IPAB@siget.local', "Operador de Programación y Continuidad QA {$agency->code}", $dirProgramming],
-                ['FISCALIZADOR', $agency->code === 'IMSS' ? 'fiscalizador@siget.local' : 'fiscalizador.IPAB@siget.local', "Fiscalizador QA {$agency->code}", $dirTransmission],
-            ];
-
-            foreach ($definitions as [$roleCode, $email, $name, $unit]) {
-                $users[$email] = $this->upsertQaUser($roleCode, $email, $name, $unit?->id, $password);
-            }
-        }
-
-        return $users;
-    }
-
-    private function upsertQaUser(string $roleCode, string $email, string $name, ?int $unitId, string $password): User
-    {
-        $role = Role::query()->where('code', $roleCode)->firstOrFail();
-
-        $user = User::query()->updateOrCreate(
-            ['email' => $email],
-            [
-                'role_id' => $role->id,
-                'contracting_agency_id' => null,
-                'organizational_unit_id' => $unitId,
-                'name' => $name,
-                'password' => $password,
-                'status' => 'ACTIVE',
-                'email_verified_at' => now(),
-                'metadata' => ['qa' => true, 'source' => 'QaUniverseSeeder'],
-            ]
-        );
-
-        UserScope::query()->where('user_id', $user->id)->delete();
-
-        return $user;
+        return app(\App\Services\QaUserStandardService::class)->sync();
     }
 
     private function seedPautasThroughRealFlow($agencies, array $users): void

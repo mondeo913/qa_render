@@ -72,7 +72,7 @@ final class EvidenceWorkflowService
                     throw new RuntimeException('El expediente está bloqueado para revisión.');
                 }
             }
-            if ($reviewer->id === $evidence->submitted_by) {
+            if ($reviewer->canonicalIdentityId() === (User::find($evidence->submitted_by)?->canonicalIdentityId() ?? $evidence->submitted_by)) {
                 throw new RuntimeException('No puede aprobar ni revisar su propia entrega.');
             }
             $type = $fiscalization ? 'FISCALIZATION' : (RoleCode::isDirectionDirector($role) ? 'DIRECTION' : 'INSTITUTIONAL');

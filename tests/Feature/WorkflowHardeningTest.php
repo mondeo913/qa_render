@@ -80,6 +80,17 @@ class WorkflowHardeningTest extends TestCase
         return app(InstitutionalClosureService::class)->close($this->load->fresh(), $this->enlace->id, 'Cierre de aceptación');
     }
 
+    public function test_consolidated_identity_cannot_review_its_retired_alias_submission(): void
+    {
+        $evidence = $this->upload('A');
+        $alias = $this->user('DIRECTOR_TRANSMISION', ['organizational_unit_id' => $this->directors['A']->organizational_unit_id,
+            'status' => 'INACTIVE', 'metadata' => ['qa_merged_into' => $this->directors['A']->id]]);
+        $evidence->update(['submitted_by' => $alias->id, 'status' => 'ENVIADO']);
+        $this->expectException(WorkflowException::class);
+        $this->expectExceptionMessage('su propia entrega');
+        app(EvidenceWorkflowService::class)->review($evidence->fresh(), $this->directors['A'], 'APROBADO', 'Conforme');
+    }
+
     public function test_database_roundtrip_preserves_institutional_window_instants(): void
     {
         $load = $this->load->fresh();

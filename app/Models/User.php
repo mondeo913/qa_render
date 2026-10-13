@@ -15,6 +15,7 @@ class User extends Authenticatable {
     public function organizationalUnit(): BelongsTo { return $this->belongsTo(OrganizationalUnit::class); }
     public function scopes(): HasMany { return $this->hasMany(UserScope::class); }
     public function reviewAssignments(): HasMany { return $this->hasMany(ReviewAssignment::class, 'fiscalizador_id'); }
+    public function canonicalIdentityId(): int { return (int) ($this->metadata['qa_merged_into'] ?? $this->id); }
     public function hasPermission(string $code): bool {
         return $this->status === 'ACTIVE' && $this->role?->active
             ? $this->role->permissions()->where('code',$code)->exists() : false;

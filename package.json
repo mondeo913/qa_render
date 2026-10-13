@@ -2,8 +2,10 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "vite build",
-    "dev": "vite"
+    "build": "npm run sync:ui && vite build",
+    "dev": "vite",
+    "sync:ui": "node scripts/sync-zenith-css.mjs",
+    "test:ui": "node tests/browser/ui.mjs"
   },
   "devDependencies": {
     "@popperjs/core": "^2.11.8",

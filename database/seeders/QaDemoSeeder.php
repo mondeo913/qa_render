@@ -9,11 +9,8 @@ use App\Models\Evidence;
 use App\Models\EvidenceTemplate;
 use App\Models\OrganizationalUnit;
 use App\Models\RepositoryFolder;
-use App\Models\Role;
 use App\Models\ScheduledLoad;
 use App\Models\ScheduledLoadDeliverable;
-use App\Models\User;
-use App\Models\UserScope;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Seeder;
 
@@ -21,8 +18,6 @@ class QaDemoSeeder extends Seeder
 {
     public function run(): void
     {
-        $password = env('SIGET_QA_PASSWORD', 'SigetQA_2026_Cambiar!');
-        $adminEmail = env('SIGET_ADMIN_EMAIL', 'admin@siget.local');
 
         $this->call(AgencyTemplateSeeder::class);
 
@@ -32,54 +27,20 @@ class QaDemoSeeder extends Seeder
             ->orderBy('id')
             ->get();
 
-        $users = [];
-
+        $users = app(\App\Services\QaUserStandardService::class)->sync();
         foreach ($agencies as $agencyIndex => $agency) {
             $monitoring = $agency->units->firstWhere('code', 'DIR_A');
             $production = $agency->units->firstWhere('code', 'DIR_B');
-
             $emails = [
-                'admin' => $agencyIndex === 0 ? $adminEmail : "admin.{$agency->code}@siget.local",
-                'director_general' => $agencyIndex === 0 ? 'director.general@siget.local' : "director.general.{$agency->code}@siget.local",
-                'director_monitoring' => $agencyIndex === 0 ? 'director@siget.local' : "director.monitoreo.{$agency->code}@siget.local",
-                'director_production' => $agencyIndex === 0 ? 'director.produccion@siget.local' : "director.produccion.{$agency->code}@siget.local",
-                'enlace' => $agencyIndex === 0 ? 'enlace@siget.local' : "enlace.{$agency->code}@siget.local",
-                'operator_monitoring' => $agencyIndex === 0 ? 'operador.monitoreo@siget.local' : "operador.monitoreo.{$agency->code}@siget.local",
-                'operator_production' => $agencyIndex === 0 ? 'operacion.programacion@siget.local' : "operacion.programacion.{$agency->code}@siget.local",
-                'fiscalizador' => $agencyIndex === 0 ? 'fiscalizador@siget.local' : "fiscalizador.{$agency->code}@siget.local",
+                'admin' => 'admin@siget.local',
+                'director_general' => 'director.general@siget.local',
+                'director_monitoring' => 'director@siget.local',
+                'director_production' => 'director.produccion@siget.local',
+                'enlace' => 'enlace@siget.local',
+                'operator_monitoring' => 'operador.monitoreo@siget.local',
+                'operator_production' => 'operador.produccion@siget.local',
+                'fiscalizador' => 'fiscalizador@siget.local',
             ];
-
-            $definitions = [
-                ['ADMINISTRADOR', $emails['admin'], "Administrador {$agency->code}", null],
-                ['DIRECTOR_GENERAL', $emails['director_general'], "Director General {$agency->code}", null],
-                ['DIRECTOR_TRANSMISION', $emails['director_monitoring'], "Director de Transmisión {$agency->code}", $monitoring],
-                ['DIRECTOR_PROGRAMACION_CONTINUIDAD', $emails['director_production'], "Director de Programación y Continuidad {$agency->code}", $production],
-                ['ENLACE_INSTITUCIONAL', $emails['enlace'], "Enlace {$agency->code}", $monitoring],
-                ['OPERADOR_TRANSMISION', $emails['operator_monitoring'], "Operador de Transmisión {$agency->code}", $monitoring],
-                ['OPERADOR_PROGRAMACION_CONTINUIDAD', $emails['operator_production'], "Operador de Programación y Continuidad {$agency->code}", $production],
-                ['FISCALIZADOR', $emails['fiscalizador'], "Fiscalizador {$agency->code}", $monitoring],
-            ];
-
-            foreach ($definitions as [$roleCode, $email, $name, $unit]) {
-                $role = Role::query()->where('code', $roleCode)->firstOrFail();
-
-                $user = User::query()->updateOrCreate(
-                    ['email' => $email],
-                    [
-                        'role_id' => $role->id,
-                        'contracting_agency_id' => null,
-                        'organizational_unit_id' => $unit?->id,
-                        'name' => $name,
-                        'password' => $password,
-                        'status' => 'ACTIVE',
-                        'email_verified_at' => now(),
-                        'metadata' => ['qa' => true],
-                    ]
-                );
-
-                UserScope::query()->where('user_id', $user->id)->delete();
-                $users[$email] = $user;
-            }
 
             $template = $agency->templates->firstWhere('code', 'PAUTA_MENSUAL');
             if (!$template) {

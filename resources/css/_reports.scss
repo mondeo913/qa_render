@@ -1,0 +1,81 @@
+/* Report center uses the same cards, tokens and readable controls as SIGET. */
+body.siget-body .report-shell {display:grid;gap:24px;min-width:0;font-size:14px;line-height:1.5}
+body.siget-body .report-shell .report-hero {padding:24px!important;margin:0;border:1px solid var(--border);border-radius:var(--radius)!important;background:var(--card)!important}
+body.siget-body .report-shell .report-eyebrow {font-size:12px!important;line-height:1.5;letter-spacing:.04em;margin-bottom:8px;color:var(--muted-foreground)!important}
+body.siget-body .report-shell .report-hero h2 {font-size:24px!important;line-height:1.3!important;margin:0 0 12px;font-weight:700}
+body.siget-body .report-shell .report-hero p {font-size:14px!important;line-height:1.6!important;margin:0;max-width:100ch}
+body.siget-body .report-shell .report-box {min-width:0;border:1px solid var(--border);border-radius:var(--radius)!important;background:var(--card)!important}
+body.siget-body .report-shell .report-toolbar {padding:24px!important;display:grid;gap:20px}
+body.siget-body .report-shell .report-filter-grid {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px;align-items:end}
+body.siget-body .report-shell .report-filter-grid>div {min-width:0}
+body.siget-body .report-shell .report-toolbar label {display:block;font-size:14px;font-weight:600;margin-bottom:8px;line-height:1.4}
+body.siget-body .report-shell :is(.form-select,.form-control,.btn) {font-size:14px!important;min-height:40px!important;height:auto!important;line-height:1.5!important}
+body.siget-body .report-shell :is(.form-select,.form-control) {width:100%;padding:8px 12px!important}
+body.siget-body .report-shell .report-period-segmented {display:flex!important;flex-wrap:wrap;align-items:center;gap:8px;padding-top:16px;border-top:1px solid var(--border)}
+body.siget-body .report-shell .report-period-segmented .btn {border-radius:999px!important;padding:8px 16px!important}
+body.siget-body .report-shell .report-actions {display:flex;align-items:center;flex-wrap:wrap;gap:12px}
+body.siget-body .report-shell .report-actions .btn {display:inline-flex;align-items:center;justify-content:center;padding:8px 16px!important}
+body.siget-body .report-shell .report-nav {display:flex;align-items:center;flex-wrap:wrap;gap:10px!important;min-width:0}
+body.siget-body .report-shell .report-nav a {display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:10px 18px!important;font-size:14px!important;line-height:1.5!important;text-decoration:none;font-weight:600;border:1px solid var(--border);border-radius:999px!important;background:var(--card)!important;color:var(--foreground)!important;white-space:normal;text-align:center}
+body.siget-body .report-shell .report-nav a.active {background:var(--primary)!important;color:var(--primary-foreground)!important;border-color:var(--primary)!important}
+body.siget-body .report-shell .report-kpis {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px!important}
+body.siget-body .report-shell .report-kpi {display:flex;flex-direction:column;align-items:flex-start;justify-content:space-between;gap:12px;min-width:0;min-height:150px;padding:20px!important;border:1px solid var(--border);border-radius:var(--radius)!important;background:var(--card)!important}
+body.siget-body .report-shell .report-kpi small {display:block;font-size:14px!important;line-height:1.5;font-weight:600;color:var(--muted-foreground)!important}
+body.siget-body .report-shell .report-kpi strong {display:block;font-size:28px!important;line-height:1.2;font-variant-numeric:tabular-nums}
+body.siget-body .report-shell .report-kpi em {display:block;font-size:13px!important;line-height:1.5;font-style:normal;color:var(--muted-foreground)!important}
+body.siget-body .report-shell .report-kpi.green strong {color:var(--success)}
+body.siget-body .report-shell .report-kpi.amber strong {color:var(--warning)}
+body.siget-body .report-shell .report-kpi.red strong {color:var(--danger)}
+body.siget-body .report-shell .report-preview {padding:24px!important;overflow:hidden}
+body.siget-body .report-shell .report-paper {background:var(--card)!important;color:var(--foreground);min-width:0}
+body.siget-body .report-shell .paper-head {padding-bottom:24px;border-bottom:1px solid var(--border)}
+body.siget-body .report-shell .paper-head h3 {font-size:22px!important;line-height:1.4!important;margin:0 0 10px}
+body.siget-body .report-shell .paper-head p {font-size:14px!important;margin:0 0 20px;line-height:1.6}
+body.siget-body .report-shell .paper-meta {display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;font-size:14px}
+body.siget-body .report-shell .paper-meta>div {display:flex;flex-direction:column;gap:6px;min-width:0;overflow-wrap:anywhere}
+body.siget-body .report-shell .paper-meta b {font-size:13px;color:var(--muted-foreground);font-weight:600}
+body.siget-body .report-shell .report-section {margin-top:28px;padding:0;min-width:0}
+body.siget-body .report-shell .report-section-title {font-size:18px!important;line-height:1.5!important;font-weight:700;margin-bottom:14px}
+body.siget-body .report-shell .report-subtitle {font-size:14px!important;line-height:1.6!important;color:var(--muted-foreground);margin-bottom:16px}
+body.siget-body .report-shell .report-table-scroll {overflow-x:auto;max-width:100%;border:1px solid var(--border);border-radius:var(--radius)}
+body.siget-body .report-shell .report-table {width:100%;min-width:760px;border-collapse:collapse;font-size:14px!important;line-height:1.5!important;color:var(--foreground);margin:0}
+body.siget-body .report-shell .report-table th {font-size:14px!important;padding:14px 16px!important;line-height:1.5!important;text-align:left;font-weight:650;color:var(--foreground)!important;background:var(--background-soft)!important;border-bottom:1px solid var(--border);vertical-align:bottom;white-space:normal}
+body.siget-body .report-shell .report-table td {font-size:14px!important;line-height:1.5!important;padding:14px 16px!important;border-bottom:1px solid var(--border);vertical-align:top;overflow-wrap:anywhere}
+body.siget-body .report-shell .report-table tbody tr:last-child td {border-bottom:0}
+body.siget-body .report-shell .report-table .num {text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+body.siget-body .report-shell .report-table .empty {text-align:center;padding:28px!important;color:var(--muted-foreground)}
+body.siget-body .report-shell .small {font-size:13px!important;line-height:1.5}
+body.siget-body .report-shell .badge {display:inline-flex;align-items:center;min-height:28px;padding:5px 10px;font-size:12px;border-radius:999px;border:1px solid var(--border);white-space:nowrap}
+body.siget-body .report-shell .badge.ok {color:var(--success)!important;background:color-mix(in srgb,var(--success) 12%,var(--card))!important}
+body.siget-body .report-shell .badge.warn {color:var(--warning)!important;background:color-mix(in srgb,var(--warning) 12%,var(--card))!important}
+body.siget-body .report-shell .badge.danger {color:var(--danger)!important;background:color-mix(in srgb,var(--danger) 12%,var(--card))!important}
+body.siget-body .report-shell .report-total {display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:16px!important;margin-top:24px;padding:20px;border:1px solid var(--border);border-radius:var(--radius);background:var(--background-soft);font-size:14px!important}
+body.siget-body .report-shell .report-total>div {display:flex;flex-direction:column;gap:8px}
+body.siget-body .report-shell .report-total strong {font-size:20px;line-height:1.3}
+body.siget-body .report-shell .preset-buttons,body.siget-body .report-shell .builder-actions {display:flex;flex-wrap:wrap;gap:12px;margin:20px 0}
+body.siget-body .report-shell .builder-grid {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px;align-items:start}
+body.siget-body .report-shell .builder-panel {padding:24px;min-width:0}
+body.siget-body .report-shell .builder-panel h3 {font-size:18px!important;line-height:1.5;margin:0 0 20px}
+body.siget-body .report-shell .builder-option {display:flex;align-items:flex-start;gap:12px;padding:12px!important;margin-bottom:10px;border:1px solid var(--border);border-radius:var(--radius)!important;cursor:pointer}
+body.siget-body .report-shell .builder-option input {flex:0 0 auto;width:18px;height:18px;margin-top:3px;accent-color:var(--primary)}
+body.siget-body .report-shell .builder-option strong {display:block;font-size:14px;line-height:1.5}
+body.siget-body .report-shell .builder-option small {display:block;font-size:13px;margin-top:4px;color:var(--muted-foreground)}
+body.siget-body .report-shell .builder-preview {padding:20px;border:1px solid var(--border);border-radius:var(--radius)}
+body.siget-body .report-shell .builder-preview h4 {font-size:18px;line-height:1.5;margin-bottom:12px}
+body.siget-body .report-shell .report-chip-list {display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 20px}
+body.siget-body .report-shell .report-chip {display:inline-flex;align-items:center;padding:7px 12px;border:1px solid var(--border);border-radius:999px;font-size:13px;line-height:1.5;background:var(--background-soft);color:var(--foreground)}
+@media(min-width:1700px) {body.siget-body .report-shell .report-kpis {grid-template-columns:repeat(6,minmax(0,1fr))}}
+@media(max-width:1100px) {body.siget-body .report-shell .paper-meta {grid-template-columns:repeat(2,minmax(0,1fr))}body.siget-body .report-shell .report-total {grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:767px) {body.siget-body .report-shell .report-filter-grid,body.siget-body .report-shell .report-kpis,body.siget-body .report-shell .builder-grid {grid-template-columns:repeat(2,minmax(0,1fr))}body.siget-body .report-shell .builder-grid {grid-template-columns:minmax(0,1fr)}body.siget-body .report-shell .report-hero,body.siget-body .report-shell .report-toolbar,body.siget-body .report-shell .report-preview {padding:16px!important}}
+@media(max-width:575px) {body.siget-body .report-shell .report-filter-grid,body.siget-body .report-shell .paper-meta {grid-template-columns:minmax(0,1fr)}body.siget-body .report-shell .report-kpis {grid-template-columns:minmax(0,1fr)}body.siget-body .report-shell .report-total {grid-template-columns:repeat(2,minmax(0,1fr))}body.siget-body .report-shell .report-nav a {width:100%;justify-content:flex-start}body.siget-body .report-shell .report-hero h2 {font-size:22px!important}}
+@media print {
+  body.siget-body .siget-sidebar,body.siget-body .siget-topbar,body.siget-body .report-toolbar,body.siget-body .report-nav,body.siget-body .report-hero,body.siget-body .report-kpis {display:none!important}
+  body.siget-body .siget-main {margin:0!important;width:100%!important}
+  body.siget-body .siget-content,body.siget-body .report-shell .report-preview {padding:0!important}
+  body.siget-body .report-shell {--foreground:#111;--card:#fff;--background-soft:#f4f4f5;--border:#ccc;--muted-foreground:#444;color:#111}
+  body.siget-body .report-shell .report-box {border:0}
+  body.siget-body .report-shell .report-table-scroll {overflow:visible;border:0}
+  body.siget-body .report-shell .report-table {min-width:0;width:100%;font-size:10pt!important}
+  body.siget-body .report-shell .report-table th,body.siget-body .report-shell .report-table td {font-size:10pt!important;padding:6pt!important}
+  body.siget-body .report-shell tr {break-inside:avoid}
+}
