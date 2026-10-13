@@ -277,6 +277,7 @@ jobs:
       CACHE_STORE: array
       QUEUE_CONNECTION: sync
       SIGET_QA_PASSWORD: SigetQA_2026_Cambiar!
+      SIGET_UI_VISUAL_EVIDENCE: 'true'
     steps:
       - uses: actions/checkout@v4
       - uses: shivammathur/setup-php@v2

@@ -60,10 +60,10 @@ body.siget-body .siget-load-card .progress-bar {background:var(--primary)!import
 body.siget-body .siget-load-card :is(.siget-traffic-red,.siget-traffic-danger) {background:var(--danger)!important}
 body.siget-body .siget-load-card :is(.siget-traffic-yellow,.siget-traffic-warning) {background:var(--warning)!important}
 body.siget-body .siget-load-card :is(.siget-traffic-green,.siget-traffic-success) {background:var(--success)!important}
-body.siget-body .badge:is(.text-bg-danger,.bg-danger),body.siget-body .siget-load-card .siget-priority-high,body.siget-body .siget-load-card .siget-priority-alta {background:color-mix(in srgb,var(--danger) 15%,var(--card))!important;color:var(--danger)!important}
-body.siget-body .badge:is(.text-bg-warning,.bg-warning),body.siget-body .siget-load-card .siget-priority-medium,body.siget-body .siget-load-card .siget-priority-media {background:color-mix(in srgb,var(--warning) 15%,var(--card))!important;color:var(--warning)!important}
-body.siget-body .badge:is(.text-bg-success,.bg-success) {background:color-mix(in srgb,var(--success) 15%,var(--card))!important;color:var(--success)!important}
-body.siget-body .badge:is(.text-bg-info,.bg-info) {background:color-mix(in srgb,var(--info) 15%,var(--card))!important;color:var(--info)!important}
+body.siget-body.siget-zenith .badge:is(.text-bg-danger,.bg-danger),body.siget-body .siget-load-card .siget-priority-high,body.siget-body .siget-load-card .siget-priority-alta {background:color-mix(in srgb,var(--danger) 15%,var(--card))!important;color:var(--danger)!important}
+body.siget-body.siget-zenith .badge:is(.text-bg-warning,.bg-warning),body.siget-body .siget-load-card .siget-priority-medium,body.siget-body .siget-load-card .siget-priority-media {background:color-mix(in srgb,var(--warning) 15%,var(--card))!important;color:var(--warning)!important}
+body.siget-body.siget-zenith .badge:is(.text-bg-success,.bg-success) {background:color-mix(in srgb,var(--success) 15%,var(--card))!important;color:var(--success)!important}
+body.siget-body.siget-zenith .badge:is(.text-bg-info,.bg-info) {background:color-mix(in srgb,var(--info) 15%,var(--card))!important;color:var(--info)!important}
 body.siget-body .btn-danger {background:var(--danger)!important;color:var(--card)!important;border-color:var(--danger)!important}
 body.siget-body .btn-success {background:var(--success)!important;color:var(--card)!important;border-color:var(--success)!important}
 body.siget-body .siget-folder-grid {grid-template-columns:repeat(auto-fit,minmax(min(220px,100%),1fr))!important}
@@ -76,7 +76,7 @@ html[data-zenith-density="comfortable"] body.siget-body :is(.card-body,.siget-fo
 html[data-zenith-radius="compact"] {--radius:3px!important}
 html[data-zenith-radius="default"] {--radius:10px!important}
 html[data-zenith-radius="soft"] {--radius:16px!important}
-html body.siget-body :is(.card,.siget-card,.exec-card,.op-card,.di-panel,.siget-folder-card,.siget-load-card) {border-radius:var(--radius)!important}
+html[data-zenith-radius] body.siget-body :is(.card,.siget-card,.exec-card,.op-card,.di-panel,.siget-folder-card,.siget-load-card) {border-radius:var(--radius)!important}
 @media (min-width:992px) {
   html[data-zenith-layout="topnav"] body.siget-body .siget-sidebar {position:sticky!important;top:0!important;width:100%!important;height:auto!important;max-height:160px;flex-direction:row;gap:24px;align-items:center;border-right:0;border-bottom:1px solid var(--border);overflow:auto}
   html[data-zenith-layout="topnav"] .siget-shell {display:block}
@@ -106,3 +106,9 @@ body.siget-body .siget-file-list-view .siget-folder-card {display:grid!important
 body.siget-body .siget-file-list-view .siget-folder-card>i {grid-row:1 / span 5;align-self:center}
 body.siget-body .siget-file-list-view .siget-folder-card>small {grid-column:2}
 body.siget-body .siget-file-toolbar .btn-group {flex-shrink:0}
+body.siget-body.siget-zenith .text-success {color:var(--success)!important}
+body.siget-body.siget-zenith .text-warning {color:var(--warning)!important}
+body.siget-body.siget-zenith .text-danger {color:var(--danger)!important}
+body.siget-body.siget-zenith .text-info {color:var(--info)!important}
+body.siget-body.siget-zenith .btn-outline-danger {color:var(--danger)!important;border-color:var(--danger)!important}
+html[data-zenith-container="fluid"] body.siget-body .siget-content {max-width:none!important}

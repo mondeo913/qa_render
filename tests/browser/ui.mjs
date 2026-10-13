@@ -54,6 +54,8 @@ try {
     assert.equal(await page.locator('.siget-sidebar').evaluate(el => el.getBoundingClientRect().width), 72, 'Sidebar collapse failed');
     await page.getByRole('button', { name: 'Alternar menú de navegación' }).click();
     await page.screenshot({ path: `${screenshots}/${user.id}-dashboard-dark.png`, fullPage: true });
+    if (process.env.SIGET_UI_VISUAL_EVIDENCE === 'true' && user.role === 'ADMINISTRADOR') console.log('SIGET_UI_IMAGE_DASHBOARD:' + (await page.screenshot({ type: 'jpeg', quality: 55 })).toString('base64'));
+    assert.equal(await page.evaluate(() => localStorage.getItem(`siget-ui:${document.documentElement.dataset.sigetUser}:theme`)), 'dark', 'Preferences must be scoped by account');
     // Every menu entry is a GET page already authorized by this user's role.
     const links = await page.locator('.siget-nav a').evaluateAll(elements => elements.map(el => el.href));
     for (const url of links) {
@@ -77,6 +79,7 @@ try {
     assert(await page.locator('[data-file-manager]').evaluate(el => el.classList.contains('siget-file-list-view')), 'Repository list failed');
     await page.locator('[data-file-view="grid"]').click();
     await page.screenshot({ path: `${screenshots}/${user.id}-repository-dark.png`, fullPage: true });
+    if (process.env.SIGET_UI_VISUAL_EVIDENCE === 'true' && user.role === 'ADMINISTRADOR') console.log('SIGET_UI_IMAGE_REPOSITORY:' + (await page.screenshot({ type: 'jpeg', quality: 55 })).toString('base64'));
     await page.goto(base + '/tablero-cargas');
     await page.screenshot({ path: `${screenshots}/${user.id}-board-dark.png`, fullPage: true });
     for (const width of [768, 390]) {
