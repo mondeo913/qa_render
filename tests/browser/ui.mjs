@@ -84,10 +84,13 @@ try {
     await page.locator('[data-file-view="list"]').click();
     assert(await page.locator('[data-file-manager]').evaluate(el => el.classList.contains('siget-file-list-view')), 'Repository list failed');
     await page.locator('[data-file-view="grid"]').click();
+    assert.equal(await page.locator('.siget-folder-grid').first().evaluate(el => getComputedStyle(el).display), 'grid', 'Repository grid is missing');
+    if (await page.locator('.siget-folder-card').count()) assert.equal(await page.locator('.siget-folder-card').first().evaluate(el => getComputedStyle(el).display), 'flex', 'Repository cards are inline');
     await page.screenshot({ path: `${screenshots}/${user.id}-repository-dark.png`, fullPage: true });
     if (process.env.SIGET_UI_VISUAL_EVIDENCE === 'true' && user.role === 'ADMINISTRADOR') console.log('SIGET_UI_IMAGE_REPOSITORY:' + (await page.screenshot({ type: 'jpeg', quality: 55 })).toString('base64'));
     await page.goto(base + '/tablero-cargas');
     await page.screenshot({ path: `${screenshots}/${user.id}-board-dark.png`, fullPage: true });
+    if (process.env.SIGET_UI_VISUAL_EVIDENCE === 'true' && user.role === 'ADMINISTRADOR') console.log('SIGET_UI_IMAGE_BOARD:' + (await page.screenshot({ type: 'jpeg', quality: 55 })).toString('base64'));
     for (const width of [768, 390]) {
       await page.setViewportSize({ width, height: 844 });
       for (const route of ['/dashboard', '/repositorio', '/tablero-cargas']) {
