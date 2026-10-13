@@ -27,6 +27,7 @@ class SharedAppearanceTest extends TestCase
                 ->assertSee('data-zenith-radius="soft"', false);
             $this->assertSame(1, substr_count($response->getContent(), 'siget-zenith-runtime.js'), $role->code);
             $this->assertStringNotContainsString('siget-zenith-runtime.css', $response->getContent(), $role->code);
+            $this->assertStringNotContainsString('report-executive-fallback.js', $response->getContent(), $role->code);
         }
     }
 
