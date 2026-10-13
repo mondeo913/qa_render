@@ -112,3 +112,6 @@ body.siget-body.siget-zenith .text-danger {color:var(--danger)!important}
 body.siget-body.siget-zenith .text-info {color:var(--info)!important}
 body.siget-body.siget-zenith .btn-outline-danger {color:var(--danger)!important;border-color:var(--danger)!important}
 html[data-zenith-container="fluid"] body.siget-body .siget-content {max-width:none!important}
+body.siget-body .siget-top-logout {margin:0}
+body.siget-body.siget-zenith .btn-danger:hover {background:var(--danger)!important;color:var(--card)!important;border-color:var(--danger)!important}
+body.siget-body.siget-zenith .btn-success:hover {background:var(--success)!important;color:var(--card)!important;border-color:var(--success)!important}

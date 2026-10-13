@@ -11,12 +11,15 @@
   const read = kind => { try { const v = localStorage.getItem(prefix + kind); return allowed[kind].includes(v) ? v : defaults[kind]; } catch { return defaults[kind]; } };
   const state = Object.fromEntries(Object.keys(allowed).map(kind => [kind, read(kind)]));
   const media = matchMedia('(prefers-color-scheme: dark)');
+  const mobile = matchMedia('(max-width: 991px)');
   const colors = { default: '#2563eb', ocean: '#2563eb', sunset: '#ea580c', forest: '#059669', berry: '#7c3aed', slate: '#64748b' };
   const apply = () => {
     root.dataset.sigetTheme = state.theme;
     root.dataset.bsTheme = state.theme === 'auto' ? (media.matches ? 'dark' : 'light') : state.theme;
     for (const kind of ['preset', 'density', 'container', 'radius', 'layout']) root.dataset['zenith' + kind[0].toUpperCase() + kind.slice(1)] = state[kind];
     document.body?.classList.toggle('siget-sidebar-collapsed', state.collapsed === '1');
+    const sidebar = document.querySelector('.siget-sidebar');
+    if (sidebar) { sidebar.inert = mobile.matches && !document.body.classList.contains('siget-sidebar-open'); sidebar.setAttribute('aria-hidden', String(sidebar.inert)); }
     document.querySelectorAll('[data-theme-value]').forEach(el => { const active = el.dataset.themeValue === state.theme; el.classList.toggle('active', active); el.setAttribute('aria-pressed', String(active)); });
     for (const kind of ['preset', 'density', 'container', 'radius', 'layout']) document.querySelectorAll(`[data-zenith-${kind}]`).forEach(el => { const active = el.dataset['zenith' + kind[0].toUpperCase() + kind.slice(1)] === state[kind]; el.classList.toggle('active', active); el.setAttribute('aria-pressed', String(active)); });
     document.querySelectorAll('[data-theme-icon]').forEach(el => { el.className = `bi ${state.theme === 'light' ? 'bi-sun' : state.theme === 'dark' ? 'bi-moon-stars' : 'bi-circle-half'}`; });
@@ -32,6 +35,7 @@
   window.SigetAppearance = { get: kind => state[kind], set, palette: () => [colors[state.preset], '#14b8a6', '#22c55e', '#f59e0b', '#ef4444', '#a855f7', '#0ea5e9', '#64748b'] };
   apply();
   media.addEventListener('change', () => { if (state.theme === 'auto') apply(); });
+  mobile.addEventListener('change', () => { document.body?.classList.remove('siget-sidebar-open'); apply(); });
   const bind = () => {
     const customizer = document.querySelector('[data-zenith-customizer]');
     const trigger = document.querySelector('[data-zenith-customizer-toggle]');

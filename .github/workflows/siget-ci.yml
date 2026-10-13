@@ -251,7 +251,7 @@ jobs:
           QUEUE_CONNECTION: sync
 
       - name: PostgreSQL controlled workflow acceptance
-        run: php artisan test --filter=WorkflowHardeningTest
+        run: php artisan test --filter='WorkflowHardeningTest|OperationsPageTest'
         env:
           DB_CONNECTION: pgsql
           DB_HOST: 127.0.0.1

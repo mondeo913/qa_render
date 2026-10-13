@@ -41,15 +41,20 @@ function passwords() {
 }
 
 function files() {
-    const m = document.querySelector('[data-file-manager]');
-    if (!m) return;
-    const apply = v => {
-        m.classList.toggle('siget-file-list-view', v === 'list');
-        window.SigetAppearance?.set('fileview', v);
-        document.querySelectorAll('[data-file-view]').forEach(b => b.classList.toggle('active', b.dataset.fileView === v));
+    const manager = document.querySelector('[data-file-manager]');
+    if (!manager) return;
+    const render = () => {
+        const value = window.SigetAppearance?.get('fileview') || 'grid';
+        manager.classList.toggle('siget-file-list-view', value === 'list');
+        document.querySelectorAll('[data-file-view]').forEach(button => {
+            const selected = button.dataset.fileView === value;
+            button.classList.toggle('active', selected);
+            button.setAttribute('aria-pressed', String(selected));
+        });
     };
-    apply(window.SigetAppearance?.get('fileview') || 'grid');
-    document.querySelectorAll('[data-file-view]').forEach(b => b.addEventListener('click', () => apply(b.dataset.fileView)));
+    document.querySelectorAll('[data-file-view]').forEach(button => button.addEventListener('click', () => window.SigetAppearance?.set('fileview', button.dataset.fileView)));
+    document.addEventListener('siget:appearance', render);
+    render();
 }
 
 function renderCharts() {
