@@ -28,6 +28,7 @@ class EvidenceWorkflowController extends Controller
                 'files',
                 'reviews',
             ]),
+            'canEdit' => $access->canUploadDeliverable($request->user(), $evidence->deliverable) && app(\App\Services\EvidenceRules::class)->isEnabled($evidence->deliverable) && in_array($evidence->status->value, ['EN_CAPTURA', 'CORREGIDO', 'OBSERVADO', 'RECHAZADO'], true),
             'canReview' => $access->canReviewEvidence(
                 $request->user(),
                 $evidence
@@ -38,8 +39,10 @@ class EvidenceWorkflowController extends Controller
     public function submit(
         Request $request,
         Evidence $evidence,
-        EvidenceWorkflowService $workflow
+        EvidenceWorkflowService $workflow,
+        AccessScopeService $access
     ): RedirectResponse {
+        abort_unless($access->canAccessEvidence($request->user(), $evidence), 403);
         $workflow->submit($evidence, $request->user());
 
         return redirect()
@@ -53,8 +56,10 @@ class EvidenceWorkflowController extends Controller
     public function review(
         Request $request,
         Evidence $evidence,
-        EvidenceWorkflowService $workflow
+        EvidenceWorkflowService $workflow,
+        AccessScopeService $access
     ): RedirectResponse {
+        abort_unless($access->canReviewEvidence($request->user(), $evidence), 403);
         $data = $request->validate([
             'decision' => [
                 'required',

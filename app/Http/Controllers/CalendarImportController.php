@@ -13,6 +13,7 @@ class CalendarImportController extends Controller
         CalendarImportRequest $request,
         CalendarImportService $service
     ): RedirectResponse {
+        abort_unless(app(\App\Services\AccessScopeService::class)->canManageAgency($request->user(), $request->integer('contracting_agency_id')), 403);
         $import = $service->uploadAndValidate(
             $request->file('calendar_file'),
             $request->integer('contracting_agency_id'),

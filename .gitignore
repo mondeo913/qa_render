@@ -26,3 +26,5 @@ Thumbs.db
 # Archivos locales/generados de SIGET
 /.phpunit.result.cache
 /storage/app/private/
+
+/storage/framework/testing/

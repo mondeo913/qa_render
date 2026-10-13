@@ -36,7 +36,7 @@ class ReviewAssignmentController extends Controller
         ]);
 
         $fiscalizador = User::query()
-            ->whereKey($data['fiscalizador_id'])
+            ->whereKey($data['fiscalizador_id'])->where('status', 'ACTIVE')
             ->whereHas('role', fn ($role) => $role->where('code', 'FISCALIZADOR'))
             ->firstOrFail();
 

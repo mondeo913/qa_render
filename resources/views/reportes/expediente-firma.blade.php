@@ -25,8 +25,8 @@ th{background:#eef2f7}.muted{color:#64748b}.page-break{page-break-before:always}
 <td>{{ str_replace('_',' ',$deliverable->status->value) }}</td>
 <td>
 @foreach($deliverable->evidences as $evidence)
-    @foreach($evidence->files as $file)
-    <div>{{ $file->original_name }} - SHA-256 {{ $file->sha256 }}</div>
+    @foreach($evidence->files->where('version',$evidence->current_version) as $file)
+    <div>{{ $file->original_name }} - v{{ $file->version }} - SHA-256 {{ $file->sha256 }}</div>
     @endforeach
 @endforeach
 </td>

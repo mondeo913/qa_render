@@ -6,6 +6,6 @@ class CalendarImportPolicy {
     public function create(User $user): bool { return $user->hasPermission('calendar.import'); }
     public function confirm(User $user, CalendarImport $import): bool {
         return $user->hasPermission('calendar.confirm')
-            && $user->contracting_agency_id === $import->contracting_agency_id;
+            && app(\App\Services\AccessScopeService::class)->canManageAgency($user, (int) $import->contracting_agency_id);
     }
 }

@@ -57,11 +57,13 @@ class AdminController extends Controller
             'organizational_unit_id' => ['nullable', 'exists:organizational_units,id'],
         ]);
 
-        User::query()->create($data + [
+        $this->validateUserAssignment($data);
+        $user = User::query()->create($data + [
             'status' => 'ACTIVE',
             'email_verified_at' => now(),
         ]);
 
+        app(\App\Services\AuditService::class)->record('user.created', $user);
         return back()->with('success', 'Usuario creado.');
     }
 
@@ -87,7 +89,9 @@ class AdminController extends Controller
             unset($data['password']);
         }
 
+        $this->validateUserAssignment($data);
         $user->update($data);
+        app(\App\Services\AuditService::class)->record('user.updated', $user, [], ['role_id' => $user->role_id, 'organizational_unit_id' => $user->organizational_unit_id]);
 
         return back()->with('success', 'Usuario actualizado correctamente.');
     }
@@ -125,7 +129,40 @@ class AdminController extends Controller
             'status' => $user->status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE',
         ]);
 
+        $user->forceFill(['remember_token' => null])->save();
+        if (config('session.driver') === 'database') {
+            DB::table('sessions')->where('user_id', $user->id)->delete();
+        }
+        app(\App\Services\AuditService::class)->record('user.status_changed', $user, [], ['status' => $user->status]);
         return back()->with('success', 'Estado del usuario actualizado.');
+    }
+
+    private function validateUserAssignment(array $data): void
+    {
+        $role = Role::query()->where('active', true)->find($data['role_id']);
+        $unit = isset($data['organizational_unit_id']) ? OrganizationalUnit::query()->where('active', true)->find($data['organizational_unit_id']) : null;
+        $errors = [];
+        if (!$role) { $errors['role_id'] = 'Seleccione un rol activo.'; }
+        if (isset($data['organizational_unit_id']) && !$unit) { $errors['organizational_unit_id'] = 'Seleccione una dirección activa.'; }
+        if (isset($data['contracting_agency_id']) && !ContractingAgency::query()->where('active', true)->whereKey($data['contracting_agency_id'])->exists()) {
+            $errors['contracting_agency_id'] = 'Seleccione una dependencia activa.';
+        }
+        if ($unit && isset($data['contracting_agency_id']) && (int) $unit->contracting_agency_id !== (int) $data['contracting_agency_id']) {
+            $errors['organizational_unit_id'] = 'La dirección no corresponde a la dependencia.';
+        }
+        if (\App\Enums\RoleCode::isDirectionDirector($role?->code) || \App\Enums\RoleCode::isOperator($role?->code)) {
+            if (!$unit) { $errors['organizational_unit_id'] = 'Este perfil requiere una dirección.'; }
+            $expected = match ($role?->code) {
+                'DIRECTOR_TRANSMISION', 'OPERADOR_TRANSMISION' => 'DIR_A',
+                'DIRECTOR_PROGRAMACION_CONTINUIDAD', 'OPERADOR_PROGRAMACION_CONTINUIDAD' => 'DIR_B',
+                default => $unit?->code,
+            };
+            if ($unit && $unit->code !== $expected) { $errors['organizational_unit_id'] = 'La dirección no corresponde al perfil.'; }
+        }
+        if ($role?->code === 'ENLACE_INSTITUCIONAL' && empty($data['contracting_agency_id']) && !$unit) {
+            $errors['contracting_agency_id'] = 'El enlace requiere una dependencia o dirección asignada.';
+        }
+        if ($errors) { throw \Illuminate\Validation\ValidationException::withMessages($errors); }
     }
 
     public function roles(Request $request)
@@ -232,68 +269,9 @@ class AdminController extends Controller
     {
         $this->authorizeAdmin($request, 'agencies.manage');
 
-        try {
-            DB::transaction(function () use ($agency): void {
-                $agencyId = $agency->id;
-                $unitIds = DB::table('organizational_units')->where('contracting_agency_id', $agencyId)->pluck('id');
-                $templateIds = DB::table('evidence_templates')->where('contracting_agency_id', $agencyId)->pluck('id');
-                $importIds = DB::table('calendar_imports')->where('contracting_agency_id', $agencyId)->pluck('id');
-                $loadIds = DB::table('scheduled_loads')->where('contracting_agency_id', $agencyId)->pluck('id');
-                $folderIds = DB::table('repository_folders')->where('contracting_agency_id', $agencyId)->pluck('id');
-
-                if ($loadIds->isNotEmpty()) {
-                    DB::table('load_closures')->whereIn('scheduled_load_id', $loadIds)->delete();
-                    DB::table('institutional_reviews')->whereIn('scheduled_load_id', $loadIds)->delete();
-                    DB::table('load_status_history')->whereIn('scheduled_load_id', $loadIds)->delete();
-                    DB::table('notifications')->whereIn('scheduled_load_id', $loadIds)->delete();
-                    DB::table('accounting_notices')->whereIn('scheduled_load_id', $loadIds)->delete();
-                    DB::table('review_assignments')->whereIn('scheduled_load_id', $loadIds)->delete();
-                    DB::table('load_reschedules')->whereIn('scheduled_load_id', $loadIds)->delete();
-                    DB::table('evidences')->whereIn('scheduled_load_id', $loadIds)->delete();
-                    DB::table('signed_documents')->whereIn('scheduled_load_id', $loadIds)->delete();
-                    DB::table('scheduled_load_deliverables')->whereIn('scheduled_load_id', $loadIds)->delete();
-                    DB::table('repository_folders')->whereIn('scheduled_load_id', $loadIds)->update(['scheduled_load_id' => null]);
-                    DB::table('scheduled_loads')->whereIn('id', $loadIds)->delete();
-                }
-
-                if ($importIds->isNotEmpty()) {
-                    DB::table('calendar_import_rows')->whereIn('calendar_import_id', $importIds)->delete();
-                    DB::table('calendar_imports')->whereIn('id', $importIds)->delete();
-                }
-
-                DB::table('calendar_suspensions')->where('contracting_agency_id', $agencyId)->delete();
-                DB::table('template_requirements')->whereIn('template_id', $templateIds)->delete();
-                DB::table('evidence_templates')->whereIn('id', $templateIds)->delete();
-
-                if ($unitIds->isNotEmpty()) {
-                    DB::table('scheduled_load_deliverables')->whereIn('organizational_unit_id', $unitIds)->delete();
-                    DB::table('template_requirements')->whereIn('responsible_unit_id', $unitIds)->update(['responsible_unit_id' => null]);
-                    DB::table('users')->whereIn('organizational_unit_id', $unitIds)->update(['organizational_unit_id' => null]);
-                    DB::table('repository_folders')->whereIn('organizational_unit_id', $unitIds)->update(['organizational_unit_id' => null]);
-                    DB::table('organizational_units')->whereIn('id', $unitIds)->update(['parent_id' => null]);
-                    DB::table('organizational_units')->whereIn('id', $unitIds)->delete();
-                }
-
-                DB::table('user_scopes')->where('contracting_agency_id', $agencyId)->delete();
-                DB::table('users')->where('contracting_agency_id', $agencyId)->update(['contracting_agency_id' => null]);
-
-                if ($folderIds->isNotEmpty()) {
-                    DB::table('evidences')->whereIn('folder_id', $folderIds)->update(['folder_id' => null]);
-                    DB::table('signed_documents')->whereIn('folder_id', $folderIds)->update(['folder_id' => null]);
-                    DB::table('evidence_files')->whereIn('folder_id', $folderIds)->update(['folder_id' => null]);
-                    DB::table('repository_folders')->whereIn('id', $folderIds)->update(['parent_id' => null]);
-                    DB::table('repository_folders')->whereIn('id', $folderIds)->delete();
-                }
-
-                $agency->delete();
-            });
-        } catch (QueryException) {
-            return back()->withErrors([
-                'agency' => 'No se pudo completar la eliminación en cascada. La operación fue revertida para proteger la integridad de los datos.',
-            ]);
-        }
-
-        return back()->with('success', 'Dependencia eliminada.');
+        $agency->update(['active' => false]);
+        app(\App\Services\AuditService::class)->record('agency.archived', $agency);
+        return back()->with('success', 'Dependencia desactivada; expedientes e historial conservados.');
     }
 
     public function storeUnit(Request $request): RedirectResponse
@@ -324,10 +302,11 @@ class AdminController extends Controller
 
         return view('admin.templates', [
             'templates' => EvidenceTemplate::query()
+                ->when($request->user()->role?->code !== 'ADMINISTRADOR', fn ($q) => $q->whereIn('contracting_agency_id', app(\App\Services\AccessScopeService::class)->readableAgencyIds($request->user())))
                 ->with(['requirements', 'requirements.responsibleUnit'])
                 ->latest('version')
                 ->get(),
-            'agencies' => ContractingAgency::query()->with('units')->get(),
+            'agencies' => ContractingAgency::query()->with('units')->when($request->user()->role?->code !== 'ADMINISTRADOR', fn ($q) => $q->whereIn('id', app(\App\Services\AccessScopeService::class)->readableAgencyIds($request->user())))->get(),
         ]);
     }
 
@@ -346,6 +325,11 @@ class AdminController extends Controller
             'max_size_mb' => ['required', 'integer', 'min:1', 'max:2048'],
         ]);
 
+        $template = EvidenceTemplate::query()->findOrFail($data['template_id']);
+        abort_unless(app(\App\Services\AccessScopeService::class)->canManageAgency($request->user(), (int) $template->contracting_agency_id), 403);
+        if (!OrganizationalUnit::query()->whereKey($data['responsible_unit_id'])->where('contracting_agency_id', $template->contracting_agency_id)->where('active', true)->exists() || $data['max_files'] < $data['min_files']) {
+            throw \Illuminate\Validation\ValidationException::withMessages(['responsible_unit_id' => 'Verifique dirección de la dependencia y cantidades de archivos.']);
+        }
         TemplateRequirement::query()->updateOrCreate(
             [
                 'template_id' => $data['template_id'],

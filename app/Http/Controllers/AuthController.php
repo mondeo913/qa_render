@@ -43,6 +43,10 @@ class AuthController extends Controller
             ]);
         }
 
+        if (!$request->user()->role?->active) {
+            Auth::logout();
+            throw ValidationException::withMessages(['email' => 'El rol de la cuenta está inactivo.']);
+        }
         RateLimiter::clear($key);
         $request->session()->regenerate();
         $request->user()->update(['last_login_at' => now()]);

@@ -28,6 +28,18 @@ final class AccountingNoticeService
             ]
         );
 
+        if ($load->status->value !== 'VALIDADO_Y_CERRADO') {
+            $notice->update(['status' => 'CANCELLED']);
+            return $notice->fresh();
+        }
+        $closureKey = $load->closure?->package_sha256 ?? $load->closed_at?->toIso8601String();
+        if ($notice->status === 'SENT' && ($notice->payload['closure_key'] ?? null) === $closureKey) {
+            return $notice->fresh();
+        }
+        $notice->update(['status' => 'PENDING', 'failure_message' => null, 'recipients' => $recipients,
+            'payload' => ['scheduled_load_id' => $load->id, 'title' => $load->title, 'closed_at' => $load->closed_at?->toIso8601String(),
+                'closure_key' => $closureKey, 'message' => 'Aviso informativo de cierre; no constituye facturación.']]);
+
         try {
             Mail::raw(
                 "La carga {$load->title} fue validada y cerrada al 100 %. "

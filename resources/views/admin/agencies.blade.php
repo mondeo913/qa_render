@@ -42,10 +42,10 @@
                     </div>
                     <div class="d-flex gap-2">
                         <button type="button" class="btn btn-outline-primary btn-sm" data-edit-agency="{{ $agency->id }}">Editar</button>
-                        <form method="POST" action="{{ route('admin.agencies.destroy', $agency) }}" onsubmit="return confirm('¿Desea eliminar esta dependencia? Esta acción no se puede deshacer.');">
+                        <form method="POST" action="{{ route('admin.agencies.destroy', $agency) }}" onsubmit="return confirm('¿Desea desactivar esta dependencia? Esta acción no se puede deshacer.');">
                             @csrf
                             @method('DELETE')
-                            <button type="submit" class="btn btn-outline-danger btn-sm">Eliminar</button>
+                            <button type="submit" class="btn btn-outline-danger btn-sm">Desactivar</button>
                         </form>
                     </div>
                 </div>

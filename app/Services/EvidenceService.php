@@ -10,7 +10,7 @@ use App\Models\User;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
-use RuntimeException;
+use App\Exceptions\WorkflowException as RuntimeException;
 
 final class EvidenceService
 {
@@ -19,7 +19,8 @@ final class EvidenceService
         private readonly AccessScopeService $access,
         private readonly AuditService $audit,
         private readonly LoadProgressService $progress,
-        private readonly RepositoryService $repository
+        private readonly RepositoryService $repository,
+        private readonly EvidenceRules $rules
     ) {}
 
     public function upload(
@@ -37,9 +38,7 @@ final class EvidenceService
         $load = $deliverable->scheduledLoad;
         $load->loadMissing('calendarImport');
 
-        if (!$this->availability->isEnabled($load, now())) {
-            throw new RuntimeException('La fecha aún no está habilitada para carga.');
-        }
+        $this->rules->assertEditable($deliverable, $user);
 
         $requirement = $deliverable->templateRequirement;
         $extension = strtolower($file->getClientOriginalExtension());
@@ -68,6 +67,14 @@ final class EvidenceService
             $extension,
             $load
         ) {
+            $load = \App\Models\ScheduledLoad::query()->lockForUpdate()->findOrFail($load->id);
+            $deliverable = ScheduledLoadDeliverable::query()->lockForUpdate()->findOrFail($deliverable->id);
+            $deliverable->setRelation('scheduledLoad', $load);
+            $existing = Evidence::query()->where('deliverable_id', $deliverable->id)->lockForUpdate()->first();
+            $this->rules->assertEditable($deliverable, $user, $existing);
+            if ($deliverable->responsible_user_id === null && \App\Enums\RoleCode::isOperator($user->role?->code)) {
+                $deliverable->update(['responsible_user_id' => $user->id]);
+            }
             $evidence = Evidence::query()->firstOrCreate(
                 ['deliverable_id' => $deliverable->id],
                 [
@@ -92,7 +99,15 @@ final class EvidenceService
                     'submitted_by' => $user->id,
                     'validated_at' => null,
                     'validated_by' => null,
+                    'submitted_at' => null,
                 ]);
+                $deliverable->update(['submitted_at' => null, 'validated_at' => null, 'validated_by' => null]);
+                $this->rules->invalidateInstitutionalValidation($load);
+            }
+
+            $count = $evidence->files()->where('version', $evidence->current_version)->count();
+            if ($deliverable->templateRequirement->max_files !== null && $count >= $deliverable->templateRequirement->max_files) {
+                throw new RuntimeException('Se alcanzó el máximo de archivos de la versión actual.');
             }
 
             $folder = RepositoryFolder::query()
@@ -123,6 +138,9 @@ final class EvidenceService
                 $storedName,
                 $disk
             );
+            if (!$path) {
+                throw new RuntimeException('No se pudo guardar el archivo.');
+            }
 
             EvidenceFile::query()->create([
                 'evidence_id' => $evidence->id,

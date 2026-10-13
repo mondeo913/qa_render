@@ -28,17 +28,24 @@ class K2VisualFunctionalIntegrationTest extends TestCase {
         $role=Role::where('code','DIRECTOR_TRANSMISION')->firstOrFail();
         $user=User::factory()->create(['role_id'=>$role->id,'status'=>'ACTIVE']);
         $this->actingAs($user)->get(route('dashboard'))->assertOk()->assertSee('Dashboard operativo')->assertSee('Dirección de Transmisión');
-        $this->assertTrue($role->permissions()->where('code','scheduled_load.close')->exists());
+        $this->assertFalse($role->permissions()->where('code','scheduled_load.close')->exists());
     }
 
     public function test_operational_dashboard_uses_standardized_geometry_and_keeps_filter_flow(): void {
         $this->seed(RolePermissionSeeder::class);
         $role = Role::where('code', 'DIRECTOR_TRANSMISION')->firstOrFail();
-        $agency = ContractingAgency::factory()->create(['name' => 'Dependencia estándar']);
+        $this->seed(\Database\Seeders\AgencyTemplateSeeder::class);
+        $agency = ContractingAgency::where('code', 'IMSS')->firstOrFail();
+        $unit = $agency->units()->where('code', 'DIR_A')->firstOrFail();
+        $load = ScheduledLoad::factory()->create(['contracting_agency_id' => $agency->id]);
+        $requirement = $agency->templates()->firstOrFail()->requirements()->where('responsible_unit_id', $unit->id)->firstOrFail();
+        \App\Models\ScheduledLoadDeliverable::create(['scheduled_load_id' => $load->id, 'template_requirement_id' => $requirement->id,
+            'organizational_unit_id' => $unit->id, 'status' => 'PENDIENTE']);
         $user = User::factory()->create([
             'role_id' => $role->id,
             'status' => 'ACTIVE',
             'contracting_agency_id' => $agency->id,
+            'organizational_unit_id' => $unit->id,
         ]);
 
         $response = $this->actingAs($user)->get(route('dashboard', [
@@ -128,6 +135,8 @@ class K2VisualFunctionalIntegrationTest extends TestCase {
         $this->seed(RolePermissionSeeder::class);
         $firstLoad = ScheduledLoad::factory()->create(['title' => 'Pauta Bienestar']);
         $secondLoad = ScheduledLoad::factory()->create(['title' => 'Pauta Salud']);
+        $firstLoad->calendarImport->update(['original_filename' => 'Pauta Bienestar']);
+        $secondLoad->calendarImport->update(['original_filename' => 'Pauta Salud']);
         $role = Role::where('code', 'DIRECTOR_GENERAL')->firstOrFail();
         $user = User::factory()->create(['role_id' => $role->id, 'status' => 'ACTIVE']);
 
@@ -143,6 +152,8 @@ class K2VisualFunctionalIntegrationTest extends TestCase {
         $firstLoad = ScheduledLoad::factory()->create(['title' => 'Pauta Enero']);
         $secondLoad = ScheduledLoad::factory()->create(['title' => 'Pauta Febrero']);
         $secondLoad->update(['contracting_agency_id' => $firstLoad->contracting_agency_id]);
+        $firstLoad->calendarImport->update(['original_filename' => 'Pauta Enero']);
+        $secondLoad->calendarImport->update(['original_filename' => 'Pauta Febrero', 'contracting_agency_id' => $firstLoad->contracting_agency_id]);
         $role = Role::where('code', 'DIRECTOR_GENERAL')->firstOrFail();
         $user = User::factory()->create(['role_id' => $role->id, 'status' => 'ACTIVE']);
 
@@ -155,10 +166,11 @@ class K2VisualFunctionalIntegrationTest extends TestCase {
         $this->actingAs($user)
             ->get(route('dashboard', [
                 'agency_id' => $firstLoad->contracting_agency_id,
-                'campaign' => 'Pauta Febrero',
+                'pauta_id' => $secondLoad->calendar_import_id,
             ]))
             ->assertOk()
-            ->assertSee('name="campaign"', false)
-            ->assertSee('value="Pauta Febrero" selected', false);
+            ->assertSee('name="pauta_id"', false)
+            ->assertSee('value="'.$secondLoad->calendar_import_id.'"', false)
+            ->assertViewHas('filters', fn ($filters) => (int) $filters['pauta_id'] === $secondLoad->calendar_import_id);
     }
 }

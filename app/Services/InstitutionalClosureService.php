@@ -13,7 +13,7 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
-use RuntimeException;
+use App\Exceptions\WorkflowException as RuntimeException;
 
 final class InstitutionalClosureService
 {
@@ -23,7 +23,9 @@ final class InstitutionalClosureService
         private readonly AlertService $alerts,
         private readonly AccountingNoticeService $accounting,
         private readonly LoadProgressService $progress,
-        private readonly LoadStatusService $loadStatus
+        private readonly LoadStatusService $loadStatus,
+        private readonly EvidenceRules $rules,
+        private readonly AccessScopeService $access
     ) {}
 
     /**
@@ -46,7 +48,7 @@ final class InstitutionalClosureService
             ->filter(fn ($d) => $d->templateRequirement?->required);
 
         $agencyUnitIds = $load->agency?->units
-            ?->where('active', true)
+            ?->where('active', true)->where('unit_type', 'DIRECTION')
             ->pluck('id')
             ->map(fn ($id) => (int) $id)
             ->values()
@@ -66,6 +68,10 @@ final class InstitutionalClosureService
             }
         }
 
+        if ($required->isEmpty()) {
+            $errors[] = 'El expediente no tiene requisitos obligatorios.';
+        }
+
         foreach ($required as $deliverable) {
             $requirement = $deliverable->templateRequirement;
             $unitName = $deliverable->organizationalUnit?->name ?? 'Dirección no identificada';
@@ -76,7 +82,13 @@ final class InstitutionalClosureService
                 continue;
             }
 
-            $files = $evidence->files;
+            $files = $evidence->files->where('version', $evidence->current_version);
+            foreach ($this->rules->fileErrors($evidence) as $error) {
+                $errors[] = $unitName.': '.$error;
+            }
+            if ($evidence->reviews()->where('review_type', 'DIRECTION')->where('evidence_version', $evidence->current_version)->latest('id')->value('decision') !== 'APROBADO') {
+                $errors[] = $unitName.': falta aprobación de Dirección para la versión actual.';
+            }
             $minFiles = max(1, (int) ($requirement?->min_files ?? 1));
             $maxFiles = $requirement?->max_files;
             if ($files->count() < $minFiles) {
@@ -129,7 +141,12 @@ final class InstitutionalClosureService
             if (!$deliverable->submitted_at) {
                 $errors[] = "{$unitName}: '{$requirement?->name}' no tiene fecha de entrega registrada.";
             } elseif ($deliverable->due_at && $deliverable->submitted_at->gt($deliverable->due_at)) {
-                $errors[] = "{$unitName}: '{$requirement?->name}' fue entregado después de su fecha programada.";
+                $authorized = \App\Models\EvidenceCorrectionWindow::query()->where('deliverable_id', $deliverable->id)
+                    ->whereNotNull('used_at')->whereNull('revoked_at')->where('evidence_version', $evidence->current_version)
+                    ->where('opens_at', '<=', $deliverable->submitted_at)->where('closes_at', '>=', $deliverable->submitted_at)->exists();
+                if (!$authorized) {
+                    $errors[] = "{$unitName}: '{$requirement?->name}' fue entregado fuera de una ventana autorizada.";
+                }
             }
         }
 
@@ -152,6 +169,12 @@ final class InstitutionalClosureService
         bool $packagePrepared,
         ?string $observations
     ): InstitutionalReview {
+        return DB::transaction(function () use ($load, $userId, $evidencesCorrect, $packagePrepared, $observations) {
+            $load = ScheduledLoad::query()->lockForUpdate()->findOrFail($load->id);
+        $this->assertInstitutionalActor($load, $userId, 'scheduled_load.verify');
+        if ($load->is_blocked) {
+            throw new RuntimeException('El expediente está bloqueado.');
+        }
         $validation = $this->validateExpediente($load);
         if ($evidencesCorrect && !$validation['ready']) {
             throw new RuntimeException('El expediente aún no cumple la pauta completa: '.implode(' ', $validation['errors']));
@@ -184,6 +207,7 @@ final class InstitutionalClosureService
         $load->update(['traffic_light'=>TrafficLight::PURPLE]);
 
         return $review;
+        });
     }
 
     public function uploadSignedDocument(
@@ -192,6 +216,10 @@ final class InstitutionalClosureService
         int $userId,
         array $metadata = []
     ): SignedDocument {
+        $this->assertInstitutionalActor($load, $userId, 'scheduled_load.upload_signed');
+        if ($load->is_blocked) {
+            throw new RuntimeException('El expediente está bloqueado.');
+        }
         $loadStatus = $load->status instanceof \BackedEnum
             ? $load->status->value
             : (string) $load->status;
@@ -202,6 +230,10 @@ final class InstitutionalClosureService
             throw new RuntimeException('El expediente debe estar VALIDADO antes de incorporar el documento firmado.');
         }
 
+        $validation = $this->validateExpediente($load);
+        if (!$validation['ready'] || !$load->institutionalReview?->verified_at) {
+            throw new RuntimeException('Debe completar la validación institucional antes de incorporar el firmado.');
+        }
         $allowed = $load->template->allowed_signed_extensions ?? ['pdf'];
         $extension = strtolower($file->getClientOriginalExtension());
         if (!in_array($extension,$allowed,true)) {
@@ -209,6 +241,11 @@ final class InstitutionalClosureService
         }
 
         return DB::transaction(function () use ($load,$file,$userId,$metadata,$extension) {
+            $load = ScheduledLoad::query()->lockForUpdate()->findOrFail($load->id);
+            if ($load->is_blocked || $load->status->value !== 'VALIDADA' || !$this->validateExpediente($load)['ready'] || !$load->institutionalReview?->verified_at) {
+                throw new RuntimeException('La validación institucional cambió; revise el expediente.');
+            }
+            $load->signedDocuments()->where('active', true)->update(['active' => false]);
             $document = SignedDocument::query()->create([
                 'scheduled_load_id'=>$load->id,
                 'uploaded_by'=>$userId,
@@ -224,6 +261,7 @@ final class InstitutionalClosureService
             $disk = config('siget.repository_disk',config('filesystems.default'));
             $storedName = Str::uuid().'.'.$extension;
             $path = $file->storeAs('siget/signed/'.$load->id,$storedName,$disk);
+            if (!$path) { throw new RuntimeException('No se pudo guardar el documento firmado.'); }
 
             EvidenceFile::query()->create([
                 'signed_document_id'=>$document->id,
@@ -246,14 +284,17 @@ final class InstitutionalClosureService
                 'validated_by'=>$load->validated_by ?? $userId,
             ]);
 
+            $this->audit->record('signed_document.uploaded', $document, [], ['uploaded_by' => $userId]);
             return $document->fresh('files');
         });
     }
 
     public function close(ScheduledLoad $load, int $userId, ?string $comment): LoadClosure
     {
+        $this->assertInstitutionalActor($load, $userId);
         return DB::transaction(function () use ($load,$userId,$comment) {
-            $load->refresh()->load(['deliverables.templateRequirement','institutionalReview','signedDocuments.files']);
+            $load = ScheduledLoad::query()->lockForUpdate()->findOrFail($load->id);
+            $load->load(['deliverables.templateRequirement','institutionalReview','signedDocuments.files']);
 
             $loadStatus = $load->status instanceof \BackedEnum
                 ? $load->status->value
@@ -277,13 +318,32 @@ final class InstitutionalClosureService
                 throw new RuntimeException('Debe adjuntar el documento firmado por el Director.');
             }
 
+            $files = $load->deliverables->flatMap(fn ($d) => $d->evidences->flatMap(fn ($e) => $e->files->where('version', $e->current_version)))->concat($signed->files);
+            foreach ($files as $stored) {
+                if (in_array($stored->antivirus_status, ['INFECTED', 'FAILED', 'ERROR'], true) || (config('siget.antivirus_enabled') && !in_array($stored->antivirus_status, ['CLEAN', 'PASSED'], true))) {
+                    throw new RuntimeException('Falta verificación antivirus satisfactoria del expediente firmado.');
+                }
+                $storage = Storage::disk($stored->storage_disk);
+                if (!$storage->exists($stored->storage_path)) {
+                    throw new RuntimeException('Falta un archivo físico del expediente.');
+                }
+                $stream = $storage->readStream($stored->storage_path);
+                if (!is_resource($stream)) { throw new RuntimeException('No se pudo verificar el archivo.'); }
+                $hash = hash_init('sha256');
+                hash_update_stream($hash, $stream);
+                fclose($stream);
+                if (!hash_equals($stored->sha256, hash_final($hash))) {
+                    throw new RuntimeException('La integridad de un archivo del expediente cambió.');
+                }
+            }
             $manifest = [
                 'scheduled_load_id'=>$load->id,
                 'closed_by'=>$userId,
                 'closed_at'=>now()->toIso8601String(),
                 'deliverables'=>$load->deliverables->pluck('id')->all(),
                 'signed_document_id'=>$signed->id,
-                'file_hashes'=>$signed->files->pluck('sha256')->all(),
+                'file_hashes'=>$files->pluck('sha256')->all(),
+                'files'=>$files->map(fn ($f) => ['id' => $f->id, 'sha256' => $f->sha256, 'version' => $f->version, 'storage_path' => $f->storage_path])->values()->all(),
                 'status'=>ScheduledLoadStatus::VALIDADO_Y_CERRADO->value,
             ];
             $packageHash = hash('sha256',json_encode($manifest,JSON_THROW_ON_ERROR));
@@ -294,6 +354,7 @@ final class InstitutionalClosureService
                     'institutional_review_id'=>$review->id,
                     'signed_document_id'=>$signed->id,
                     'closed_by'=>$userId,
+                    'reopened'=>false, 'reopened_reason'=>null, 'reopened_by'=>null, 'reopened_at'=>null,
                     'closed_at'=>now(),
                     'closing_comment'=>$comment,
                     'package_sha256'=>$packageHash,
@@ -325,11 +386,19 @@ final class InstitutionalClosureService
                 'package_sha256'=>$packageHash,
                 'scope'=>'DEPENDENCY_COMPLETE_EXPEDIENTE',
             ]);
-            $this->alerts->notifyClosure($load);
+            DB::afterCommit(fn () => $this->alerts->notifyClosure($load->fresh()));
             $this->progress->recalculate($load);
-            $this->accounting->sendCompletionNotice($load->fresh());
+            DB::afterCommit(fn () => $this->accounting->sendCompletionNotice($load->fresh()));
 
             return $closure->fresh();
         });
+    }
+    private function assertInstitutionalActor(ScheduledLoad $load, int $userId, string $permission = 'scheduled_load.close'): void
+    {
+        $user = \App\Models\User::query()->findOrFail($userId);
+        if (!in_array($user->role?->code, ['ADMINISTRADOR', 'ENLACE_INSTITUCIONAL'], true)
+            || !$user->hasPermission($permission) || !$load->agency?->active || !$this->access->canAccessLoad($user, $load)) {
+            throw new RuntimeException('El cierre institucional corresponde al enlace o administrador autorizado.');
+        }
     }
 }

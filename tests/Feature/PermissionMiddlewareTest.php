@@ -12,7 +12,7 @@ class PermissionMiddlewareTest extends TestCase
 
     public function test_operator_cannot_import_calendar(): void
     {
-        $role = Role::query()->create(['code'=>'OPERADOR_TRANSMISION','name'=>'Operativo de Transmisión']);
+        $role = Role::query()->firstOrCreate(['code'=>'OPERADOR_TRANSMISION'],['name'=>'Operativo de Transmisión']);
         $user = User::query()->create([
             'role_id'=>$role->id,'name'=>'Operador','email'=>'operador@example.test',
             'password'=>'secret','status'=>'ACTIVE',

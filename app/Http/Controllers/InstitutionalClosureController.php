@@ -18,7 +18,7 @@ class InstitutionalClosureController extends Controller
         ScheduledLoad $load,
         InstitutionalClosureService $service
     ): RedirectResponse {
-        $this->authorize('close',$load);
+        $this->authorize('verify',$load);
         $service->updateChecklist(
             $load,
             $request->user()->id,
@@ -35,19 +35,17 @@ class InstitutionalClosureController extends Controller
         ReportService $reports,
         InstitutionalClosureService $service
     ) {
-        $this->authorize('close',$load);
+        $this->authorize('signaturePackage',$load);
 
-        $validation = $service->validateExpediente($load);
-        if (!$validation['ready']) {
-            throw new RuntimeException(
-                'No se puede generar el expediente para firma hasta completar la pauta: '
-                .implode(' ', $validation['errors'])
-            );
-        }
-
-        $path = $reports->generateSignaturePackage($load);
-        return Storage::disk(config('siget.repository_disk','local'))
-            ->download($path,'expediente-firma-'.$load->id.'.pdf');
+        return \Illuminate\Support\Facades\DB::transaction(function () use ($load, $reports, $service) {
+            $load = ScheduledLoad::query()->lockForUpdate()->findOrFail($load->id);
+            $validation = $service->validateExpediente($load);
+            if ($load->is_blocked || !$validation['ready'] || !$load->institutionalReview?->verified_at) {
+                throw new \App\Exceptions\WorkflowException('Complete la validación institucional del expediente antes de generar el paquete para firma.');
+            }
+            $path = $reports->generateSignaturePackage($load);
+            return Storage::disk(config('siget.repository_disk','local'))->download($path,'expediente-firma-'.$load->id.'.pdf');
+        });
     }
 
     public function signedDocument(
@@ -55,7 +53,7 @@ class InstitutionalClosureController extends Controller
         ScheduledLoad $load,
         InstitutionalClosureService $service
     ): RedirectResponse {
-        $this->authorize('close',$load);
+        $this->authorize('uploadSigned',$load);
         $service->uploadSignedDocument(
             $load,
             $request->file('file'),

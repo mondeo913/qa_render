@@ -23,6 +23,12 @@ final class LoadStatusService
             return;
         }
 
+        if (!\App\Enums\ScheduledLoadStatus::tryFrom($newStatus)) {
+            throw new \RuntimeException('Estado de carga inválido.');
+        }
+        if ($oldStatus === 'VALIDADO_Y_CERRADO' && ($newStatus !== 'REABIERTA' || !$user?->hasPermission('scheduled_load.reopen'))) {
+            throw new \RuntimeException('El expediente cerrado requiere una reapertura autorizada.');
+        }
         $load->update(['status' => $newStatus]);
 
         LoadStatusHistory::query()->create([

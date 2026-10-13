@@ -100,7 +100,7 @@ class AdminAgencyTest extends TestCase
         ]);
     }
 
-    public function test_administrator_can_delete_an_agency_without_related_records(): void
+    public function test_administrator_archives_an_agency_without_removing_history(): void
     {
         [$user] = $this->adminWithAgencyPermission();
         $agency = ContractingAgency::query()->create(['code' => 'DEL', 'name' => 'Eliminar', 'active' => true]);
@@ -109,12 +109,12 @@ class AdminAgencyTest extends TestCase
             ->actingAs($user)
             ->delete(route('admin.agencies.destroy', $agency), ['_token' => 'test-token'])
             ->assertRedirect()
-            ->assertSessionHas('success', 'Dependencia eliminada.');
+            ->assertSessionHas('success', 'Dependencia desactivada; expedientes e historial conservados.');
 
-        $this->assertDatabaseMissing('contracting_agencies', ['id' => $agency->id]);
+        $this->assertDatabaseHas('contracting_agencies', ['id' => $agency->id, 'active' => false]);
     }
 
-    public function test_agency_with_units_is_deleted_in_cascade(): void
+    public function test_agency_with_units_is_archived_without_cascade(): void
     {
         [$user] = $this->adminWithAgencyPermission();
         $agency = ContractingAgency::query()->create(['code' => 'KEEP', 'name' => 'Con unidad', 'active' => true]);
@@ -130,10 +130,10 @@ class AdminAgencyTest extends TestCase
             ->actingAs($user)
             ->delete(route('admin.agencies.destroy', $agency), ['_token' => 'test-token'])
             ->assertRedirect()
-            ->assertSessionHas('success', 'Dependencia eliminada.');
+            ->assertSessionHas('success', 'Dependencia desactivada; expedientes e historial conservados.');
 
-        $this->assertDatabaseMissing('contracting_agencies', ['id' => $agency->id]);
-        $this->assertDatabaseMissing('organizational_units', ['contracting_agency_id' => $agency->id]);
+        $this->assertDatabaseHas('contracting_agencies', ['id' => $agency->id, 'active' => false]);
+        $this->assertDatabaseHas('organizational_units', ['contracting_agency_id' => $agency->id]);
     }
 
     private function adminWithAgencyPermission(): array

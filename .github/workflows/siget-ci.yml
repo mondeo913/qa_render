@@ -249,3 +249,16 @@ jobs:
           SESSION_DRIVER: array
           CACHE_STORE: array
           QUEUE_CONNECTION: sync
+
+      - name: PostgreSQL controlled workflow acceptance
+        run: php artisan test --filter=WorkflowHardeningTest
+        env:
+          DB_CONNECTION: pgsql
+          DB_HOST: 127.0.0.1
+          DB_PORT: 5432
+          DB_DATABASE: siget_ci
+          DB_USERNAME: siget
+          DB_PASSWORD: siget_ci
+          SESSION_DRIVER: array
+          CACHE_STORE: array
+          QUEUE_CONNECTION: sync

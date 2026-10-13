@@ -7,7 +7,7 @@
     $status = $load->status instanceof \BackedEnum ? $load->status->value : $load->status;
     $role = auth()->user()->role?->code;
     $isInstitutional = in_array($role,['ADMINISTRADOR','ENLACE_INSTITUCIONAL'],true);
-    $validationReady = $expedienteValidation['ready'] ?? false;
+    $validationReady = ($expedienteValidation['ready'] ?? false) && !$load->is_blocked;
 @endphp
 
 <div class="card siget-card mb-4">
@@ -33,9 +33,11 @@
         <div class="row g-3 mb-3">
             <div class="col-md-4"><div class="border rounded p-3 h-100"><small class="text-secondary d-block">Direcciones incluidas</small><strong class="fs-4">{{ $expedienteValidation['directions'] }}</strong></div></div>
             <div class="col-md-4"><div class="border rounded p-3 h-100"><small class="text-secondary d-block">Requisitos obligatorios</small><strong class="fs-4">{{ $expedienteValidation['required_deliverables'] }}</strong></div></div>
-            <div class="col-md-4"><div class="border rounded p-3 h-100"><small class="text-secondary d-block">Resultado de pauta</small><strong class="fs-5 {{ $validationReady ? 'text-success' : 'text-danger' }}">{{ $validationReady ? 'CUMPLE' : 'PENDIENTE' }}</strong></div></div>
+            <div class="col-md-4"><div class="border rounded p-3 h-100"><small class="text-secondary d-block">Resultado de pauta</small><strong class="fs-5 {{ $validationReady ? 'text-success' : 'text-danger' }}">{{ $status === 'VALIDADO_Y_CERRADO' ? 'CERRADO' : ($validationReady ? 'CUMPLE' : 'PENDIENTE') }}</strong></div></div>
         </div>
-        @if($validationReady)
+        @if($status === 'VALIDADO_Y_CERRADO')
+            <div class="alert alert-success mb-0">Expediente cerrado. Los archivos y validaciones están bloqueados; cualquier cambio requiere reapertura autorizada.</div>
+        @elseif($validationReady)
             <div class="alert alert-success mb-0"><i class="bi bi-check-circle me-2"></i>El conjunto de evidencias cumple actualmente la pauta y sus fechas programadas. El expediente puede pasar al proceso institucional de firma.</div>
         @else
             <div class="alert alert-warning mb-0"><strong><i class="bi bi-exclamation-triangle me-2"></i>No se puede validar/cerrar el expediente todavía.</strong><ul class="mb-0 mt-2">@foreach(($expedienteValidation['errors'] ?? []) as $error)<li>{{ $error }}</li>@endforeach</ul></div>
@@ -62,8 +64,9 @@
                         @else
                             <div class="alert alert-warning">Esta dirección aún no ha integrado la evidencia requerida.</div>
                         @endif
-                        @if(auth()->user()->hasPermission('evidence.upload') && in_array($deliverable->organizational_unit_id, auth()->user()->scopes()->pluck('organizational_unit_id')->filter()->all() ?: [auth()->user()->organizational_unit_id]))
-                            <form action="{{ route('evidences.store') }}" method="POST" enctype="multipart/form-data">@csrf<input type="hidden" name="deliverable_id" value="{{ $deliverable->id }}"><div class="mb-2"><input name="title" class="form-control" placeholder="Título de la evidencia"></div><div class="input-group"><input type="file" name="file" class="form-control" required @disabled(!$uploadEnabled)><button class="btn btn-primary" @disabled(!$uploadEnabled)><i class="bi bi-cloud-arrow-up"></i> {{ $uploadEnabled ? 'Cargar evidencia' : 'Carga cerrada' }}</button></div></form>
+                        @php($editable = app(\App\Services\AccessScopeService::class)->canUploadDeliverable(auth()->user(),$deliverable) && app(\App\Services\EvidenceRules::class)->isEnabled($deliverable) && (!$evidence || in_array($evidence->status->value,['EN_CAPTURA','CORREGIDO','OBSERVADO','RECHAZADO'],true)))
+                        @if($editable)
+                            <form action="{{ route('evidences.store') }}" method="POST" enctype="multipart/form-data">@csrf<input type="hidden" name="deliverable_id" value="{{ $deliverable->id }}"><div class="mb-2"><input name="title" class="form-control" placeholder="Título de la evidencia"></div><div class="input-group"><input type="file" name="file" class="form-control" required @disabled(!$editable)><button class="btn btn-primary" @disabled(!$editable)><i class="bi bi-cloud-arrow-up"></i> Cargar evidencia</button></div></form>
                         @endif
                     </div>
                 </div>
@@ -93,6 +96,20 @@
         @if($load->accountingNotice)<div class="alert alert-info mt-3 mb-0">Aviso a Contabilidad: {{ $load->accountingNotice->status }} · {{ $load->accountingNotice->sent_at?->format('d/m/Y H:i') }}</div>@endif
     </div>
 </div>
+@endif
+
+@if($isInstitutional && auth()->user()->hasPermission('calendar.reschedule') && in_array($status,['PROGRAMADA','ABIERTA','VENCIDA','SUSPENDIDA','REPROGRAMADA'],true))
+<div class="card siget-card mt-4"><div class="card-header"><h2>Reprogramar carga</h2></div><div class="card-body"><form method="POST" action="{{ route('loads.reschedule',$load) }}">@csrf
+<div class="row g-3"><div class="col-md-6"><label class="form-label">Nueva apertura</label><input type="datetime-local" name="opens_at" class="form-control" required></div><div class="col-md-6"><label class="form-label">Nuevo cierre</label><input type="datetime-local" name="closes_at" class="form-control" required></div><div class="col-12"><label class="form-label">Motivo de reprogramación</label><textarea name="reason" class="form-control" minlength="10" required></textarea></div></div><button class="btn btn-outline-primary mt-3">Guardar reprogramación</button></form></div></div>
+@endif
+
+@if($isInstitutional && auth()->user()->hasPermission($status === 'VALIDADO_Y_CERRADO' ? 'scheduled_load.reopen' : 'scheduled_load.verify'))
+<div class="card siget-card mt-4"><div class="card-header"><h2>{{ $status === 'VALIDADO_Y_CERRADO' ? 'Reapertura autorizada' : 'Autorizar correcciones' }}</h2></div><div class="card-body">
+<p>Seleccione los entregables a corregir. Se conservarán versiones, revisiones y cierres anteriores; será necesaria una nueva validación y firma.</p>
+<form method="POST" action="{{ route($status === 'VALIDADO_Y_CERRADO' ? 'loads.reopen' : 'loads.corrections',$load) }}">@csrf
+@foreach($load->deliverables as $deliverable)<label class="d-block mb-2"><input type="checkbox" name="deliverable_ids[]" value="{{ $deliverable->id }}"> {{ $deliverable->organizationalUnit?->name }} · {{ $deliverable->templateRequirement?->name }}</label>@endforeach
+<div class="row g-3"><div class="col-md-6"><label class="form-label">Apertura de corrección</label><input type="datetime-local" name="opens_at" class="form-control" required></div><div class="col-md-6"><label class="form-label">Límite de corrección</label><input type="datetime-local" name="closes_at" class="form-control" required></div><div class="col-12"><label class="form-label">Motivo obligatorio</label><textarea name="reason" class="form-control" minlength="10" required></textarea></div></div>
+<button class="btn btn-warning mt-3">{{ $status === 'VALIDADO_Y_CERRADO' ? 'Reabrir y autorizar corrección' : 'Autorizar ventana de corrección' }}</button></form></div></div>
 @endif
 
 <div class="card siget-card mt-4"><div class="card-header"><div><h2>Trazabilidad del expediente</h2><p>Historial de transiciones institucionales</p></div></div><div class="table-responsive"><table class="table mb-0"><thead><tr><th>Fecha</th><th>Anterior</th><th>Nuevo</th><th>Usuario</th><th>Motivo</th></tr></thead><tbody>@forelse($load->statusHistory->sortByDesc('created_at') as $item)<tr><td>{{ $item->created_at?->format('d/m/Y H:i') }}</td><td>{{ $item->old_status }}</td><td>{{ $item->new_status }}</td><td>{{ $item->user?->name }}</td><td>{{ $item->reason }}</td></tr>@empty<tr><td colspan="5" class="text-center text-secondary py-4">Sin cambios registrados.</td></tr>@endforelse</tbody></table></div></div>

@@ -33,18 +33,11 @@ class ScheduledLoadController extends Controller
             'closure',
             'reviewAssignments.fiscalizador',
             'accountingNotice',
-            'statusHistory.user',
+            'statusHistory' => fn ($q) => $access->scopeStatusHistory($q, $request->user())->with('user'),
         ]);
 
-        $unitIds = $access->accessibleUnitIds($request->user());
-        if ($unitIds !== []) {
-            $load->setRelation(
-                'deliverables',
-                $load->deliverables
-                    ->whereIn('organizational_unit_id', $unitIds)
-                    ->values()
-            );
-        }
+        $load->setRelation('deliverables', $load->deliverables
+            ->filter(fn ($d) => $access->canAccessDeliverable($request->user(), $d))->values());
 
         // The institutional link sees one complete expediente for the dependency,
         // with all directions/evidences participating in the pauta validation.

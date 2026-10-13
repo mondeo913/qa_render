@@ -14,7 +14,7 @@ use Carbon\CarbonImmutable;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
-use RuntimeException;
+use App\Exceptions\WorkflowException as RuntimeException;
 
 final class CalendarImportService
 {
@@ -31,6 +31,10 @@ final class CalendarImportService
         int $userId,
         int $scheduleYear
     ): CalendarImport {
+        $user = User::query()->findOrFail($userId);
+        if (!$user->hasPermission('calendar.import') || !app(AccessScopeService::class)->canManageAgency($user, $agencyId)) {
+            throw new RuntimeException('No tiene permiso para importar pautas de esta dependencia.');
+        }
         $agency = ContractingAgency::query()
             ->whereKey($agencyId)
             ->where('active', true)
@@ -119,6 +123,10 @@ final class CalendarImportService
 
     public function confirm(CalendarImport $import, int $userId): int
     {
+        $user = User::query()->findOrFail($userId);
+        if (!$user->hasPermission('calendar.confirm') || !app(AccessScopeService::class)->canManageAgency($user, (int) $import->contracting_agency_id)) {
+            throw new RuntimeException('No tiene permiso para confirmar esta pauta.');
+        }
         if ($import->error_rows > 0 || $import->status !== 'VALIDATED') {
             throw new RuntimeException(
                 'La importación contiene errores o no está validada.'
@@ -126,6 +134,8 @@ final class CalendarImportService
         }
 
         return DB::transaction(function () use ($import, $userId) {
+            $import = CalendarImport::query()->lockForUpdate()->findOrFail($import->id);
+            if ($import->status !== 'VALIDATED') { throw new RuntimeException('La pauta ya fue confirmada o cambió de estado.'); }
             $agency = ContractingAgency::query()
                 ->findOrFail($import->contracting_agency_id);
 

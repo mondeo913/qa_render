@@ -14,7 +14,10 @@
                     <tbody>@forelse($evidence->files->sortByDesc('created_at') as $file)<tr><td>{{ $file->original_name }}</td><td>v{{ $file->version }}</td><td><code>{{ Str::limit($file->sha256,20) }}</code></td><td>{{ $file->antivirus_status }}</td><td><a href="{{ route('evidence-files.download',$file) }}">Descargar</a></td></tr>@empty<tr><td colspan="5" class="text-secondary">Sin archivos físicos.</td></tr>@endforelse</tbody></table>
                 </div>
 
-                @if(in_array($status,['EN_CAPTURA','CORREGIDO','OBSERVADO','RECHAZADO']) && auth()->user()->hasPermission('evidence.upload'))
+                @if($canEdit)
+                <form action="{{ route('evidences.store') }}" method="POST" enctype="multipart/form-data" class="mb-3">@csrf<input type="hidden" name="deliverable_id" value="{{ $evidence->deliverable_id }}"><label class="form-label">Adjuntar archivo a la versión vigente (una corrección inicia nueva versión)</label><div class="input-group"><input type="file" name="file" class="form-control" required><button class="btn btn-outline-primary">Adjuntar</button></div></form>
+                @endif
+                @if($canEdit && in_array($status,['EN_CAPTURA','CORREGIDO'],true))
                 <form action="{{ route('evidences.submit',$evidence) }}" method="POST">@csrf<button class="btn btn-primary"><i class="bi bi-send"></i> Enviar a revisión</button></form>
                 @endif
             </div>
@@ -24,7 +27,7 @@
             <div class="card-header"><div><h2>Revisiones</h2><p>Decisiones institucionales y de fiscalización</p></div></div>
             <div class="list-group list-group-flush">
                 @forelse($evidence->reviews->sortByDesc('created_at') as $review)
-                    <div class="list-group-item"><div class="d-flex justify-content-between"><strong>{{ $review->decision }}</strong><small>{{ $review->created_at?->format('d/m/Y H:i') }}</small></div><p class="mb-0">{{ $review->comments }}</p><small>{{ $review->review_type }}</small></div>
+                    <div class="list-group-item"><div class="d-flex justify-content-between"><strong>{{ $review->decision }}</strong><small>{{ $review->created_at?->format('d/m/Y H:i') }}</small></div><p class="mb-0">{{ $review->comments }}</p><small>{{ $review->review_type }} · Versión {{ $review->evidence_version ?? 'histórica' }}</small></div>
                 @empty<div class="p-4 text-secondary">Aún no hay revisiones.</div>@endforelse
             </div>
         </div>
@@ -33,7 +36,7 @@
     <div class="col-xl-4">
         @if($canReview)
         <div class="card siget-card">
-            <div class="card-header"><div><h2>Registrar revisión</h2><p>La decisión actualiza evidencia, entregable y carga.</p></div></div>
+            <div class="card-header"><div><h2>Registrar revisión</h2><p>La revisión de Dirección precede a la institucional. El dictamen fiscalizador conserva el estado institucional.</p></div></div>
             <div class="card-body">
                 <form action="{{ route('evidences.review',$evidence) }}" method="POST">
                     @csrf

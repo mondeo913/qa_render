@@ -76,8 +76,7 @@ class RolePermissionSeeder extends Seeder
         $directorPermissions = [
             'direction.dashboard','direction.repository','reports.view',
             'repository.view','repository.download','calendar.view','alerts.view','scheduled_load.board',
-            'evidence.review','scheduled_load.review','scheduled_load.verify','scheduled_load.signature_package',
-            'scheduled_load.upload_signed','scheduled_load.close','scheduled_load.reopen',
+            'evidence.review',
         ];
         $operatorPermissions = [
             'dashboard.view','calendar.view','evidence.upload','repository.view',
@@ -87,9 +86,7 @@ class RolePermissionSeeder extends Seeder
         $map = [
             'DIRECTOR_GENERAL' => [
                 'dashboard.view','intelligence.view','reports.view','reports.export',
-                'repository.view','repository.download','scheduled_load.board','evidence.review',
-                'scheduled_load.review','scheduled_load.verify','scheduled_load.signature_package',
-                'scheduled_load.upload_signed','scheduled_load.close','scheduled_load.reopen',
+                'repository.view','repository.download','scheduled_load.board',
             ],
             'DIRECTOR' => array_values(array_unique([...$directorPermissions,'intelligence.view'])),
             'DIRECTOR_TRANSMISION' => array_values(array_unique([...$directorPermissions,'intelligence.view'])),

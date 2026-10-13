@@ -11,7 +11,7 @@ class SpecificRolePermissionsTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_directors_have_supervision_without_evidence_review(): void
+    public function test_directors_validate_their_direction_without_institutional_closure(): void
     {
         $this->seed(RolePermissionSeeder::class);
 
@@ -25,7 +25,7 @@ class SpecificRolePermissionsTest extends TestCase
 
             $this->assertTrue($codes->contains('direction.dashboard'));
             $this->assertTrue($codes->contains('repository.view'));
-            $this->assertFalse($codes->contains('evidence.review'));
+            $this->assertTrue($codes->contains('evidence.review'));
             $this->assertFalse($codes->contains('scheduled_load.close'));
         }
     }

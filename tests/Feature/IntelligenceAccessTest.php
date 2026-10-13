@@ -136,16 +136,16 @@ class IntelligenceAccessTest extends TestCase
 
         $payload = app(IntelligenceAnalyticsService::class)->forUser($director);
         $this->assertCount(1, $payload['direction_performance']);
-        $this->assertSame('DIRECCIÓN DE TRANSMISIÓN', $payload['direction_performance'][0]['name']);
+        $this->assertSame('Dirección de Transmisión', $payload['direction_performance'][0]['name']);
         $this->assertSame(1, $payload['kpis']['total']);
         $this->assertSame(1, $payload['kpis']['overdue']);
 
         $response = $this->actingAs($director)->get(route('intelligence'));
 
         $response->assertOk();
-        $response->assertSee('DIRECCIÓN DE TRANSMISIÓN');
+        $response->assertSee('Dirección de Transmisión');
         $response->assertSee('Carga exclusiva Transmisión');
-        $response->assertDontSee('DIRECCIÓN DE PROGRAMACIÓN Y CONTINUIDAD');
+        $response->assertDontSee('Dirección de Programación y Continuidad');
         $response->assertDontSee('Carga exclusiva Programación');
         $response->assertDontSee('Riesgo por Dependencia');
     }
@@ -251,8 +251,8 @@ class IntelligenceAccessTest extends TestCase
         $this->assertSame(2, $pcAnalytics['kpis']['total']);
         $this->assertCount(1, $txAnalytics['direction_performance']);
         $this->assertCount(1, $pcAnalytics['direction_performance']);
-        $this->assertSame('DIRECCIÓN DE TRANSMISIÓN', $txAnalytics['direction_performance'][0]['name']);
-        $this->assertSame('DIRECCIÓN DE PROGRAMACIÓN Y CONTINUIDAD', $pcAnalytics['direction_performance'][0]['name']);
+        $this->assertSame('Dirección de Transmisión', $txAnalytics['direction_performance'][0]['name']);
+        $this->assertSame('Dirección de Programación y Continuidad', $pcAnalytics['direction_performance'][0]['name']);
 
         $txDashboard = $this->actingAs($txDirector)->get(route('dashboard'));
         $txDashboard->assertOk();
@@ -267,7 +267,7 @@ class IntelligenceAccessTest extends TestCase
         $pcIntelligence = $this->actingAs($pcDirector)->get(route('intelligence'));
         $pcIntelligence->assertOk();
         $pcIntelligence->assertSee('Inteligencia de Dirección de Programación y Continuidad');
-        $pcIntelligence->assertSee('DIRECCIÓN DE PROGRAMACIÓN Y CONTINUIDAD');
+        $pcIntelligence->assertSee('Dirección de Programación y Continuidad');
         foreach ($pcAgencyLoads as [$agencyName, $title]) {
             $pcIntelligence->assertSee($title);
         }

@@ -7,7 +7,7 @@ use App\Models\ScheduledLoadDeliverable;
 use App\Services\EvidenceService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Log;
-use RuntimeException;
+use App\Exceptions\WorkflowException as RuntimeException;
 use Throwable;
 
 class EvidenceController extends Controller
@@ -24,6 +24,7 @@ class EvidenceController extends Controller
             ])
             ->findOrFail($request->integer('deliverable_id'));
 
+        abort_unless(app(\App\Services\AccessScopeService::class)->canUploadDeliverable($request->user(), $deliverable), 403);
         try {
             $evidence = $service->upload(
                 $deliverable,

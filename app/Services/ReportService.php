@@ -24,7 +24,7 @@ final class ReportService
         $load->load(['deliverables','signedDocuments.files']);
         $pdf = Pdf::loadView('reportes.constancia-cierre',compact('load','closure'))
             ->setPaper('letter');
-        $path = 'siget/reports/closure-certificate-'.$load->id.'.pdf';
+        $path = 'siget/reports/closure-certificate-'.$load->id.'-'.$closure->package_sha256.'.pdf';
         Storage::disk(config('siget.repository_disk','local'))->put($path,$pdf->output());
         return $path;
     }

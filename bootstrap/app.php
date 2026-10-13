@@ -26,10 +26,19 @@ return Application::configure(basePath: dirname(__DIR__))
                 Request::HEADER_X_FORWARDED_PREFIX
         );
         $middleware->alias([
+            'active-user' => \App\Http\Middleware\EnsureActiveUser::class,
             'permission' => EnsurePermission::class,
             'no-cache-auth' => NoCacheAuthenticated::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
-        //
+        $exceptions->render(function (\App\Exceptions\WorkflowException $exception, Request $request) {
+            // Domain validation is returned as a user-correctable action, not a server error.
+            if ($request->routeIs('evidences.*', 'loads.checklist', 'loads.signature-package', 'loads.signed-document', 'loads.close', 'loads.corrections', 'loads.reopen', 'calendar.import.*', 'loads.reschedule')) {
+                return $request->expectsJson()
+                    ? response()->json(['message' => $exception->getMessage()], 422)
+                    : back()->withErrors(['workflow' => $exception->getMessage()]);
+            }
+            return null;
+        });
     })->create();

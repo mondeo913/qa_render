@@ -11,13 +11,13 @@ final class ReviewInboxController extends Controller {
         $query=$access->scopeLoads(ScheduledLoad::query()->with(['agency','deliverables.organizationalUnit','deliverables.evidences.files','institutionalReview']),$request->user());
         match($status){
             'observed'=>$query->where('status','OBSERVADA'),
-            'closed'=>$query->whereIn('status',['VALIDADA','VALIDADO_Y_CERRADO']),
-            default=>$query->whereIn('status',['ENTREGADA','EN_REVISION_INSTITUCIONAL','LISTA_PARA_FIRMA','PENDIENTE_DOCUMENTO_FIRMADO']),
+            'closed'=>$query->whereIn('status',['VALIDADO_Y_CERRADO']),
+            default=>$query->whereIn('status',['ENTREGADA','EN_REVISION_INSTITUCIONAL','LISTA_PARA_FIRMA','PENDIENTE_DOCUMENTO_FIRMADO','VALIDADA']),
         };
         return view('revision.inbox',['loads'=>$query->orderBy('effective_close_at')->paginate(20)->withQueryString(),'status'=>$status,'counts'=>[
-            'pending'=>$access->scopeLoads(ScheduledLoad::query(),$request->user())->whereIn('status',['ENTREGADA','EN_REVISION_INSTITUCIONAL','LISTA_PARA_FIRMA','PENDIENTE_DOCUMENTO_FIRMADO'])->count(),
+            'pending'=>$access->scopeLoads(ScheduledLoad::query(),$request->user())->whereIn('status',['ENTREGADA','EN_REVISION_INSTITUCIONAL','LISTA_PARA_FIRMA','PENDIENTE_DOCUMENTO_FIRMADO','VALIDADA'])->count(),
             'observed'=>$access->scopeLoads(ScheduledLoad::query(),$request->user())->where('status','OBSERVADA')->count(),
-            'closed'=>$access->scopeLoads(ScheduledLoad::query(),$request->user())->whereIn('status',['VALIDADA','VALIDADO_Y_CERRADO'])->count(),
+            'closed'=>$access->scopeLoads(ScheduledLoad::query(),$request->user())->whereIn('status',['VALIDADO_Y_CERRADO'])->count(),
         ]]);
     }
 }

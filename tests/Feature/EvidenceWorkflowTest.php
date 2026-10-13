@@ -95,6 +95,8 @@ class EvidenceWorkflowTest extends TestCase
         );
 
         app(EvidenceWorkflowService::class)->submit($evidence, $operator);
+        $director = User::factory()->create(['role_id' => Role::query()->where('code', 'DIRECTOR_TRANSMISION')->firstOrFail()->id, 'organizational_unit_id' => $unit->id]);
+        app(EvidenceWorkflowService::class)->review($evidence->fresh(), $director, 'APROBADO', 'Validación de Dirección');
         app(EvidenceWorkflowService::class)->review(
             $evidence->fresh(['deliverable', 'scheduledLoad']),
             $enlace,

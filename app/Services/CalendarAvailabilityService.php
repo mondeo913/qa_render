@@ -23,7 +23,14 @@ final class CalendarAvailabilityService
             return false;
         }
 
-        $hasActiveSuspension = CalendarSuspension::query()
+        if ($this->isSuspended($load, $moment)) { return false; }
+
+        return $moment->between($load->effective_open_at, $load->effective_close_at, true);
+    }
+
+    public function isSuspended(ScheduledLoad $load, CarbonInterface $moment): bool
+    {
+        return CalendarSuspension::query()
             ->where('active', true)
             ->where('block_upload', true)
             ->where('starts_at', '<=', $moment)
@@ -34,11 +41,6 @@ final class CalendarAvailabilityService
             })
             ->exists();
 
-        if ($hasActiveSuspension) {
-            return false;
-        }
-
-        return $moment->between($load->effective_open_at, $load->effective_close_at, true);
     }
 
     public function tooltip(ScheduledLoad $load): string
@@ -47,7 +49,7 @@ final class CalendarAvailabilityService
             ScheduledLoadStatus::SUSPENDIDA,
             ScheduledLoadStatus::REPROGRAMADA,
         ], true)) {
-            return 'Esta fecha está reprogramada para después del 8 de septiembre de 2026.';
+            return 'Carga suspendida o reprogramada; consulte su nueva ventana autorizada.';
         }
 
         if ($this->isEnabled($load, now())) {

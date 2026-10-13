@@ -50,7 +50,7 @@ class MyLoadsController extends Controller
         // oculte la pauta que todavía corresponde a esta dirección.
         $scopedQuery->whereHas('deliverables', function ($query) use ($access, $user) {
             $access->scopeDeliverables($query, $user);
-            $query->whereDoesntHave('evidences');
+            $query->whereNotIn('status', ['VALIDADO', 'CERRADO']);
         });
 
         if ($request->filled('agency_id')) {

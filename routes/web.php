@@ -20,7 +20,7 @@ use App\Http\Controllers\MyLoadsController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () { return auth()->check() ? redirect()->route('dashboard') : redirect()->route('login'); });
-Route::middleware(['auth', 'no-cache-auth'])->group(function () {
+Route::middleware(['auth', 'active-user', 'no-cache-auth'])->group(function () {
     Route::get('/dashboard', DashboardController::class)->name('dashboard');
     Route::get('/calendario', [CalendarController::class, 'index'])->middleware('permission:calendar.view')->name('calendar.index');
     Route::get('/calendario/eventos', [CalendarController::class, 'events'])->middleware('permission:calendar.view')->name('calendar.events');
@@ -41,6 +41,9 @@ Route::middleware(['auth', 'no-cache-auth'])->group(function () {
     Route::patch('/cargas/{load}/revision/checklist', [InstitutionalClosureController::class, 'checklist'])->middleware('permission:scheduled_load.verify')->name('loads.checklist');
     Route::post('/cargas/{load}/expediente-firma', [InstitutionalClosureController::class, 'signaturePackage'])->middleware('permission:scheduled_load.signature_package')->name('loads.signature-package');
     Route::post('/cargas/{load}/documento-firmado', [InstitutionalClosureController::class, 'signedDocument'])->middleware('permission:scheduled_load.upload_signed')->name('loads.signed-document');
+    Route::post('/cargas/{load}/reprogramar', [\App\Http\Controllers\EvidenceCorrectionController::class, 'reschedule'])->middleware('permission:calendar.reschedule')->name('loads.reschedule');
+    Route::post('/cargas/{load}/correcciones', [\App\Http\Controllers\EvidenceCorrectionController::class, 'authorizeWindow'])->middleware('permission:scheduled_load.verify')->name('loads.corrections');
+    Route::post('/cargas/{load}/reabrir', [\App\Http\Controllers\EvidenceCorrectionController::class, 'reopen'])->middleware('permission:scheduled_load.reopen')->name('loads.reopen');
     Route::post('/cargas/{load}/cerrar', [InstitutionalClosureController::class, 'close'])->middleware('permission:scheduled_load.close')->name('loads.close');
     Route::post('/cargas/{load}/fiscalizador', [ReviewAssignmentController::class, 'store'])->name('loads.assign-fiscalizador');
     Route::get('/inteligencia', IntelligenceController::class)->middleware('permission:intelligence.view')->name('intelligence');
@@ -75,7 +78,7 @@ Route::middleware(['auth', 'no-cache-auth'])->group(function () {
     Route::get('/admin/configuracion', [AdminController::class, 'settings'])->middleware('permission:settings.manage')->name('admin.settings');
     Route::post('/admin/configuracion', [AdminController::class, 'updateSetting'])->middleware('permission:settings.manage')->name('admin.settings.update');
     Route::get('/admin/logs', [AdminController::class, 'logs'])->middleware('permission:logs.view')->name('admin.logs');
-    Route::get('/qa/credenciales', function () { abort_unless(auth()->user()?->role?->code === 'ADMINISTRADOR', 403); return view('qa.credentials'); })->name('qa.credentials');
+    Route::get('/qa/credenciales', function () { abort_unless(app()->environment(['local', 'testing']) && auth()->user()?->role?->code === 'ADMINISTRADOR', 403); return view('qa.credentials'); })->name('qa.credentials');
 });
 require __DIR__.'/auth.php';
 require __DIR__.'/operations.php';

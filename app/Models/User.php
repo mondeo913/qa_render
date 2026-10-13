@@ -16,6 +16,7 @@ class User extends Authenticatable {
     public function scopes(): HasMany { return $this->hasMany(UserScope::class); }
     public function reviewAssignments(): HasMany { return $this->hasMany(ReviewAssignment::class, 'fiscalizador_id'); }
     public function hasPermission(string $code): bool {
-        return $this->role?->permissions()->where('code',$code)->exists() ?? false;
+        return $this->status === 'ACTIVE' && $this->role?->active
+            ? $this->role->permissions()->where('code',$code)->exists() : false;
     }
 }
