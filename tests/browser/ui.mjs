@@ -18,6 +18,11 @@ async function checkPage(page, name) {
   assert.equal(await page.locator('script[src*="siget-zenith-runtime.js"]').count(), 1, `${name}: duplicate runtime`);
   assert.equal(await page.locator('link[href*="siget-zenith-runtime.css"]').count(), 0, `${name}: duplicate visual CSS`);
   assert.equal(await page.locator('.siget-main').count(), 1);
+  const clipped = await page.locator('.exec-kpi label').evaluateAll(elements => elements.filter(el => {
+    const label = el.getBoundingClientRect(), card = el.closest('.exec-kpi').getBoundingClientRect();
+    return label.width < 70 || label.bottom > card.bottom || label.right > card.right;
+  }).map(el => el.textContent));
+  assert.deepEqual(clipped, [], `${name}: clipped KPI labels`);
   pages++;
 }
 try {
@@ -53,6 +58,7 @@ try {
     await page.waitForFunction(() => document.querySelector('.siget-sidebar').getBoundingClientRect().width === 72);
     assert.equal(await page.locator('.siget-sidebar').evaluate(el => el.getBoundingClientRect().width), 72, 'Sidebar collapse failed');
     await page.getByRole('button', { name: 'Alternar menú de navegación' }).click();
+    await page.waitForTimeout(1800);
     await page.screenshot({ path: `${screenshots}/${user.id}-dashboard-dark.png`, fullPage: true });
     if (process.env.SIGET_UI_VISUAL_EVIDENCE === 'true' && user.role === 'ADMINISTRADOR') console.log('SIGET_UI_IMAGE_DASHBOARD:' + (await page.screenshot({ type: 'jpeg', quality: 55 })).toString('base64'));
     assert.equal(await page.evaluate(() => localStorage.getItem(`siget-ui:${document.documentElement.dataset.sigetUser}:theme`)), 'dark', 'Preferences must be scoped by account');
