@@ -21,6 +21,7 @@ STATE_DIR="$PROJECT_ROOT/.codespace"
 LOG_DIR="$STATE_DIR/logs"
 SUPERVISOR_CONFIG="$STATE_DIR/supervisor.conf"
 record() { printf '%s\n' "$*" >> "$PROJECT_ROOT/calls.log"; }
+assert_php_extensions() { return 0; }
 ensure_directories() { mkdir -p "$LOG_DIR"; }
 update_env_urls() { record urls; }
 stop_legacy_laravel_server() { record stop-legacy; }

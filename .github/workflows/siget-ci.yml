@@ -317,3 +317,30 @@ jobs:
         with:
           name: siget-ui-screenshots-${{ github.sha }}
           path: storage/framework/testing/ui-screenshots
+
+  codespaces-image:
+    name: Codespaces image and PostgreSQL 15/16 recovery
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build actual Codespaces image
+        run: docker build -f .devcontainer/Dockerfile.k2 -t siget-codespaces .
+      - name: Verify PHP and existing PostgreSQL versions
+        run: |
+          docker run --rm --entrypoint bash -v "$GITHUB_WORKSPACE/.devcontainer:/scripts:ro" siget-codespaces -lc '
+            set -Eeuo pipefail
+            mkdir -p /tmp/siget/.devcontainer
+            cp /scripts/lib-siget.sh /tmp/siget/.devcontainer/
+            source /tmp/siget/.devcontainer/lib-siget.sh
+            assert_php_extensions
+            PGPORT=15432
+            for major in 15 16; do
+              PGDATA="$STATE_DIR/postgres-data-$major"
+              SIGET_POSTGRES_MAJOR="$major"
+              start_postgres
+              test "$(cat "$PGDATA/PG_VERSION")" = "$major"
+              pg_bin="$(find_postgres_bin)"
+              "$pg_bin/pg_ctl" -D "$PGDATA" -m fast -w stop
+            done
+          '

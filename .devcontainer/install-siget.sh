@@ -158,13 +158,14 @@ fi
 
 echo "6/10 Base de datos y datos ABCD QA..."
 
-if [[ ! -f "${STATE_DIR}/database-initialized" ]]; then
-  php artisan migrate:fresh --seed --force
+EXISTING_TABLES="$(psql -h 127.0.0.1 -p "${PGPORT}" -U "${PGUSER}" -d "${PGDATABASE}" -tAc "SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema='public')")"
+php artisan migrate --force
+if [[ ! -f "${STATE_DIR}/database-initialized" && "${EXISTING_TABLES}" == "f" ]]; then
+  php artisan db:seed --force
 else
-  php artisan migrate --force
+  echo "Instalación existente: se conservan usuarios, cargas y evidencias; no se ejecutan seeds de demostración."
 fi
 
-php artisan siget:qa-init
 touch "${STATE_DIR}/database-initialized"
 
 echo "7/10 Almacenamiento y cachés..."

@@ -3,6 +3,7 @@ set -Eeuo pipefail
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "${PROJECT_ROOT}"
 source .devcontainer/lib-siget.sh
+assert_php_extensions
 ensure_directories
 
 # Una sola ruta para arranque automático, reanudación y recuperación manual.
