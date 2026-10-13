@@ -1,0 +1,108 @@
+/* Canonical controls and responsive shell shared by every SIGET role. */
+html[data-bs-theme="light"][data-zenith-preset] {
+  --background:#fafafa!important; --background-soft:#f4f4f5!important; --foreground:#18181b!important;
+  --card:#fff!important; --card-foreground:#18181b!important; --popover:#fff!important; --popover-foreground:#18181b!important;
+  --muted:#f4f4f5!important; --muted-foreground:#52525b!important; --border:#e4e4e7!important; --input:#d4d4d8!important;
+  --sidebar:#fff!important; --sidebar-foreground:#18181b!important; --sidebar-muted:#52525b!important; --sidebar-border:#e4e4e7!important;
+  --success:#15803d!important; --warning:#a16207!important; --danger:#b91c1c!important; --info:#2563eb!important;
+}
+html[data-bs-theme="dark"][data-zenith-preset] {
+  --background:#09090b!important; --background-soft:#18181b!important; --foreground:#fafafa!important;
+  --card:#141416!important; --card-foreground:#fafafa!important; --popover:#141416!important; --popover-foreground:#fafafa!important;
+  --muted:#27272a!important; --muted-foreground:#a1a1aa!important; --border:#303034!important; --input:#3f3f46!important;
+  --sidebar:#09090b!important; --sidebar-foreground:#fafafa!important; --sidebar-muted:#a1a1aa!important; --sidebar-border:#27272a!important;
+  --success:#4ade80!important; --warning:#fbbf24!important; --danger:#f87171!important; --info:#60a5fa!important;
+}
+html[data-zenith-preset="default"] {--primary:#18181b!important;--primary-foreground:#fff!important;--ring:#71717a!important;--accent:#f4f4f5!important;--sidebar-active:#f4f4f5!important}
+html[data-bs-theme="dark"][data-zenith-preset="default"] {--primary:#fafafa!important;--primary-foreground:#18181b!important;--ring:#a1a1aa!important;--accent:#27272a!important;--sidebar-active:#18181b!important}
+html[data-zenith-preset="ocean"] {--primary:#2563eb!important;--primary-foreground:#fff!important;--ring:#2563eb!important;--accent:#eff6ff!important;--sidebar-active:#eff6ff!important}
+html[data-bs-theme="dark"][data-zenith-preset="ocean"] {--primary:#60a5fa!important;--primary-foreground:#09090b!important;--ring:#60a5fa!important;--accent:#17243b!important;--sidebar-active:#17243b!important}
+html[data-zenith-preset="sunset"] {--primary:#c2410c!important;--primary-foreground:#fff!important;--ring:#c2410c!important;--accent:#fff7ed!important;--sidebar-active:#fff7ed!important}
+html[data-bs-theme="dark"][data-zenith-preset="sunset"] {--primary:#fb923c!important;--primary-foreground:#09090b!important;--ring:#fb923c!important;--accent:#342117!important;--sidebar-active:#342117!important}
+html[data-zenith-preset="forest"] {--primary:#047857!important;--primary-foreground:#fff!important;--ring:#047857!important;--accent:#ecfdf5!important;--sidebar-active:#ecfdf5!important}
+html[data-bs-theme="dark"][data-zenith-preset="forest"] {--primary:#34d399!important;--primary-foreground:#09090b!important;--ring:#34d399!important;--accent:#142e25!important;--sidebar-active:#142e25!important}
+html[data-zenith-preset="berry"] {--primary:#7c3aed!important;--primary-foreground:#fff!important;--ring:#7c3aed!important;--accent:#f5f3ff!important;--sidebar-active:#f5f3ff!important}
+html[data-bs-theme="dark"][data-zenith-preset="berry"] {--primary:#c4b5fd!important;--primary-foreground:#09090b!important;--ring:#c4b5fd!important;--accent:#262039!important;--sidebar-active:#262039!important}
+html[data-zenith-preset="slate"] {--primary:#475569!important;--primary-foreground:#fff!important;--ring:#475569!important;--accent:#f1f5f9!important;--sidebar-active:#f1f5f9!important}
+html[data-bs-theme="dark"][data-zenith-preset="slate"] {--primary:#cbd5e1!important;--primary-foreground:#09090b!important;--ring:#cbd5e1!important;--accent:#222a35!important;--sidebar-active:#222a35!important}
+body.siget-body .siget-main {min-width:0!important}
+body.siget-body .siget-topbar {background:var(--sidebar)!important}
+body.siget-body .siget-nav a.active {color:var(--primary)!important;background:var(--sidebar-active)!important}
+body.siget-body .siget-content {padding:24px!important}
+body.siget-body .siget-sidebar {width:248px!important}
+body.siget-body.siget-sidebar-collapsed .siget-sidebar {width:72px!important}
+body.siget-body.siget-sidebar-collapsed .siget-main {margin-left:72px!important;width:calc(100% - 72px)!important}
+body.siget-body.siget-sidebar-collapsed .siget-brand-copy,
+body.siget-body.siget-sidebar-collapsed .siget-user-card,
+body.siget-body.siget-sidebar-collapsed .siget-nav a span,
+body.siget-body.siget-sidebar-collapsed .siget-sidebar-footer {display:none!important}
+body.siget-body.siget-sidebar-collapsed .siget-nav a {justify-content:center!important}
+body.siget-body .siget-customizer {z-index:1080}
+body.siget-body .siget-customizer-panel {width:min(380px,100vw);background:var(--card)!important;border-left:1px solid var(--border)}
+body.siget-body.siget-customizer-open {overflow:hidden}
+body.siget-body .siget-preset-grid {grid-template-columns:repeat(3,minmax(0,1fr))}
+body.siget-body .siget-preset {display:flex;flex-direction:column;gap:6px;text-align:center;padding:12px 5px}
+body.siget-body .siget-preset small {display:none}
+body.siget-body .siget-preset[data-zenith-preset="default"] span {background:#71717a!important}
+body.siget-body .siget-preset[data-zenith-preset="ocean"] span {background:#2563eb!important}
+body.siget-body .siget-preset[data-zenith-preset="sunset"] span {background:#ea580c!important}
+body.siget-body .siget-preset[data-zenith-preset="forest"] span {background:#059669!important}
+body.siget-body .siget-preset[data-zenith-preset="berry"] span {background:#7c3aed!important}
+body.siget-body .siget-preset[data-zenith-preset="slate"] span {background:#475569!important}
+body.siget-body .siget-choice-row button.active,body.siget-body .siget-preset.active {border-color:var(--foreground)!important;box-shadow:inset 0 0 0 1px var(--foreground)!important}
+body.siget-body :is(button,a,input,select,textarea):focus-visible {outline:2px solid var(--ring)!important;outline-offset:3px!important;box-shadow:none!important}
+body.siget-body :is(.form-control,.form-select):focus {border-color:var(--ring)!important}
+body.siget-body .siget-load-card {height:auto!important;min-height:190px!important;max-height:none!important;overflow:visible!important;padding:14px!important;border-radius:var(--radius)!important}
+body.siget-body .siget-load-card h4 {max-height:none!important;height:auto!important;display:block!important;overflow:visible!important;min-height:0!important}
+body.siget-body .siget-load-card .siget-assignees,body.siget-body .siget-load-card .siget-load-units {max-height:none!important;height:auto!important;overflow:visible!important}
+body.siget-body .siget-load-card.is-overdue {border-left:3px solid var(--danger)!important}
+body.siget-body .siget-load-card .progress-bar {background:var(--primary)!important}
+body.siget-body .siget-load-card :is(.siget-traffic-red,.siget-traffic-danger) {background:var(--danger)!important}
+body.siget-body .siget-load-card :is(.siget-traffic-yellow,.siget-traffic-warning) {background:var(--warning)!important}
+body.siget-body .siget-load-card :is(.siget-traffic-green,.siget-traffic-success) {background:var(--success)!important}
+body.siget-body .badge:is(.text-bg-danger,.bg-danger),body.siget-body .siget-load-card .siget-priority-high,body.siget-body .siget-load-card .siget-priority-alta {background:color-mix(in srgb,var(--danger) 15%,var(--card))!important;color:var(--danger)!important}
+body.siget-body .badge:is(.text-bg-warning,.bg-warning),body.siget-body .siget-load-card .siget-priority-medium,body.siget-body .siget-load-card .siget-priority-media {background:color-mix(in srgb,var(--warning) 15%,var(--card))!important;color:var(--warning)!important}
+body.siget-body .badge:is(.text-bg-success,.bg-success) {background:color-mix(in srgb,var(--success) 15%,var(--card))!important;color:var(--success)!important}
+body.siget-body .badge:is(.text-bg-info,.bg-info) {background:color-mix(in srgb,var(--info) 15%,var(--card))!important;color:var(--info)!important}
+body.siget-body .btn-danger {background:var(--danger)!important;color:var(--card)!important;border-color:var(--danger)!important}
+body.siget-body .btn-success {background:var(--success)!important;color:var(--card)!important;border-color:var(--success)!important}
+body.siget-body .siget-folder-grid {grid-template-columns:repeat(auto-fit,minmax(min(220px,100%),1fr))!important}
+body.siget-body .siget-folder-card {min-height:150px!important;border-radius:var(--radius)!important}
+body.siget-body .siget-folder-card>i {color:var(--info)!important;font-size:34px!important}
+html[data-zenith-density="compact"] body.siget-body .siget-content {padding:16px!important}
+html[data-zenith-density="comfortable"] body.siget-body .siget-content {padding:32px!important}
+html[data-zenith-density="compact"] body.siget-body :is(.card-body,.siget-folder-card,.siget-load-card) {padding:12px!important}
+html[data-zenith-density="comfortable"] body.siget-body :is(.card-body,.siget-folder-card,.siget-load-card) {padding:24px!important}
+html[data-zenith-radius="compact"] {--radius:3px!important}
+html[data-zenith-radius="default"] {--radius:10px!important}
+html[data-zenith-radius="soft"] {--radius:16px!important}
+html body.siget-body :is(.card,.siget-card,.exec-card,.op-card,.di-panel,.siget-folder-card,.siget-load-card) {border-radius:var(--radius)!important}
+@media (min-width:992px) {
+  html[data-zenith-layout="topnav"] body.siget-body .siget-sidebar {position:sticky!important;top:0!important;width:100%!important;height:auto!important;max-height:160px;flex-direction:row;gap:24px;align-items:center;border-right:0;border-bottom:1px solid var(--border);overflow:auto}
+  html[data-zenith-layout="topnav"] .siget-shell {display:block}
+  html[data-zenith-layout="topnav"] body.siget-body .siget-main {width:100%!important;margin-left:0!important}
+  html[data-zenith-layout="topnav"] body.siget-body .siget-nav {display:flex;gap:8px;flex-wrap:wrap}
+  html[data-zenith-layout="topnav"] body.siget-body .siget-nav a {white-space:nowrap}
+  html[data-zenith-layout="topnav"] body.siget-body .siget-user-card,html[data-zenith-layout="topnav"] body.siget-body .siget-sidebar-footer {display:none!important}
+  html[data-zenith-layout="topnav"] body.siget-body .siget-nav a span {display:inline!important}
+  html[data-zenith-layout="topnav"] [data-siget-sidebar-toggle] {display:none}
+}
+@media (max-width:991px) {
+  body.siget-body .siget-main,body.siget-body.siget-sidebar-collapsed .siget-main {width:100%!important;margin-left:0!important}
+  body.siget-body .siget-sidebar,body.siget-body.siget-sidebar-collapsed .siget-sidebar {width:min(280px,85vw)!important;transform:translateX(-100%)}
+  body.siget-body.siget-sidebar-open .siget-sidebar {transform:translateX(0)}
+  body.siget-body.siget-sidebar-collapsed .siget-nav a span,body.siget-body.siget-sidebar-collapsed .siget-user-card,body.siget-body.siget-sidebar-collapsed .siget-sidebar-footer,body.siget-body.siget-sidebar-collapsed .siget-brand-copy {display:revert!important}
+  body.siget-body .siget-topbar {flex-wrap:wrap;gap:12px;padding:12px!important}
+  body.siget-body .siget-topbar-left {flex:1;min-width:0}
+  body.siget-body .siget-top-actions {margin-left:auto;flex-wrap:wrap}
+  body.siget-body .siget-content {padding:16px!important}
+  body.siget-body .siget-file-manager {grid-template-columns:minmax(0,1fr)!important}
+  body.siget-body .siget-file-toolbar {flex-wrap:wrap;gap:12px}
+  body.siget-body .siget-file-toolbar form {width:100%;min-width:0}
+}
+@media (prefers-reduced-motion:reduce) {body.siget-body *,body.siget-body *::before,body.siget-body *::after {animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+body.siget-body .siget-file-list-view .siget-folder-grid {grid-template-columns:minmax(0,1fr)!important}
+body.siget-body .siget-file-list-view .siget-folder-card {display:grid!important;grid-template-columns:44px minmax(0,1fr);text-align:left!important;min-height:80px!important;gap:4px 16px}
+body.siget-body .siget-file-list-view .siget-folder-card>i {grid-row:1 / span 5;align-self:center}
+body.siget-body .siget-file-list-view .siget-folder-card>small {grid-column:2}
+body.siget-body .siget-file-toolbar .btn-group {flex-shrink:0}
