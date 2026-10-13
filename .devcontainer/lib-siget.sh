@@ -157,7 +157,7 @@ clear_stale_postmaster_pid() {
 initialize_postgres() {
   local pg_bin password_file
   pg_bin="$(find_postgres_bin)" || return 1
-  ensure_directories
+  ensure_directories || return 1
 
   if [[ ! -f "${PGDATA}/PG_VERSION" ]]; then
     echo "Inicializando PostgreSQL persistente..."
@@ -179,7 +179,7 @@ initialize_postgres() {
       --auth-local=trust \
       --auth-host=scram-sha-256 \
       --encoding=UTF8 \
-      --locale=C.UTF-8
+      --locale=C.UTF-8 || { rm -f "${password_file}"; return 1; }
 
     rm -f "${password_file}"
 

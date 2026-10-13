@@ -158,7 +158,7 @@ fi
 
 echo "6/10 Base de datos y datos ABCD QA..."
 
-EXISTING_TABLES="$(psql -h 127.0.0.1 -p "${PGPORT}" -U "${PGUSER}" -d "${PGDATABASE}" -tAc "SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema='public')")"
+EXISTING_TABLES="$(php -r 'require "vendor/autoload.php"; $app = require "bootstrap/app.php"; $app->make(Illuminate\Contracts\Console\Kernel::class)->bootstrap(); echo count(Illuminate\Support\Facades\Schema::getTables()) > 0 ? "t" : "f";')"
 php artisan migrate --force
 if [[ ! -f "${STATE_DIR}/database-initialized" && "${EXISTING_TABLES}" == "f" ]]; then
   php artisan db:seed --force
