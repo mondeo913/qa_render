@@ -54,13 +54,14 @@ Los códigos heredados DIRECTOR y OPERADOR se mantienen para compatibilidad; apl
 3. Ejecutar `php artisan optimize:clear` y reiniciar workers con `php artisan queue:restart`. Mantener el scheduler activo para habilitar reprogramaciones.
 4. No ejecutar `migrate:fresh`, seeders de demostración ni reinicializadores QA sobre datos reales.
 5. Verificar que cada Director/operativo tenga la Dirección correcta y que cada enlace tenga dependencia o alcances explícitos. Cuentas mal asignadas no amplían acceso por tener permisos.
-6. Revisiones antiguas sin número de versión permanecen como históricas. No se presume que certifican una versión vigente. Los expedientes abiertos que dependan de ellas requieren corrección/revalidación; los cerrados se conservan bloqueados.
+6. La sesión PostgreSQL usa `APP_TIMEZONE`, igual que la aplicación (por defecto `America/Mexico_City`). Verificar fechas ya almacenadas en QA si se escribieron antes con una zona de sesión diferente; no se desplazan masivamente los datos existentes.
+7. Revisiones antiguas sin número de versión permanecen como históricas. No se presume que certifican una versión vigente. Los expedientes abiertos que dependan de ellas requieren corrección/revalidación; los cerrados se conservan bloqueados.
 
 ## Pruebas de aceptación automatizadas
 
 `tests/Feature/WorkflowHardeningTest.php` cubre rutas directas entre Direcciones, responsables, cuentas/roles inactivos, archivos bloqueados, orden de aprobaciones, motivo de observación, mínimos y máximos por versión, dictamen fiscalizador independiente, destinatarios de alertas, ventanas tardías, reapertura y nueva firma, integridad física, historial, alcances de escritura, suspensiones, plantillas, importación Excel hasta cierre y reprogramación.
 
-Validación local del 13 de octubre de 2026: PHP 8.3.6, SQLite de pruebas, **78 pruebas y 406 comprobaciones correctas**. Incluye 27 pruebas específicas del flujo controlado. La compilación Vite terminó correctamente. CI incorpora además la aceptación del flujo con PostgreSQL; sus resultados deben revisarse en GitHub Actions antes de desplegar.
+Validación local del 13 de octubre de 2026: PHP 8.3.6, SQLite de pruebas, **80 pruebas y 411 comprobaciones correctas**. Incluye 29 pruebas específicas del flujo controlado. La compilación Vite terminó correctamente. CI incorpora además la aceptación del flujo con PostgreSQL; sus resultados deben revisarse en GitHub Actions antes de desplegar.
 
 Comandos:
 

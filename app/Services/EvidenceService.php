@@ -20,7 +20,8 @@ final class EvidenceService
         private readonly AuditService $audit,
         private readonly LoadProgressService $progress,
         private readonly RepositoryService $repository,
-        private readonly EvidenceRules $rules
+        private readonly EvidenceRules $rules,
+        private readonly LoadStatusService $loadStatus
     ) {}
 
     public function upload(
@@ -176,6 +177,9 @@ final class EvidenceService
                     : 'EN_CAPTURA',
             ]);
 
+            if (in_array($load->status->value, ['PROGRAMADA', 'ABIERTA', 'REPROGRAMADA_ABIERTA'], true)) {
+                $this->loadStatus->transition($load, 'EN_CAPTURA', $user, 'Captura de evidencias iniciada.', ['organizational_unit_id' => $deliverable->organizational_unit_id, 'evidence_id' => $evidence->id]);
+            }
             $this->progress->recalculate($deliverable->scheduledLoad);
 
             $this->audit->record(

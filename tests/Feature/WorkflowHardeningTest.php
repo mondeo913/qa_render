@@ -80,6 +80,22 @@ class WorkflowHardeningTest extends TestCase
         return app(InstitutionalClosureService::class)->close($this->load->fresh(), $this->enlace->id, 'Cierre de aceptación');
     }
 
+    public function test_database_roundtrip_preserves_institutional_window_instants(): void
+    {
+        $load = $this->load->fresh();
+        $this->assertSame(now()->subHour()->getTimestamp(), $load->effective_open_at->getTimestamp());
+        $this->assertSame(now()->addHour()->getTimestamp(), $load->effective_close_at->getTimestamp());
+        $this->assertTrue(app(EvidenceRules::class)->isEnabled($this->deliverables['A']->fresh()));
+    }
+
+    public function test_first_upload_moves_load_to_capture_and_records_direction(): void
+    {
+        $this->upload('A');
+        $this->assertSame('EN_CAPTURA', $this->load->fresh()->status->value);
+        $history = $this->load->statusHistory()->where('new_status', 'EN_CAPTURA')->firstOrFail();
+        $this->assertSame($this->deliverables['A']->organizational_unit_id, $history->metadata['organizational_unit_id']);
+    }
+
     public function test_director_cannot_open_download_or_review_other_direction_by_id(): void
     {
         $e = $this->upload('B');

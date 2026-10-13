@@ -34,7 +34,7 @@
     </div>
 
     <div class="col-xl-4">
-        @if($canReview)
+        @if($canReview && auth()->id() !== $evidence->submitted_by && in_array($status, \App\Enums\RoleCode::isDirectionDirector(auth()->user()->role?->code) ? ['ENVIADO'] : (auth()->user()->role?->code === 'FISCALIZADOR' ? ['ENVIADO','EN_REVISION','VALIDADO','CERRADO'] : ['EN_REVISION']),true) && (!$evidence->scheduledLoad->is_blocked || auth()->user()->role?->code === 'FISCALIZADOR'))
         <div class="card siget-card">
             <div class="card-header"><div><h2>Registrar revisión</h2><p>La revisión de Dirección precede a la institucional. El dictamen fiscalizador conserva el estado institucional.</p></div></div>
             <div class="card-body">
