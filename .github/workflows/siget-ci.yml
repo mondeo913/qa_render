@@ -251,7 +251,7 @@ jobs:
           QUEUE_CONNECTION: sync
 
       - name: PostgreSQL controlled workflow acceptance
-        run: php artisan test --filter=WorkflowHardeningTest
+        run: php artisan test --filter='WorkflowHardeningTest|OperationsPageTest'
         env:
           DB_CONNECTION: pgsql
           DB_HOST: 127.0.0.1
@@ -262,3 +262,85 @@ jobs:
           SESSION_DRIVER: array
           CACHE_STORE: array
           QUEUE_CONNECTION: sync
+
+  browser-ui:
+    name: Bootstrap and responsive UI for every role
+    needs: frontend
+    runs-on: ubuntu-latest
+    env:
+      APP_ENV: testing
+      APP_URL: http://127.0.0.1:8000
+      DB_CONNECTION: sqlite
+      DB_DATABASE: ${{ github.workspace }}/database/ui-testing.sqlite
+      SESSION_DRIVER: file
+      SESSION_SECURE_COOKIE: 'false'
+      CACHE_STORE: array
+      QUEUE_CONNECTION: sync
+      SIGET_QA_PASSWORD: SigetQA_2026_Cambiar!
+      SIGET_UI_VISUAL_EVIDENCE: 'true'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mbstring, bcmath, intl, gd, pdo_sqlite, zip
+          coverage: none
+          tools: composer:v2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: composer install --no-interaction --no-progress --prefer-dist
+      - uses: actions/download-artifact@v4
+        with:
+          name: vite-build-${{ github.sha }}
+          path: public/build
+      - name: Install browser tooling
+        run: |
+          npm ci --no-audit --no-fund
+          npm install --no-save --package-lock=false playwright@1.58.2
+          npx playwright install --with-deps chromium
+          node scripts/sync-zenith-css.mjs --check
+      - name: Prepare isolated QA fixtures
+        run: |
+          cp .env.example .env
+          php artisan key:generate --force
+          touch database/ui-testing.sqlite
+          php artisan migrate:fresh --seed --force
+          php tests/browser/export-users.php
+          php artisan serve --host=127.0.0.1 --port=8000 > /tmp/siget-ui-server.log 2>&1 &
+          for attempt in $(seq 1 30); do curl -fsS http://127.0.0.1:8000/up && break || sleep 1; done
+      - name: Test every role and viewport
+        run: npm run test:ui
+      - name: Preserve visual QA evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: siget-ui-screenshots-${{ github.sha }}
+          path: storage/framework/testing/ui-screenshots
+
+  codespaces-image:
+    name: Codespaces image and PostgreSQL 15/16 recovery
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build actual Codespaces image
+        run: docker build -f .devcontainer/Dockerfile.k2 -t siget-codespaces .
+      - name: Verify PHP and existing PostgreSQL versions
+        run: |
+          docker run --rm --entrypoint bash -v "$GITHUB_WORKSPACE/.devcontainer:/scripts:ro" siget-codespaces -lc '
+            set -Eeuo pipefail
+            mkdir -p /tmp/siget/.devcontainer
+            cp /scripts/lib-siget.sh /tmp/siget/.devcontainer/
+            source /tmp/siget/.devcontainer/lib-siget.sh
+            assert_php_extensions
+            PGPORT=15432
+            for major in 15 16; do
+              PGDATA="$STATE_DIR/postgres-data-$major"
+              SIGET_POSTGRES_MAJOR="$major"
+              start_postgres
+              test "$(cat "$PGDATA/PG_VERSION")" = "$major"
+              pg_bin="$(find_postgres_bin)"
+              "$pg_bin/pg_ctl" -D "$PGDATA" -m fast -w stop
+            done
+          '

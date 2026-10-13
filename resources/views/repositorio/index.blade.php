@@ -36,7 +36,11 @@
             <form method="GET" class="d-flex gap-2">
                 <input type="hidden" name="agency_id" value="{{ $filters['agency_id'] ?? '' }}">
                 <input class="form-control" name="q" value="{{ $filters['q'] ?? '' }}" placeholder="Buscar dependencia, pauta o mes">
-                <button class="btn btn-primary" type="submit"><i class="bi bi-search"></i></button>
+                <button class="btn btn-primary" type="submit" aria-label="Buscar en el repositorio"><i class="bi bi-search"></i></button>
+                <div class="btn-group" role="group" aria-label="Vista del repositorio">
+                    <button class="btn btn-outline-secondary" type="button" data-file-view="grid" aria-label="Vista de tarjetas"><i class="bi bi-grid-3x3-gap"></i></button>
+                    <button class="btn btn-outline-secondary" type="button" data-file-view="list" aria-label="Vista de lista"><i class="bi bi-list-ul"></i></button>
+                </div>
             </form>
         </div>
 
