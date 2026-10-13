@@ -5,6 +5,13 @@ cd "${PROJECT_ROOT}"
 source .devcontainer/lib-siget.sh
 ensure_directories
 
+# Una sola ruta para arranque automático, reanudación y recuperación manual.
+if [[ ! -f "${STATE_DIR}/application-installed" ]]; then
+  exec bash "${PROJECT_ROOT}/.devcontainer/install-siget.sh"
+fi
+
+update_env_urls
+
 # Mantener las sesiones de QA activas durante la jornada.
 if [[ -f .env ]]; then
   if grep -q '^SESSION_LIFETIME=' .env; then sed -i 's/^SESSION_LIFETIME=.*/SESSION_LIFETIME=1440/' .env; else printf '\nSESSION_LIFETIME=1440\n' >> .env; fi
@@ -68,4 +75,6 @@ if [[ -f "${WATCHDOG_SCRIPT}" ]]; then
   echo "Watchdog SIGET verificado/iniciado en segundo plano."
 fi
 
+wait_for_http "http://127.0.0.1:8000/up" "SIGET" 120
+wait_for_http "http://127.0.0.1:8025/readyz" "Mailpit" 90
 show_service_status
