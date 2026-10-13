@@ -43,7 +43,7 @@
       customizer.inert = !open;
       trigger?.setAttribute('aria-expanded', String(open));
       document.body.classList.toggle('siget-customizer-open', open);
-      if (open) { previousFocus = document.activeElement; customizer.querySelector('[data-zenith-customizer-close]')?.focus(); }
+      if (open) { previousFocus = document.activeElement; customizer.querySelector('button[data-zenith-customizer-close]')?.focus(); }
       else previousFocus?.focus();
     };
     trigger?.addEventListener('click', () => togglePanel(!customizer?.classList.contains('is-open')));

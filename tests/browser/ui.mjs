@@ -50,6 +50,7 @@ try {
     assert.equal(await page.locator('html').getAttribute('data-bs-theme'), 'dark', 'Theme did not persist');
     assert.equal(await page.locator('html').getAttribute('data-zenith-preset'), 'ocean', 'Color did not persist');
     await page.getByRole('button', { name: 'Alternar menú de navegación' }).click();
+    await page.waitForFunction(() => document.querySelector('.siget-sidebar').getBoundingClientRect().width === 72);
     assert.equal(await page.locator('.siget-sidebar').evaluate(el => el.getBoundingClientRect().width), 72, 'Sidebar collapse failed');
     await page.getByRole('button', { name: 'Alternar menú de navegación' }).click();
     await page.screenshot({ path: `${screenshots}/${user.id}-dashboard-dark.png`, fullPage: true });
@@ -84,8 +85,10 @@ try {
         await page.goto(base + route);
         await checkPage(page, `${user.email}: ${width} ${route}`);
         await page.getByRole('button', { name: 'Alternar menú de navegación' }).click();
+        await page.waitForFunction(() => Math.round(document.querySelector('.siget-sidebar').getBoundingClientRect().left) === 0);
         assert.equal(await page.locator('.siget-sidebar').evaluate(el => Math.round(el.getBoundingClientRect().left)), 0, 'Mobile navigation failed');
         await page.keyboard.press('Escape');
+        await page.waitForFunction(() => document.querySelector('.siget-sidebar').getBoundingClientRect().right <= 1);
         assert(await page.locator('.siget-sidebar').evaluate(el => el.getBoundingClientRect().right <= 1), 'Mobile navigation did not close');
       }
     }
