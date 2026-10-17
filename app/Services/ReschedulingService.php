@@ -8,6 +8,18 @@ use App\Exceptions\WorkflowException;
 
 final class ReschedulingService
 {
+    public function reschedule(ScheduledLoad $load, User $user, CarbonInterface $opens, CarbonInterface $closes, string $reason): void
+    {
+        DB::transaction(function () use ($load, $user, $opens, $closes, $reason) {
+            $load = ScheduledLoad::query()->lockForUpdate()->findOrFail($load->id);
+            $record = $load->reschedules()->whereIn('status', ['PENDING', 'SCHEDULED'])->latest('id')->first();
+            $record ??= $load->reschedules()->create(['old_open_at' => $load->effective_open_at,
+                'old_close_at' => $load->effective_close_at, 'reason' => $reason, 'status' => 'PENDING']);
+            $record->update(['reason' => $reason]);
+            $this->assignNewWindow($record, $opens, $closes, $user->id);
+        });
+    }
+
     public function assignNewWindow(LoadReschedule $reschedule, CarbonInterface $newOpen, CarbonInterface $newClose, int $userId): void
     {
         $user = User::query()->findOrFail($userId);

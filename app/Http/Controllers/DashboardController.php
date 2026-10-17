@@ -24,6 +24,7 @@ class DashboardController extends Controller
             'campaign' => ['nullable', 'string', 'max:255'],
             'responsible_id' => ['nullable', 'integer', 'min:1'],
             'status' => ['nullable', 'string', 'max:60'],
+            'deliverable_group' => ['nullable', 'in:pending,review,observed,validated'],
             'from' => ['nullable', 'date_format:Y-m'],
             'to' => ['nullable', 'date_format:Y-m', 'after_or_equal:from'],
         ]);
@@ -37,11 +38,7 @@ class DashboardController extends Controller
             RoleCode::DIRECTOR_GENERAL->value,
         ], true);
 
-        $agenciesQuery = ContractingAgency::query()->where('active', true);
-        if (!$isGlobalDashboard) {
-            $agenciesQuery->whereIn('id', (clone $accessibleLoads)->select('contracting_agency_id')->distinct());
-        }
-        $agencies = $agenciesQuery->orderBy('name')->get();
+        $agencies = $access->availableAgencies($user);
 
         $unitsQuery = OrganizationalUnit::query()
             ->where('organizational_units.active', true)
@@ -62,10 +59,7 @@ class DashboardController extends Controller
             }
         }
 
-        if (!empty($filters['agency_id'])) {
-            $unitsQuery->where('organizational_units.contracting_agency_id', (int) $filters['agency_id']);
-        }
-
+        // Direction IDs remain stable when changing dependency; the load query intersects both.
         $units = $unitsQuery
             ->orderBy('name')
             ->get()
@@ -147,30 +141,6 @@ class DashboardController extends Controller
         }
         $filterResponsibles = $responsibleQuery->orderBy('users.name')->get();
 
-        $periodLoads = clone $accessibleLoads;
-        if (!empty($filters['agency_id'])) {
-            $periodLoads->where('scheduled_loads.contracting_agency_id', (int) $filters['agency_id']);
-        }
-        if (!empty($filters['organizational_unit_id'])) {
-            $unitIds = collect(explode(',', (string) $filters['organizational_unit_id']))
-                ->map(fn ($id) => (int) trim($id))->filter()->unique()->values()->all();
-            if ($unitIds) {
-                $periodLoads->whereIn('scheduled_loads.id', function ($q) use ($unitIds) {
-                    $q->select('scheduled_load_id')
-                        ->from('scheduled_load_deliverables')
-                        ->whereIn('organizational_unit_id', $unitIds);
-                });
-            }
-        }
-
-        $periodBounds = (clone $periodLoads)
-            ->selectRaw('MIN(scheduled_loads.effective_open_at) AS min_open_at')
-            ->selectRaw('MAX(scheduled_loads.effective_close_at) AS max_close_at')
-            ->first();
-
-        $periodMin = $periodBounds?->min_open_at ? date('Y-m', strtotime($periodBounds->min_open_at)) : null;
-        $periodMax = $periodBounds?->max_close_at ? date('Y-m', strtotime($periodBounds->max_close_at)) : null;
-
         $viewData = [
             'analytics' => $analytics->forUser($user, $filters),
             'filters' => $filters,
@@ -180,21 +150,31 @@ class DashboardController extends Controller
             'filterUnits' => $units,
             'filterPautas' => $filterPautas,
             'filterResponsibles' => $filterResponsibles,
-            'periodMin' => $periodMin,
-            'periodMax' => $periodMax,
             'presentation' => RolePresentation::for($user->role?->code),
+            'profile' => match ($user->role?->code) {
+                'ADMINISTRADOR' => 'admin',
+                'DIRECTOR_GENERAL' => 'executive',
+                'ENLACE_INSTITUCIONAL' => 'institutional',
+                'FISCALIZADOR' => 'fiscal',
+                'DIRECTOR', 'DIRECTOR_TRANSMISION', 'DIRECTOR_PROGRAMACION_CONTINUIDAD' => 'direction',
+                default => 'operator',
+            },
         ];
-
-        $dashboardRoles = [
-            'ADMINISTRADOR',
-            'DIRECTOR_GENERAL',
-            'ENLACE_INSTITUCIONAL',
-        ];
-
-        if (in_array($user->role?->code, $dashboardRoles, true)) {
-            return view('dashboard.executive', $viewData);
+        if ($user->role?->code === 'ADMINISTRADOR') {
+            $viewData['administration'] = [
+                'queue' => app(\App\Services\Operations\QueueMonitorService::class)->inspect(),
+                'database' => app(\App\Services\Operations\DatabaseHealthService::class)->inspect(),
+                'active_users' => User::query()->where('status', 'ACTIVE')->count(),
+                'incidents' => \App\Models\OperationalIncident::query()->whereNotIn('status', ['RESOLVED', 'CLOSED'])->latest('opened_at')->limit(5)->get(),
+                'activity' => \App\Models\AuditLog::query()->with('user:id,name')->latest('id')->limit(5)->get(),
+            ];
         }
-
-        return view('dashboard.index', $viewData);
+        if ($user->role?->code === 'ENLACE_INSTITUCIONAL') {
+            $viewData['pendingImports'] = \App\Models\CalendarImport::query()
+                ->whereIn('contracting_agency_id', $agencies->pluck('id'))
+                ->when($filters['agency_id'] ?? null, fn ($q, $id) => $q->where('contracting_agency_id', $id))
+                ->whereIn('status', ['VALIDATED', 'WITH_ERRORS'])->latest('id')->limit(5)->get();
+        }
+        return view('dashboard.workspace', $viewData);
     }
 }

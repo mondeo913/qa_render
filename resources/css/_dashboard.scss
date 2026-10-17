@@ -1,0 +1,44 @@
+/* Dashboard components share the SIGET theme tokens across all profiles. */
+body.siget-body .siget-dashboard{display:grid;gap:22px;min-width:0;color:var(--foreground)}
+body.siget-body .siget-dashboard-hero{display:flex;align-items:center;justify-content:space-between;gap:24px;padding:8px 0}
+body.siget-body .siget-dashboard-overline{font-size:13px;font-weight:700;letter-spacing:.07em;color:var(--muted-foreground);text-transform:uppercase}
+body.siget-body .siget-dashboard-hero h2{font-size:clamp(24px,2.3vw,32px)!important;line-height:1.25!important;margin:8px 0 10px;font-weight:750;letter-spacing:-.025em}
+body.siget-body .siget-dashboard-hero p{font-size:15px;line-height:1.6;color:var(--muted-foreground);margin:0;max-width:750px}
+body.siget-body .siget-dashboard-actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:flex-end;max-width:380px}
+body.siget-body .siget-dashboard-actions .exec-scope{font-size:13px}
+body.siget-body .siget-dashboard-filters,body.siget-body .siget-dashboard-card,body.siget-body .siget-dashboard-kpi{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow-xs);min-width:0}
+body.siget-body .siget-dashboard-filters{padding:20px}
+body.siget-body .siget-dashboard-filters .form-label{font-size:14px;font-weight:650;margin-bottom:7px}
+body.siget-body .siget-dashboard-filters select,body.siget-body .siget-dashboard-filters input{width:100%;min-width:0;font-size:14px;min-height:42px}
+body.siget-body .siget-dashboard summary{font-size:14px;font-weight:600;cursor:pointer;color:var(--foreground);padding:5px 0}
+body.siget-body .siget-dashboard-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px}
+body.siget-body .siget-dashboard-kpi{padding:20px;display:flex;flex-direction:column;gap:10px}
+body.siget-body .siget-dashboard-kpi h3{font-size:15px!important;line-height:1.4!important;font-weight:650!important;margin:0!important;color:var(--muted-foreground);overflow-wrap:anywhere}
+body.siget-body .siget-dashboard-kpi strong{font-size:clamp(27px,2.6vw,36px);line-height:1.15;letter-spacing:-.03em;color:var(--foreground);font-variant-numeric:tabular-nums}
+body.siget-body .siget-dashboard-kpi p{font-size:13px;line-height:1.5;color:var(--muted-foreground);margin:0}
+body.siget-body .siget-dashboard-scope-note{font-size:14px;line-height:1.6;color:var(--muted-foreground);margin:0}
+body.siget-body .siget-dashboard-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:22px;min-width:0}
+body.siget-body .siget-dashboard-main-charts{grid-template-columns:minmax(0,1.5fr) minmax(0,1fr)}
+body.siget-body .siget-dashboard-card{padding:22px;overflow:hidden}
+body.siget-body .siget-dashboard-card header{margin-bottom:18px}
+body.siget-body .siget-dashboard-card h3{font-size:19px!important;line-height:1.35!important;font-weight:700!important;margin:0 0 8px!important;color:var(--foreground)}
+body.siget-body .siget-dashboard-card header p,body.siget-body .siget-dashboard-card>p{font-size:14px;line-height:1.6;color:var(--muted-foreground);margin:0 0 12px;overflow-wrap:anywhere}
+body.siget-body .siget-dashboard-card a{overflow-wrap:anywhere}
+body.siget-body .siget-dashboard-chart{position:relative;width:100%;min-width:0;margin:10px 0 18px}
+body.siget-body .siget-dashboard-chart canvas{max-width:100%}
+body.siget-body .siget-dashboard-data{border-top:1px solid var(--border);padding-top:10px}
+body.siget-body .siget-dashboard-data table{font-size:14px;margin-top:12px}
+body.siget-body .siget-dashboard-data table td{font-variant-numeric:tabular-nums}
+body.siget-body .siget-dashboard-empty{display:flex;min-height:230px;flex-direction:column;align-items:center;justify-content:center;gap:12px;text-align:center;color:var(--muted-foreground)}
+body.siget-body .siget-dashboard-empty i{font-size:32px}
+body.siget-body .siget-dashboard-empty p{font-size:14px;max-width:300px}
+body.siget-body .siget-dashboard-table-heading{display:flex;justify-content:space-between;align-items:flex-start;gap:20px}
+body.siget-body .siget-dashboard-table{min-width:840px;font-size:14px;margin:0}
+body.siget-body .siget-dashboard-table th{font-size:14px;font-weight:700;padding:14px 12px;white-space:normal}
+body.siget-body .siget-dashboard-table td{padding:16px 12px;max-width:300px;overflow-wrap:anywhere}
+body.siget-body .siget-dashboard-table small{display:block;font-size:13px;line-height:1.5;color:var(--muted-foreground);margin-top:6px}
+body.siget-body .siget-dashboard-status{display:inline-flex;gap:7px;align-items:center;font-size:13px;line-height:1.4;font-weight:650;border:1px solid var(--border);border-radius:24px;padding:6px 10px;color:var(--foreground);background:var(--background-soft)}
+body.siget-body .siget-dashboard-status:before{content:'';background:var(--status-color);width:9px;height:9px;border-radius:50%;flex-shrink:0}
+@media(max-width:1199px){body.siget-body .siget-dashboard-hero{align-items:flex-start;flex-direction:column}body.siget-body .siget-dashboard-actions{max-width:none;justify-content:flex-start}body.siget-body .siget-dashboard-main-charts{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:900px){body.siget-body .siget-dashboard-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}body.siget-body .siget-dashboard-grid{grid-template-columns:minmax(0,1fr)}body.siget-body .siget-dashboard-table-heading{flex-direction:column}}
+@media(max-width:575px){body.siget-body .siget-dashboard{gap:16px}body.siget-body .siget-dashboard-card,body.siget-body .siget-dashboard-filters{padding:16px}body.siget-body .siget-dashboard-kpis{gap:10px}body.siget-body .siget-dashboard-kpi{padding:16px 13px}body.siget-body .siget-dashboard-kpi h3{font-size:14px!important}body.siget-body .siget-dashboard-hero h2{font-size:25px!important}body.siget-body .siget-dashboard-card h3{font-size:18px!important}}

@@ -28,3 +28,8 @@ Thumbs.db
 /storage/app/private/
 
 /storage/framework/testing/
+/deploy/vm1/.env.production
+/deploy/vm1/__pycache__/
+/deploy/tests/__pycache__/
+/dist/
+/images.tar.gz

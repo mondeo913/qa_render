@@ -1,5 +1,11 @@
 <?php
 
+\Illuminate\Support\Facades\Route::get('/ready', function (\App\Services\InfrastructureReadinessService $service) {
+    $ready = $service->ready();
+    return response()->json(['status' => $ready ? 'ready' : 'unavailable'], $ready ? 200 : 503)
+        ->header('Cache-Control', 'no-store');
+})->withoutMiddleware(\App\Http\Middleware\RequirePrivateRepository::class)->name('readiness');
+
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AlertController;
 use App\Http\Controllers\CalendarController;

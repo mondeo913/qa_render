@@ -71,12 +71,12 @@ npm ci
 npm run build
 ```
 
-## Siguiente etapa: API y dos máquinas virtuales
+## API v1 y entrega en dos máquinas virtuales
 
 - VM 1: aplicación web/API, PostgreSQL, workers, scheduler y auditoría.
 - VM 2: archivos institucionales privados; las descargas siguen pasando por autorización de SIGET.
-- La API debe llamar a estos mismos servicios y políticas, conservar bloqueos/transacciones y devolver validaciones 422 y prohibiciones 403.
-- Wizard de servidor: requisitos, dirección HTTPS, base de datos, almacenamiento VM 2, administrador inicial, correo institucional, workers/scheduler, respaldos y pruebas finales. El usuario final solo necesita navegador y cuenta autorizada.
-- Antes de habilitar usuarios reales: verificar almacenamiento institucional, SMTP y colas, antivirus real, transferencia de videos grandes, concurrencia en PostgreSQL y restauración de respaldos. La bandera de antivirus no instala un escáner; con ella activa las evidencias pendientes no avanzan.
+- La API v1 implementa 37 operaciones sobre estos mismos servicios y políticas; conserva bloqueos y transacciones y devuelve validaciones 422 y prohibiciones 403. Consulte `docs/API_V1.md`.
+- El asistente `deploy/vm1/install.sh` valida requisitos, HTTPS, PostgreSQL, VM2, administrador inicial, SMTP, workers, scheduler y respaldo inicial con restauración. El usuario final sólo necesita navegador y cuenta autorizada. Consulte `docs/ENTREGA_INFRAESTRUCTURA_API.md`.
+- El kit incluye ClamAV real: analiza pautas, evidencias y firmados antes de incorporarlos y rechaza archivos si el escáner falla. CI prueba EICAR, HTTPS, PostgreSQL y restauración. Infraestructura acepta NFS real, SMTP, capacidad, transferencia de videos grandes y reinicio de las VM en su entorno.
 - Mantener los archivos sensibles fuera del repositorio GitHub. Este repositorio contiene código y pruebas sintéticas.
-- La capacidad 500 GB + 500 GB y la política de respaldo deben medirse en las VM. La ventana de pérdida de hasta 14 días y la dependencia del mismo host físico descritas en la propuesta siguen siendo decisiones de infraestructura.
+- La capacidad de 500 GB por VM debe medirse después de asignar sistema, base de datos, repositorio y respaldos. Por instrucción del usuario, los respaldos son **mensuales**; el punto recuperable es el último respaldo mensual completado y verificado. Infraestructura debe registrar la ubicación física de ambas VM y probar la restauración.

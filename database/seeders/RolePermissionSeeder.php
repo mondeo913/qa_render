@@ -85,7 +85,7 @@ class RolePermissionSeeder extends Seeder
 
         $map = [
             'DIRECTOR_GENERAL' => [
-                'dashboard.view','intelligence.view','reports.view','reports.export',
+                'dashboard.view','calendar.view','intelligence.view','reports.view','reports.export',
                 'repository.view','repository.download','scheduled_load.board',
             ],
             'DIRECTOR' => array_values(array_unique([...$directorPermissions,'intelligence.view'])),
@@ -102,7 +102,7 @@ class RolePermissionSeeder extends Seeder
             'OPERADOR' => array_values(array_unique([...$operatorPermissions,'intelligence.view'])),
             'OPERADOR_TRANSMISION' => array_values(array_unique([...$operatorPermissions,'intelligence.view'])),
             'OPERADOR_PROGRAMACION_CONTINUIDAD' => array_values(array_unique([...$operatorPermissions,'intelligence.view'])),
-            'FISCALIZADOR' => ['repository.view','repository.download','reports.view','reports.export','evidence.review','intelligence.view','scheduled_load.board'],
+            'FISCALIZADOR' => ['calendar.view','repository.view','repository.download','reports.view','reports.export','evidence.review','intelligence.view','scheduled_load.board'],
         ];
 
         // Retirar definitivamente el módulo Indicadores de instalaciones QA existentes.

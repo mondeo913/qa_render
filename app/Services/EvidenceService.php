@@ -60,13 +60,16 @@ final class EvidenceService
             throw new RuntimeException('El archivo excede el tamaño máximo permitido.');
         }
 
+        $antivirusStatus = app(FileScanService::class)->assertClean($file);
+
         return DB::transaction(function () use (
             $deliverable,
             $file,
             $user,
             $title,
             $extension,
-            $load
+            $load,
+            $antivirusStatus
         ) {
             $load = \App\Models\ScheduledLoad::query()->lockForUpdate()->findOrFail($load->id);
             $deliverable = ScheduledLoadDeliverable::query()->lockForUpdate()->findOrFail($deliverable->id);
@@ -155,9 +158,7 @@ final class EvidenceService
                 'mime_type' => $file->getMimeType() ?: 'application/octet-stream',
                 'size_bytes' => $file->getSize(),
                 'sha256' => hash_file('sha256', $file->getRealPath()),
-                'antivirus_status' => config('siget.antivirus_enabled')
-                    ? 'PENDING'
-                    : 'SKIPPED',
+                'antivirus_status' => $antivirusStatus,
                 'version' => $evidence->current_version,
                 'metadata' => [
                     'organizational_unit_id' => $deliverable->organizational_unit_id,

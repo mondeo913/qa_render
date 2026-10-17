@@ -5,7 +5,7 @@ namespace App\Services;
 use Carbon\CarbonImmutable;
 use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
 use PhpOffice\PhpSpreadsheet\IOFactory;
-use RuntimeException;
+use App\Exceptions\WorkflowException as RuntimeException;
 
 final class HorizontalPautaParser
 {
@@ -35,6 +35,12 @@ final class HorizontalPautaParser
             $highestColumnIndex = Coordinate::columnIndexFromString(
                 $worksheet->getHighestDataColumn()
             );
+
+            $filenameHeader = $this->detectFilenameHeader($worksheet, $highestRow, $highestColumnIndex);
+            if ($filenameHeader !== null) {
+                $items = array_merge($items, $this->parseFilenames($worksheet, $filenameHeader, $highestRow, $year));
+                continue;
+            }
 
             [$monthRow, $dayRow] = $this->detectHeaderRows(
                 $worksheet,
@@ -100,12 +106,74 @@ final class HorizontalPautaParser
         return $items;
     }
 
+    private function detectFilenameHeader(object $worksheet, int $rows, int $columns): ?array
+    {
+        $headers = [];
+        for ($row = 1; $row <= min($rows, 100); $row++) {
+            for ($column = 1; $column <= $columns; $column++) {
+                $label = \Illuminate\Support\Str::ascii(mb_strtolower((string) $worksheet->getCell([$column, $row])->getCalculatedValue()));
+                $label = preg_replace('/[^a-z]/', '', $label);
+                if (in_array($label, ['nombredelarchivoparabitacora', 'nombredearchivoparabitacora'], true)) {
+                    $headers[] = [$row, $column];
+                }
+            }
+        }
+        if (count($headers) > 1) {
+            throw new RuntimeException('Hoja «'.$worksheet->getTitle().'»: hay varias columnas de nombre de archivo para bitácora. Conserve un solo encabezado.');
+        }
+        return $headers[0] ?? null;
+    }
+
+    private function parseFilenames(object $worksheet, array $header, int $rows, int $year): array
+    {
+        [$headerRow, $column] = $header;
+        $items = [];
+        for ($row = $headerRow + 1; $row <= $rows; $row++) {
+            $filename = trim((string) $worksheet->getCell([$column, $row])->getCalculatedValue());
+            $metadata = $this->readMetadata($worksheet, $row);
+            $cell = Coordinate::stringFromColumnIndex($column).$row;
+            $location = 'Hoja «'.$worksheet->getTitle().'», celda '.$cell.': ';
+            if ($filename === '') {
+                if ($metadata['campana'] !== '' || $metadata['canal'] !== '' || $metadata['plaza'] !== '') {
+                    throw new RuntimeException($location.'falta el nombre del archivo para bitácora.');
+                }
+                continue;
+            }
+            // Exigir el segmento de fecha anterior a TESTIGO, nunca la hora final.
+            if (!preg_match('/_(\d{2})\.(\d{2})\.(\d{2})\.TESTIGO[._]/i', $filename, $match)) {
+                throw new RuntimeException($location.'el nombre debe contener _AA.MM.DD.TESTIGO (por ejemplo, _26.07.07.TESTIGO).');
+            }
+            $fileYear = 2000 + (int) $match[1];
+            $month = (int) $match[2];
+            $day = (int) $match[3];
+            if (!checkdate($month, $day, $fileYear)) {
+                throw new RuntimeException($location.'el nombre contiene una fecha inexistente.');
+            }
+            if ($fileYear !== $year) {
+                throw new RuntimeException($location.'el año del archivo ('.$fileYear.') no coincide con el año seleccionado ('.$year.').');
+            }
+            $date = CarbonImmutable::create($fileYear, $month, $day, 8, 0, 0, config('app.timezone'));
+            $metadata['nombre_archivo_bitacora'] = $filename;
+            $items[] = [
+                'sheet_name' => $worksheet->getTitle(), 'row_number' => $row,
+                'source_column' => Coordinate::stringFromColumnIndex($column),
+                'date' => $date, 'metadata' => $metadata,
+                'delivery_name' => $this->deliveryName($metadata, $date),
+                'first_date_column' => $column, 'format' => 'BITACORA_FILENAME',
+            ];
+        }
+        if ($items === []) {
+            throw new RuntimeException('Hoja «'.$worksheet->getTitle().'»: la columna de archivos para bitácora no contiene registros.');
+        }
+        return $items;
+    }
+
     private function detectHeaderRows(
         object $worksheet,
         int $highestRow,
         int $highestColumnIndex
     ): array {
-        $searchLimit = min($highestRow, 30);
+        $searchLimit = min($highestRow, 100);
         $monthRows = [];
         $dayRows = [];
 
@@ -160,7 +228,7 @@ final class HorizontalPautaParser
 
         if ($bestPair === null) {
             throw new RuntimeException(
-                'No fue posible identificar la fila de meses y la fila de días.'
+                'Hoja «'.$worksheet->getTitle().'»: no fue posible identificar los encabezados. Se requiere una fila con meses completos (por ejemplo, ENERO) y, hasta tres filas debajo, al menos tres días enteros entre 1 y 31, dentro de las primeras 100 filas. Revise también las hojas auxiliares del archivo.'
             );
         }
 
@@ -289,6 +357,7 @@ final class HorizontalPautaParser
     private function isDayValue(mixed $value): bool
     {
         return is_numeric($value)
+            && (float) $value === (float) (int) $value
             && (int) $value >= 1
             && (int) $value <= 31;
     }
@@ -298,7 +367,7 @@ final class HorizontalPautaParser
         $value = str_replace("\u{00A0}", ' ', $value);
         $value = preg_replace('/\s+/u', ' ', trim($value)) ?? trim($value);
 
-        return strtoupper(
+        return mb_strtoupper(
             str_replace(
                 ['Á', 'É', 'Í', 'Ó', 'Ú', 'Ü'],
                 ['A', 'E', 'I', 'O', 'U', 'U'],

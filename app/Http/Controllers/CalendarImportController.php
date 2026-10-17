@@ -38,7 +38,10 @@ class CalendarImportController extends Controller
     ): RedirectResponse {
         $this->authorize('confirm',$import);
         $created = $service->confirm($import,$request->user()->id);
-        return redirect()->route('calendar.index')
+        return redirect()->route('calendar.index', [
+            'contracting_agency_id' => $import->contracting_agency_id,
+            'date' => $import->rows()->min('original_open_at') ? \Carbon\Carbon::parse($import->rows()->min('original_open_at'))->toDateString() : now()->toDateString(),
+        ])
             ->with('success',"Se crearon {$created} cargas programadas.");
     }
 }

@@ -10,6 +10,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: siget-ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   php-tests:
     name: PHP tests + app smoke
@@ -44,6 +48,9 @@ jobs:
 
       - name: Composer install
         run: composer install --no-interaction --no-progress --prefer-dist
+
+      - name: Composer security audit
+        run: composer audit --locked --no-interaction
 
       - name: Download compiled assets
         uses: actions/download-artifact@v4
@@ -168,6 +175,9 @@ jobs:
       - name: npm ci
         run: npm ci
 
+      - name: npm security audit
+        run: npm audit
+
       - name: npm build
         run: npm run build
 
@@ -251,7 +261,7 @@ jobs:
           QUEUE_CONNECTION: sync
 
       - name: PostgreSQL controlled workflow acceptance
-        run: php artisan test --filter=WorkflowHardeningTest
+        run: php artisan test --filter='WorkflowHardeningTest|OperationsPageTest|QaUserStandardTest|ReportPresentationTest|CalendarAgencyFlowTest|AgencyOnboardingTest|CalendarPresentationTest|LoadBoardFilterFlowTest|AdminUserEditTest|DashboardRoleFlowTest|RepositoryAgencyFlowTest|ApiWorkflowTest|InfrastructureDeliveryTest|ApiContractTest'
         env:
           DB_CONNECTION: pgsql
           DB_HOST: 127.0.0.1
@@ -262,3 +272,161 @@ jobs:
           SESSION_DRIVER: array
           CACHE_STORE: array
           QUEUE_CONNECTION: sync
+
+  browser-ui:
+    name: Bootstrap and responsive UI for every role
+    needs: frontend
+    runs-on: ubuntu-latest
+    env:
+      APP_ENV: testing
+      APP_URL: http://127.0.0.1:8000
+      DB_CONNECTION: sqlite
+      DB_DATABASE: ${{ github.workspace }}/database/ui-testing.sqlite
+      SESSION_DRIVER: file
+      SESSION_SECURE_COOKIE: 'false'
+      CACHE_STORE: array
+      QUEUE_CONNECTION: sync
+      SIGET_QA_PASSWORD: SigetQA_2026_Cambiar!
+      SIGET_UI_VISUAL_EVIDENCE: 'true'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mbstring, bcmath, intl, gd, pdo_sqlite, zip
+          coverage: none
+          tools: composer:v2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: composer install --no-interaction --no-progress --prefer-dist
+      - uses: actions/download-artifact@v4
+        with:
+          name: vite-build-${{ github.sha }}
+          path: public/build
+      - name: Install browser tooling
+        run: |
+          npm ci --no-audit --no-fund
+          npm install --no-save --package-lock=false playwright@1.58.2
+          npx playwright install --with-deps chromium
+          node scripts/sync-zenith-css.mjs --check
+      - name: Prepare isolated QA fixtures
+        run: |
+          cp .env.example .env
+          php artisan key:generate --force
+          touch database/ui-testing.sqlite
+          php artisan migrate:fresh --seed --force
+          php tests/browser/export-users.php
+          php artisan serve --host=127.0.0.1 --port=8000 > /tmp/siget-ui-server.log 2>&1 &
+          for attempt in $(seq 1 30); do curl -fsS http://127.0.0.1:8000/up && break || sleep 1; done
+      - name: Test every role and viewport
+        run: npm run test:ui
+      - name: Preserve visual QA evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: siget-ui-screenshots-${{ github.sha }}
+          path: storage/framework/testing/ui-screenshots
+
+  codespaces-image:
+    name: Codespaces image and PostgreSQL 15/16 recovery
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Regression check for PHP extension detection
+        run: bash tests/runtime/php-extension-check.sh
+      - name: Build actual Codespaces image
+        run: docker build -f .devcontainer/Dockerfile.k2 -t siget-codespaces .
+      - name: Verify PHP and existing PostgreSQL versions
+        run: |
+          docker run --rm --entrypoint bash -v "$GITHUB_WORKSPACE/.devcontainer:/scripts:ro" siget-codespaces -lc '
+            set -Eeuo pipefail
+            mkdir -p /tmp/siget/.devcontainer
+            cp /scripts/lib-siget.sh /tmp/siget/.devcontainer/
+            source /tmp/siget/.devcontainer/lib-siget.sh
+            for attempt in {1..30}; do assert_php_extensions; done
+            PGPORT=15432
+            for major in 15 16; do
+              PGDATA="$STATE_DIR/postgres-data-$major"
+              SIGET_POSTGRES_MAJOR="$major"
+              start_postgres
+              test "$(cat "$PGDATA/PG_VERSION")" = "$major"
+              pg_bin="$(find_postgres_bin)"
+              "$pg_bin/pg_ctl" -D "$PGDATA" -m fast -w stop
+            done
+          '
+
+  production-vm:
+    name: Production image, HTTPS API and monthly restore
+    needs: frontend
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check infrastructure scripts
+        run: |
+          find deploy -name '*.sh' -print0 | xargs -0 -n1 bash -n
+          python3 -m py_compile deploy/vm1/wizard.py deploy/tests/production-api.py
+          python3 -m venv /tmp/siget-openapi
+          /tmp/siget-openapi/bin/pip install --quiet 'openapi-spec-validator==0.7.2'
+          /tmp/siget-openapi/bin/python -c 'from openapi_spec_validator import validate; import json; validate(json.load(open("docs/api/openapi.json"))); print("OpenAPI schema validation PASS")'
+      - name: Build production application
+        run: docker build -f deploy/Dockerfile --target app -t siget-app:1.0.0-api-v1 .
+      - name: Build production HTTPS server
+        run: docker build -f deploy/Dockerfile --target web -t siget-web:1.0.0-api-v1 .
+      - name: Build production antivirus
+        run: docker build -f deploy/Dockerfile --target antivirus -t siget-antivirus:1.0.0-api-v1 .
+      - name: Real production acceptance with isolated repository fixture
+        env:
+          SIGET_PRODUCTION_SMOKE: '1'
+        run: bash deploy/tests/production-smoke.sh | tee /tmp/siget-production-acceptance.log
+      - name: Download compiled assets
+        uses: actions/download-artifact@v4
+        with:
+          name: vite-build-${{ github.sha }}
+          path: public/build
+      - name: Package infrastructure source and tested images
+        env:
+          SIGET_CI_RUN_URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: bash deploy/package-release.sh --images
+      - name: Preserve infrastructure delivery
+        uses: actions/upload-artifact@v4
+        with:
+          name: siget-infra-${{ github.sha }}
+          path: dist/siget-*.tar.gz
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 14
+      - name: Preserve production acceptance log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: siget-production-acceptance-${{ github.sha }}
+          path: /tmp/siget-production-acceptance.log
+          if-no-files-found: ignore
+
+  release-ready:
+    name: Release acceptance gate
+    needs: [frontend, php-tests, postgres-smoke, browser-ui, codespaces-image, production-vm]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Approve only the fully validated commit
+        env:
+          SIGET_VALIDATED_COMMIT: ${{ github.sha }}
+          SIGET_CI_RUN_URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          python3 - <<'PY'
+          import json,os
+          approval={'commit':os.environ['SIGET_VALIDATED_COMMIT'],'status':'PASSED','api':'v1','backup_cadence':'monthly',
+                    'ci_run':os.environ['SIGET_CI_RUN_URL'],
+                    'validated':['PHP regression','PostgreSQL workflow and API','8-role responsive browser UI','Codespaces recovery',
+                                 'Production images','HTTPS API workflow','Real ClamAV EICAR rejection','Monthly backup and PostgreSQL restore'],
+                    'target_vm_acceptance':'NFS real, DNS/TLS institucional, SMTP, firewall y reinicio de VM se aceptan por infraestructura.'}
+          open('SIGET_RELEASE_ACCEPTANCE.json','w').write(json.dumps(approval,ensure_ascii=False,indent=2)+'\n')
+          print('Release acceptance gate PASS: '+approval['commit'])
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: siget-release-acceptance-${{ github.sha }}
+          path: SIGET_RELEASE_ACCEPTANCE.json

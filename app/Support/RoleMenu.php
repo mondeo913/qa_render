@@ -25,6 +25,7 @@ final class RoleMenu
                 ['label' => 'Operaciones', 'route' => 'operations.index', 'icon' => 'bi-activity'],
             ],
             'DIRECTOR_GENERAL' => [
+                ['label' => 'Calendario de consulta', 'route' => 'calendar.index', 'icon' => 'bi-calendar3'],
                 ['label' => 'Dashboard ejecutivo', 'route' => 'dashboard', 'icon' => 'bi-speedometer2'],
                 ['label' => 'Centro de Inteligencia', 'route' => 'intelligence', 'icon' => 'bi-speedometer2'],
                 ['label' => 'Tablero institucional', 'route' => 'loads.board', 'icon' => 'bi-kanban'],
@@ -68,6 +69,8 @@ final class RoleMenu
                 ['label' => 'Inteligencia', 'route' => 'intelligence', 'icon' => 'bi-graph-up-arrow'],
             ],
             'FISCALIZADOR' => [
+                ['label' => 'Bandeja de fiscalización', 'route' => 'dashboard', 'icon' => 'bi-grid'],
+                ['label' => 'Calendario de asignaciones', 'route' => 'calendar.index', 'icon' => 'bi-calendar3'],
                 ['label' => 'Asignaciones', 'route' => 'repository.index', 'icon' => 'bi-search'],
                 ['label' => 'Tablero de cargas', 'route' => 'loads.board', 'icon' => 'bi-kanban'],
                 ['label' => 'Historial', 'route' => 'history.index', 'icon' => 'bi-clock-history'],

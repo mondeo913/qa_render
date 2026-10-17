@@ -1,5 +1,5 @@
 SIGET — Ambiente QA consolidado
-Fecha de línea QA: 2026-09-15
+Fecha de línea QA: 2026-10-13
 Plataforma objetivo: GitHub Codespaces / Linux
 Backend: Laravel 12 / PHP 8.3
 Frontend: Blade / Bootstrap / Vite / Chart.js / FullCalendar
@@ -8,4 +8,5 @@ Correo QA: Mailpit
 Puerto SIGET: 8000
 Puerto Mailpit: 8025
 Identidad: SIGET — Sistema de Gestión de Evidencias de Transmisión
-Estado: QA consolidado; certificación integral pendiente en Codespaces.
+Estado: flujo validado automáticamente; estructura y Codespaces consolidados.
+Reconstrucción del Codespace y certificación productiva pendientes.

@@ -15,6 +15,7 @@ class DashboardDemoDataSeeder extends Seeder
 {
     public function run(): void
     {
+        if (!app()->environment(['local', 'qa', 'testing'])) throw new \RuntimeException('Datos QA deshabilitados en este ambiente.');
         DB::transaction(function (): void {
             $admin = User::query()->where('email', 'admin@siget.local')->first();
             $director = User::query()->where('email', 'director.general@siget.local')->first();

@@ -15,6 +15,7 @@ class CalendarController extends Controller
 {
     public function index(Request $request, AccessScopeService $access): View
     {
+        $request->validate(['date' => ['nullable', 'date_format:Y-m-d'], 'contracting_agency_id' => ['nullable', 'integer']]);
         $upcoming = $access->scopeLoads(ScheduledLoad::query()->with('agency'), $request->user())
             ->where('effective_close_at', '>=', now())
             ->whereNotIn('status', ['VALIDADO_Y_CERRADO', 'CANCELADA'])
@@ -24,37 +25,29 @@ class CalendarController extends Controller
 
         return view('calendario.index', [
             'agencies' => $this->accessibleAgencies($request->user(), $access),
+            'importAgencies' => ContractingAgency::query()->where('active', true)->orderBy('name')->get()->filter(fn ($agency) => $access->canManageAgency($request->user(), $agency->id)),
             'canImport' => $request->user()->hasPermission('calendar.import'),
             'upcoming' => $upcoming,
+            'calendarLegend' => \App\Services\CalendarPresentationService::LEGEND,
         ]);
     }
 
     private function accessibleAgencies($user, AccessScopeService $access)
     {
-        $loadIds = $access->scopeLoads(ScheduledLoad::query(), $user)->select('scheduled_loads.id');
-
-        return ContractingAgency::query()
-            ->where('active', true)
-            ->whereIn('id', ScheduledLoad::query()
-                ->whereIn('id', $loadIds)
-                ->whereNotNull('contracting_agency_id')
-                ->select('contracting_agency_id')
-                ->distinct()
-            )
-            ->orderBy('name')
-            ->get();
+        return $access->availableAgencies($user);
     }
 
     public function events(
         Request $request,
         CalendarAvailabilityService $availability,
-        AccessScopeService $access
+        AccessScopeService $access,
+        \App\Services\CalendarPresentationService $presentation
     ): JsonResponse {
         $start = $request->date('start');
         $end = $request->date('end');
 
         $query = $access->scopeLoads(
-            ScheduledLoad::query(),
+            ScheduledLoad::query()->with('agency'),
             $request->user()
         );
 
@@ -71,32 +64,42 @@ class CalendarController extends Controller
             ->get();
 
         return response()->json($loads->map(
-            fn (ScheduledLoad $load) => [
-                'id' => $load->id,
-                'title' => $load->title,
-                'start' => $load->effective_open_at->toIso8601String(),
-                'end' => $load->effective_close_at->toIso8601String(),
-                'classNames' => [
-                    'siget-event',
-                    'status-'.strtolower(
-                        $load->status instanceof \BackedEnum
+            function (ScheduledLoad $load) use ($availability, $presentation) {
+                $appearance = $presentation->forLoad($load, now());
+                return [
+                    'id' => $load->id,
+                    'title' => ($load->agency?->name ?? 'Sin dependencia').' · '.$load->title,
+                    'start' => $load->effective_open_at->toIso8601String(),
+                    'end' => $load->effective_close_at->toIso8601String(),
+                    'display' => 'block',
+                    'backgroundColor' => $appearance['color'],
+                    'borderColor' => $appearance['color'],
+                    'textColor' => '#ffffff',
+                    'classNames' => [
+                        'siget-event',
+                        'status-'.strtolower(
+                            $load->status instanceof \BackedEnum
+                                ? $load->status->value
+                                : $load->status
+                        ),
+                    ],
+                    'extendedProps' => [
+                        'contracting_agency_id' => $load->contracting_agency_id,
+                        'agency' => $load->agency?->name,
+                        'status' => $load->status instanceof \BackedEnum
                             ? $load->status->value
-                            : $load->status
-                    ),
-                ],
-                'extendedProps' => [
-                    'status' => $load->status instanceof \BackedEnum
-                        ? $load->status->value
-                        : $load->status,
-                    'trafficLight' => $load->traffic_light instanceof \BackedEnum
-                        ? $load->traffic_light->value
-                        : $load->traffic_light,
-                    'completion' => $load->completion_percentage,
-                    'enabled' => $availability->isEnabled($load, now()),
-                    'tooltip' => $availability->tooltip($load),
-                    'url' => route('loads.show', $load),
-                ],
-            ]
+                            : $load->status,
+                        'trafficLight' => $load->traffic_light instanceof \BackedEnum
+                            ? $load->traffic_light->value
+                            : $load->traffic_light,
+                        'appearance' => $appearance,
+                        'completion' => $load->completion_percentage,
+                        'enabled' => $availability->isEnabled($load, now()),
+                        'tooltip' => $availability->tooltip($load),
+                        'url' => route('loads.show', $load),
+                    ],
+                ];
+            }
         ));
     }
 
