@@ -94,10 +94,11 @@ final class CalendarImportService
                 ]);
             }
 
-            $hasRetroactiveDates = collect($items)->contains(fn ($item) =>
-                $item['date']->year === ScheduledLoad::RETROACTIVE_POLICY_YEAR
-                && $item['date']->endOfDay()->lt(now())
-            );
+            $hasRetroactiveDates = now()->year === ScheduledLoad::RETROACTIVE_POLICY_YEAR
+                && collect($items)->contains(fn ($item) =>
+                    $item['date']->year === ScheduledLoad::RETROACTIVE_POLICY_YEAR
+                    && $item['date']->endOfDay()->lt(now())
+                );
             $warnings = [
                 'Los registros de una misma fecha se agruparán en una sola carga. Si existe la columna Nombre del Archivo para bitácora, la fecha se obtiene de _AA.MM.DD.TESTIGO; en otras pautas se utilizan las marcas X.',
                 'Cada carga generará los entregables configurados para las dos direcciones.',
@@ -171,7 +172,8 @@ final class CalendarImportService
 
             foreach ($groups as $date => $rows) {
                 $dateObject = CarbonImmutable::parse($date, config('app.timezone'));
-                $isRetroactive = $dateObject->year === ScheduledLoad::RETROACTIVE_POLICY_YEAR
+                $isRetroactive = now()->year === ScheduledLoad::RETROACTIVE_POLICY_YEAR
+                    && $dateObject->year === ScheduledLoad::RETROACTIVE_POLICY_YEAR
                     && $dateObject->endOfDay()->lt(now());
                 $serviceItems = $rows->map(fn (CalendarImportRow $row) => [
                     'sheet' => $row->sheet_name,
