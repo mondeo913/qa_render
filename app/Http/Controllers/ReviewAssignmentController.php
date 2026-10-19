@@ -15,7 +15,7 @@ class ReviewAssignmentController extends Controller
         Request $request,
         ScheduledLoad $load,
         AccessScopeService $access
-    ): RedirectResponse {
+    ): \Symfony\Component\HttpFoundation\Response {
         abort_unless(
             in_array(
                 $request->user()->role?->code,
@@ -52,6 +52,8 @@ class ReviewAssignmentController extends Controller
             ]
         );
 
-        return back()->with('success', 'Fiscalizador asignado.');
+        return $request->is('api/*')
+            ? response()->json(['message' => 'Fiscalizador asignado.'])
+            : back()->with('success', 'Fiscalizador asignado.');
     }
 }

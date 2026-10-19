@@ -1,0 +1,9 @@
+[Unit]
+Description=Respaldo mensual consistente y prueba de restauración SIGET
+After=docker.service network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/bash @RELEASE_DIR@/deploy/vm1/backup-monthly.sh
+TimeoutStartSec=14400
+TimeoutStopSec=180

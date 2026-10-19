@@ -1,0 +1,10 @@
+[Unit]
+Description=SIGET respaldo mensual: día 1 a las 02:00, Ciudad de México
+
+[Timer]
+OnCalendar=*-*-01 02:00:00 America/Mexico_City
+Persistent=true
+Unit=siget-backup.service
+
+[Install]
+WantedBy=timers.target

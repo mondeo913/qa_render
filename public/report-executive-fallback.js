@@ -1,5 +1,14 @@
 (function () {
     'use strict';
+    document.addEventListener('DOMContentLoaded', function () {
+        // Data remains usable when the compiled chart module is unavailable.
+        document.querySelectorAll('.siget-dashboard-card:has(script[data-siget-chart])').forEach(function (card) {
+            var canvas = card.querySelector('.siget-dashboard-chart');
+            if (canvas) canvas.hidden = true;
+            var values = card.querySelector('details');
+            if (values) values.open = true;
+        });
+    });
 
     function parseChart(id) {
         var node = document.querySelector('script[data-siget-chart="' + id + '"]');

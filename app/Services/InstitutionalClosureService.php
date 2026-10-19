@@ -240,7 +240,9 @@ final class InstitutionalClosureService
             throw new RuntimeException('El formato del documento firmado no está permitido.');
         }
 
-        return DB::transaction(function () use ($load,$file,$userId,$metadata,$extension) {
+        $antivirusStatus = app(FileScanService::class)->assertClean($file);
+
+        return DB::transaction(function () use ($load,$file,$userId,$metadata,$extension,$antivirusStatus) {
             $load = ScheduledLoad::query()->lockForUpdate()->findOrFail($load->id);
             if ($load->is_blocked || $load->status->value !== 'VALIDADA' || !$this->validateExpediente($load)['ready'] || !$load->institutionalReview?->verified_at) {
                 throw new RuntimeException('La validación institucional cambió; revise el expediente.');
@@ -274,7 +276,7 @@ final class InstitutionalClosureService
                 'mime_type'=>$file->getMimeType() ?: 'application/octet-stream',
                 'size_bytes'=>$file->getSize(),
                 'sha256'=>hash_file('sha256',$file->getRealPath()),
-                'antivirus_status'=>config('siget.antivirus_enabled') ? 'PENDING' : 'SKIPPED',
+                'antivirus_status'=>$antivirusStatus,
                 'version'=>1,
             ]);
 

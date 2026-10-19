@@ -21,7 +21,7 @@ final class LoadBoardService
     {
         $normalized=['pauta_id'=>isset($filters['pauta_id'])&&$filters['pauta_id']!==''?(int)$filters['pauta_id']:null,'agency_id'=>isset($filters['agency_id'])&&$filters['agency_id']!==''?(int)$filters['agency_id']:null,'unit_id'=>trim((string)($filters['unit_id']??''))?:null,'from'=>trim((string)($filters['from']??''))?:null,'to'=>trim((string)($filters['to']??''))?:null,'q'=>trim((string)($filters['q']??''))?:null,'mine'=>(bool)($filters['mine']??false)];
         $availableAgencies=$this->availableAgencies($user,$normalized);
-        $availableUnits=$this->availableUnits($user,$normalized['agency_id'],$normalized['pauta_id']);
+        $availableUnits=$this->availableUnits($user);
         if($normalized['agency_id']!==null&&!$availableAgencies->contains('id',$normalized['agency_id']))$normalized['agency_id']=null;
         $selectedUnitIds=$this->parseIds($normalized['unit_id']);
         $allowedUnitIds=$availableUnits->flatMap(fn($unit)=>(array)($unit->filter_unit_ids??[$unit->id]))->map(fn($id)=>(int)$id)->unique()->values()->all();
@@ -51,23 +51,7 @@ final class LoadBoardService
 
     private function availableAgencies(User $user,array $filters=[]):Collection
     {
-        $role=$user->role?->code;
-        $query=ContractingAgency::query()->select(['id','code','name','metadata'])->where('active',true);
-
-        if(in_array($role,[RoleCode::ADMINISTRADOR->value,RoleCode::DIRECTOR_GENERAL->value],true)){
-            return $query->orderBy('name')->get();
-        }
-
-        $loads=$this->access->scopeLoads(ScheduledLoad::query(),$user);
-        if(!empty($filters['agency_id']))$loads->where('scheduled_loads.contracting_agency_id',(int)$filters['agency_id']);
-        if(!empty($filters['unit_id'])){
-            $unitIds=$this->parseIds($filters['unit_id']);
-            if($unitIds)$loads->whereHas('deliverables',fn(Builder $d)=>$d->whereIn('organizational_unit_id',$unitIds));
-        }
-        if(!empty($filters['pauta_id']))$loads->where('calendar_import_id',(int)$filters['pauta_id']);
-
-        $ids=(clone $loads)->whereNotNull('contracting_agency_id')->distinct()->pluck('contracting_agency_id')->map(fn($id)=>(int)$id)->all();
-        return $ids?$query->whereIn('id',$ids)->orderBy('name')->get():$query->whereRaw('1=0')->get();
+        return $this->access->availableAgencies($user);
     }
     private function availableUnits(User $user,?int $agencyId=null,?int $pautaId=null):Collection
     {

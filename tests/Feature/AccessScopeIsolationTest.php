@@ -160,10 +160,10 @@ class AccessScopeIsolationTest extends TestCase
         $this->actingAs($programmingUser)->get(route('dashboard'))
             ->assertOk()->assertSee($programmingUser->name)->assertDontSee($monitoringUser->name);
         $this->actingAs($institutionalLink)->get(route('dashboard'))
-            ->assertOk()->assertSee('Alertas directivas');
+            ->assertOk()->assertSee('Bandeja de revisión de entregables');
         $this->actingAs($generalDirector)->get(route('dashboard'))
             ->assertOk()->assertSee('Dashboard ejecutivo');
         $this->actingAs($admin)->get(route('dashboard'))
-            ->assertOk()->assertSee('Dashboard ejecutivo');
+            ->assertOk()->assertSee('Administración y operación de SIGET');
     }
 }

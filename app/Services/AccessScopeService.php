@@ -13,6 +13,19 @@ use Illuminate\Database\Eloquent\Relations\Relation;
 
 final class AccessScopeService
 {
+    public function availableAgencies(User $user): \Illuminate\Database\Eloquent\Collection
+    {
+        $query = \App\Models\ContractingAgency::query()->where('active', true);
+        if ($user->status !== 'ACTIVE' || !$user->role?->active) return $query->whereRaw('1 = 0')->get();
+        if (!in_array($user->role?->code, ['ADMINISTRADOR', 'DIRECTOR_GENERAL'], true)) {
+            $ids = $user->role?->code === 'FISCALIZADOR'
+                ? $this->scopeLoads(ScheduledLoad::query(), $user)->pluck('contracting_agency_id')->all()
+                : $this->readableAgencyIds($user);
+            $query->whereIn('id', $ids);
+        }
+        return $query->orderBy('name')->get();
+    }
+
     public function scopeLoads(Builder $query, User $user): Builder
     {
         $role = $user->role?->code;

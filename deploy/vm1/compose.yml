@@ -1,0 +1,168 @@
+name: siget
+
+x-app: &app
+  image: ${SIGET_APP_IMAGE:-siget-app:1.0.0-api-v1}
+  build:
+    context: ../..
+    dockerfile: deploy/Dockerfile
+    target: app
+  environment:
+    APP_NAME: SIGET
+    APP_ENV: production
+    APP_DEBUG: "false"
+    APP_URL: ${APP_URL}
+    APP_KEY: ${APP_KEY}
+    APP_TIMEZONE: America/Mexico_City
+    APP_LOCALE: es
+    LOG_CHANNEL: stack
+    LOG_STACK: daily
+    LOG_LEVEL: warning
+    TRUSTED_PROXIES: ${TRUSTED_PROXIES:-}
+    DB_CONNECTION: pgsql
+    DB_HOST: database
+    DB_PORT: "5432"
+    DB_DATABASE: ${DB_DATABASE}
+    DB_USERNAME: ${DB_USERNAME}
+    DB_PASSWORD: ${DB_PASSWORD}
+    SESSION_DRIVER: database
+    SESSION_ENCRYPT: "true"
+    SESSION_SECURE_COOKIE: "true"
+    CACHE_STORE: database
+    QUEUE_CONNECTION: database
+    FILESYSTEM_DISK: nas
+    SIGET_REPOSITORY_DISK: nas
+    NAS_ROOT: /mnt/siget
+    SIGET_REQUIRE_PRIVATE_REPOSITORY: "true"
+    SIGET_REPOSITORY_ID: ${SIGET_REPOSITORY_ID}
+    SIGET_BACKUP_DIRECTORY: /backups
+    SIGET_BACKUP_MIN_FREE_GB: ${SIGET_BACKUP_MIN_FREE_GB:-5}
+    SIGET_ANTIVIRUS_ENABLED: "true"
+    SIGET_ANTIVIRUS_COMMAND: clamdscan
+    SIGET_API_TOKEN_MINUTES: ${SIGET_API_TOKEN_MINUTES:-480}
+    SIGET_API_LOGIN_PER_MINUTE: ${SIGET_API_LOGIN_PER_MINUTE:-5}
+    SIGET_API_REQUESTS_PER_MINUTE: ${SIGET_API_REQUESTS_PER_MINUTE:-120}
+    SIGET_METRICS_TOKEN: ${SIGET_METRICS_TOKEN}
+    MAIL_MAILER: smtp
+    MAIL_SCHEME: ${MAIL_SCHEME:-smtp}
+    MAIL_HOST: ${MAIL_HOST}
+    MAIL_PORT: ${MAIL_PORT:-587}
+    MAIL_USERNAME: ${MAIL_USERNAME:-}
+    MAIL_PASSWORD: ${MAIL_PASSWORD:-}
+    MAIL_FROM_ADDRESS: ${MAIL_FROM_ADDRESS}
+    MAIL_FROM_NAME: SIGET
+    SIGET_SUPPORT_EMAIL: ${SIGET_SUPPORT_EMAIL}
+    SIGET_ACCOUNTING_RECIPIENTS: ${SIGET_ACCOUNTING_RECIPIENTS:-}
+    SIGET_CI_ISOLATED: ${SIGET_CI_ISOLATED:-0}
+  restart: unless-stopped
+  init: true
+  stop_grace_period: 120s
+  security_opt: [no-new-privileges:true]
+  volumes:
+    - app-storage:/var/www/html/storage
+    - &repository
+      type: bind
+      source: ${SIGET_REPOSITORY_PATH:-/srv/siget/repository}
+      target: /mnt/siget
+      bind: {create_host_path: false}
+  depends_on:
+    database: {condition: service_healthy}
+  networks: [private]
+  logging:
+    driver: json-file
+    options: {max-size: "20m", max-file: "5"}
+
+services:
+  database:
+    image: ${SIGET_DATABASE_IMAGE:-postgres:16-bookworm}
+    environment:
+      POSTGRES_DB: ${DB_DATABASE}
+      POSTGRES_USER: siget_owner
+      POSTGRES_PASSWORD: ${SIGET_DATABASE_ADMIN_PASSWORD}
+      SIGET_APP_DB_USER: ${DB_USERNAME}
+      SIGET_APP_DB_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - database:/var/lib/postgresql/data
+      - ../database-init.sh:/docker-entrypoint-initdb.d/01-siget.sh:ro
+    restart: unless-stopped
+    shm_size: 256mb
+    healthcheck:
+      test: [CMD-SHELL, 'pg_isready -U "$${POSTGRES_USER}" -d "$${POSTGRES_DB}"']
+      interval: 10s
+      timeout: 5s
+      retries: 12
+    networks: [private]
+    logging:
+      driver: json-file
+      options: {max-size: "20m", max-file: "5"}
+  app:
+    <<: *app
+    healthcheck:
+      test: [CMD, php, deploy/fpm-health.php]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 180s
+  worker:
+    <<: *app
+    command: [php, artisan, queue:work, --sleep=3, --tries=3, --timeout=300, --max-time=3600]
+  scheduler:
+    <<: *app
+    command: [php, artisan, schedule:work]
+  maintenance:
+    <<: *app
+    profiles: [tools]
+    restart: "no"
+    command: [php, artisan, --version]
+    volumes:
+      - app-storage:/var/www/html/storage
+      - *repository
+      - type: bind
+        source: ${SIGET_BACKUP_PATH:-/srv/siget/backups}
+        target: /backups
+        bind: {create_host_path: false}
+  web:
+    image: ${SIGET_WEB_IMAGE:-siget-web:1.0.0-api-v1}
+    build:
+      context: ../..
+      dockerfile: deploy/Dockerfile
+      target: web
+    ports: ["80:80", "443:443"]
+    volumes:
+      - type: bind
+        source: ${SIGET_TLS_PATH:-/etc/siget/tls}
+        target: /etc/nginx/tls
+        read_only: true
+        bind: {create_host_path: false}
+    restart: unless-stopped
+    depends_on: [app]
+    networks: [private]
+    logging:
+      driver: json-file
+      options: {max-size: "20m", max-file: "5"}
+  antivirus:
+    image: ${SIGET_ANTIVIRUS_IMAGE:-siget-antivirus:1.0.0-api-v1}
+    build:
+      context: ../..
+      dockerfile: deploy/Dockerfile
+      target: antivirus
+    volumes: [antivirus:/var/lib/clamav]
+    healthcheck:
+      test: [CMD-SHELL, "printf 'nPING\\n' | nc -w 3 127.0.0.1 3310 | grep -qx PONG"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 180s
+    restart: unless-stopped
+    networks: [private]
+    logging:
+      driver: json-file
+      options: {max-size: "20m", max-file: "5"}
+
+networks:
+  private:
+    driver: bridge
+
+volumes:
+  database:
+  app-storage:
+  antivirus:

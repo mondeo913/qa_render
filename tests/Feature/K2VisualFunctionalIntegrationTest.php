@@ -27,7 +27,7 @@ class K2VisualFunctionalIntegrationTest extends TestCase {
         $this->seed(RolePermissionSeeder::class);
         $role=Role::where('code','DIRECTOR_TRANSMISION')->firstOrFail();
         $user=User::factory()->create(['role_id'=>$role->id,'status'=>'ACTIVE']);
-        $this->actingAs($user)->get(route('dashboard'))->assertOk()->assertSee('Dashboard operativo')->assertSee('Dirección de Transmisión');
+        $this->actingAs($user)->get(route('dashboard'))->assertOk()->assertSee('Dashboard de Dirección de Transmisión')->assertSee('Dirección de Transmisión');
         $this->assertFalse($role->permissions()->where('code','scheduled_load.close')->exists());
     }
 
@@ -53,14 +53,14 @@ class K2VisualFunctionalIntegrationTest extends TestCase {
         ]));
 
         $response->assertOk()
-            ->assertSee('Dashboard operativo')
-            ->assertSee('Avance por unidad interna')
+            ->assertSee('Dashboard de Dirección de Transmisión')
+            ->assertSee('Cumplimiento por dependencia')
             ->assertSee('Calendario de fechas programadas')
             ->assertSee('Estado del expediente')
             ->assertSee('Tendencia de entregas')
-            ->assertSee('Carga por responsable')
-            ->assertSee('Bandeja de evidencias')
-            ->assertSee('Exportar')
+            ->assertSee('Carga pendiente por responsable')
+            ->assertSee('Seguimiento de entregables')
+            ->assertDontSee('Exportar resumen')
             ->assertSee('Más filtros')
             ->assertSee('name="agency_id"', false)
             ->assertSee('name="pauta_id"', false)
@@ -72,30 +72,17 @@ class K2VisualFunctionalIntegrationTest extends TestCase {
     public function test_executive_dashboard_is_available_to_admin_and_general_director(): void {
         $this->seed(RolePermissionSeeder::class);
 
-        foreach (['ADMINISTRADOR' => 'Administrador', 'DIRECTOR_GENERAL' => 'Director General', 'ENLACE_INSTITUCIONAL' => 'Enlace Institucional'] as $code => $label) {
+        foreach (['ADMINISTRADOR' => 'admin', 'DIRECTOR_GENERAL' => 'executive', 'ENLACE_INSTITUCIONAL' => 'institutional'] as $code => $profile) {
             $role = Role::where('code', $code)->firstOrFail();
             $user = User::factory()->create(['role_id' => $role->id, 'status' => 'ACTIVE']);
-
-            $this->actingAs($user)
-                ->get(route('dashboard'))
-                ->assertOk()
-                ->assertSee('Dashboard ejecutivo')
-                ->assertSee($label.' · cumplimiento institucional de evidencias')
+            $this->actingAs($user)->get(route('dashboard'))->assertOk()
+                ->assertSee('data-dashboard-profile="'.$profile.'"', false)
+                ->assertSee(\App\Support\RolePresentation::for($code)['title'])
                 ->assertSee('Comparativo por dirección')
-                ->assertSee('tres barras por dirección')
-                ->assertSee('"label":"Esperadas"', false)
-                ->assertSee('"label":"Recibidas"', false)
-                ->assertSee('"label":"Validadas"', false)
-                ->assertSee('exec-comparison-card', false)
-                ->assertSee('exec-header', false)
-                ->assertSee('exec-scope', false)
-                ->assertSee('exec-kpis', false)
-                ->assertSee('exec-grid', false);
+                ->assertSee('Estado actual de los entregables')
+                ->assertSee('siget-dashboard-kpis', false)
+                ->assertSee('siget-dashboard-grid', false);
         }
-
-        $template = file_get_contents(resource_path('views/dashboard/executive.blade.php'));
-        $this->assertStringContainsString('agency-ipab-official.png', $template);
-        $this->assertStringContainsString('agency-imss-official.png', $template);
     }
 
     public function test_global_dashboard_filters_include_new_agencies_without_loads(): void {
@@ -127,7 +114,7 @@ class K2VisualFunctionalIntegrationTest extends TestCase {
                 ->assertSee('value="'.$agency->id.'" selected', false)
                 ->assertSee('Dirección de Transmisión')
                 ->assertDontSee('Nombre que no debe aparecer como dirección')
-                ->assertSee('Spots programados');
+                ->assertSee('0 cargas · 0 entregables');
         }
     }
 

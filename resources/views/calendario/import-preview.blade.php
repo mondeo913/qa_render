@@ -1,9 +1,10 @@
 @extends('layouts.app')
 @section('title','Vista previa')
-@section('page-title','Validación de pauta horizontal')
+@section('page-title','Validación de pauta')
 @section('content')
+<div class="alert alert-info">Dependencia: <strong>{{ \App\Models\ContractingAgency::find($import->contracting_agency_id)?->name }}</strong>. Todas las fechas de esta pauta se programarán para esta dependencia y generarán entregables para ambas direcciones al confirmar.</div>
 <div class="row g-3 mb-4">
-    @foreach([['Marcas X',$import->total_rows],['Válidas',$import->valid_rows],['Errores',$import->error_rows],['Estado',$import->status]] as [$label,$value])
+    @foreach([['Registros',$import->total_rows],['Válidas',$import->valid_rows],['Errores',$import->error_rows],['Estado',$import->status]] as [$label,$value])
         <div class="col-md-3"><div class="siget-kpi"><div><small>{{ $label }}</small><strong>{{ $value }}</strong></div></div></div>
     @endforeach
 </div>
@@ -14,7 +15,7 @@
 
 <div class="card siget-card">
     <div class="card-header">
-        <div><h2>Marcas detectadas</h2><p>{{ $import->original_filename }} · SHA-256 {{ $import->sha256 }}</p></div>
+        <div><h2>Registros detectados</h2><p>{{ $import->original_filename }} · SHA-256 {{ $import->sha256 }}</p></div>
         @if($import->status === 'VALIDATED')
             <form method="POST" action="{{ route('calendar.import.confirm',$import) }}">
                 @csrf
@@ -33,7 +34,7 @@
                     <td>{{ $row->sheet_name }}</td>
                     <td>{{ $row->source_column }}{{ $row->row_number }}</td>
                     <td>{{ $row->original_open_at?->format('d/m/Y') }}</td>
-                    <td>{{ $row->delivery_name }}</td>
+                    <td>{{ $row->delivery_name }}@if($row->payload['service']['nombre_archivo_bitacora'] ?? null)<small class="d-block text-muted text-break">{{ $row->payload['service']['nombre_archivo_bitacora'] }}</small>@endif</td>
                     <td><span class="badge {{ $row->is_valid ? 'text-bg-success' : 'text-bg-danger' }}">{{ $row->is_valid ? 'Válida' : 'Error' }}</span></td>
                 </tr>
             @endforeach

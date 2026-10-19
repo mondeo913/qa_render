@@ -40,6 +40,7 @@ final class CalendarImportService
             ->where('active', true)
             ->firstOrFail();
 
+        app(FileScanService::class)->assertClean($file);
         $disk = config('filesystems.default');
         $path = $file->store('siget/calendar-imports', $disk);
         $absolutePath = Storage::disk($disk)->path($path);
@@ -83,7 +84,7 @@ final class CalendarImportService
                     'original_close_at' => $item['date']->endOfDay(),
                     'delivery_name' => $item['delivery_name'],
                     'payload' => [
-                        'format' => 'HORIZONTAL_X',
+                        'format' => $item['format'] ?? 'HORIZONTAL_X',
                         'schedule_year' => $scheduleYear,
                         'source_column' => $item['source_column'],
                         'service' => $item['metadata'],
@@ -95,11 +96,12 @@ final class CalendarImportService
 
             $import->update([
                 'status' => 'VALIDATED',
+                'workbook_version' => (collect($items)->contains(fn ($item) => ($item['format'] ?? '') === 'BITACORA_FILENAME') ? 'BITACORA-FILENAME-' : 'HORIZONTAL-X-').$scheduleYear,
                 'total_rows' => count($items),
                 'valid_rows' => count($items),
                 'error_rows' => 0,
                 'warnings' => [
-                    'Las marcas X de una misma fecha se agruparán en una sola carga.',
+                    'Los registros de una misma fecha se agruparán en una sola carga. Si existe la columna Nombre del Archivo para bitácora, la fecha se obtiene de _AA.MM.DD.TESTIGO; en otras pautas se utilizan las marcas X.',
                     'Cada carga generará los entregables configurados para las dos direcciones.',
                 ],
             ]);
@@ -188,7 +190,7 @@ final class CalendarImportService
                     'priority' => count($serviceItems) >= 5 ? 'ALTA' : 'NORMAL',
                     'completion_percentage' => 0,
                     'metadata' => [
-                        'format' => 'HORIZONTAL_X',
+                        'format' => $rows->first()->payload['format'] ?? 'HORIZONTAL_X',
                         'source_sha256' => $import->sha256,
                         'source_rows' => $rows->pluck('id')->all(),
                         'service_count' => count($serviceItems),
@@ -208,13 +210,22 @@ final class CalendarImportService
                             $query->where('contracting_agency_id', $agency->id)
                                 ->orWhereNull('contracting_agency_id');
                         })
-                        ->where('organizational_unit_id', $requirement->responsible_unit_id)
+                        ->where(function ($query) use ($requirement, $agency) {
+                            $query->where('organizational_unit_id', $requirement->responsible_unit_id)
+                                ->orWhereHas('scopes', fn ($scope) => $scope
+                                    ->where('contracting_agency_id', $agency->id)
+                                    ->where('organizational_unit_id', $requirement->responsible_unit_id)
+                                    ->where('can_read', true)->where('can_write', true));
+                        })
                         ->whereHas('role', fn ($role) => $role->whereIn(
                             'code',
                             RoleCode::operatorValues()
                         ))
+                        ->whereHas('role', fn ($role) => $role->where('active', true)
+                            ->when($requirement->responsible_role_code, fn ($q) => $q->where('code', $requirement->responsible_role_code)))
                         ->where('status', 'ACTIVE')
                         ->orderByRaw('CASE WHEN contracting_agency_id = ? THEN 0 ELSE 1 END', [$agency->id])
+                        ->orderBy('id')
                         ->value('id');
 
                     ScheduledLoadDeliverable::query()->create([

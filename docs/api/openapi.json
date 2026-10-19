@@ -1,0 +1,3354 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "SIGET API institucional",
+    "version": "1.0.0",
+    "description": "API v1 sobre los servicios y permisos de SIGET. No hay registro público. Web y API comparten PostgreSQL y repositorio privado. Fechas ISO 8601 con zona horaria America/Mexico_City. Los respaldos son mensuales y su administración se realiza en VM1, fuera de la API."
+  },
+  "servers": [
+    {
+      "url": "https://siget.institucion.gob.mx/api/v1",
+      "description": "Sustituir por la URL institucional configurada por infraestructura."
+    }
+  ],
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "tags": [
+    {
+      "name": "Auth"
+    },
+    {
+      "name": "Catalog"
+    },
+    {
+      "name": "Queries"
+    },
+    {
+      "name": "Pautas"
+    },
+    {
+      "name": "Evidencias"
+    },
+    {
+      "name": "Cierre"
+    },
+    {
+      "name": "Reportes"
+    },
+    {
+      "name": "Administración"
+    }
+  ],
+  "paths": {
+    "/auth/token": {
+      "post": {
+        "operationId": "authAuthTokenPost",
+        "summary": "Iniciar sesión de una cuenta existente",
+        "tags": [
+          "Auth"
+        ],
+        "responses": {
+          "201": {
+            "description": "Operación completada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Token"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "422": {
+            "$ref": "#/components/responses/Invalid"
+          },
+          "429": {
+            "$ref": "#/components/responses/Throttled"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          }
+        },
+        "x-siget-permission": "",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Login"
+              }
+            }
+          }
+        },
+        "security": []
+      },
+      "delete": {
+        "operationId": "authAuthTokenDelete",
+        "summary": "Revocar el token actual",
+        "tags": [
+          "Auth"
+        ],
+        "responses": {
+          "204": {
+            "description": "Token revocado. Sin contenido."
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "422": {
+            "$ref": "#/components/responses/Invalid"
+          },
+          "429": {
+            "$ref": "#/components/responses/Throttled"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          }
+        },
+        "x-siget-permission": ""
+      }
+    },
+    "/me": {
+      "get": {
+        "operationId": "authMeGet",
+        "summary": "Identidad y permisos vigentes",
+        "tags": [
+          "Auth"
+        ],
+        "responses": {
+          "200": {
+            "description": "Operación completada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/User"
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "422": {
+            "$ref": "#/components/responses/Invalid"
+          },
+          "429": {
+            "$ref": "#/components/responses/Throttled"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          }
+        },
+        "x-siget-permission": ""
+      }
+    },
+    "/auth/tokens": {
+      "delete": {
+        "operationId": "authAuthTokensDelete",
+        "summary": "Revocar todos los tokens del usuario",
+        "tags": [
+          "Auth"
+        ],
+        "responses": {
+          "204": {
+            "description": "Token revocado. Sin contenido."
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "422": {
+            "$ref": "#/components/responses/Invalid"
+          },
+          "429": {
+            "$ref": "#/components/responses/Throttled"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          }
+        },
+        "x-siget-permission": ""
+      }
+    },
+    "/agencies": {
+      "get": {
+        "operationId": "catalogAgenciesGet",
+        "summary": "Dependencias visibles según el perfil",
+        "tags": [
+          "Catalog"
+        ],
+        "responses": {
+          "200": {
+            "description": "Operación completada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Agency"
+                      }
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "422": {
+            "$ref": "#/components/responses/Invalid"
+          },
+          "429": {
+            "$ref": "#/components/responses/Throttled"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          }
+        },
+        "x-siget-permission": ""
+      }
+    },
+    "/dashboard": {
+      "get": {
+        "operationId": "queriesDashboardGet",
+        "summary": "Agregados y gráficas dentro del alcance autorizado",
+        "tags": [
+          "Queries"
+        ],
+        "responses": {
+          "200": {
+            "description": "Operación completada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/Dashboard"
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "422": {
+            "$ref": "#/components/responses/Invalid"
+          },
+          "429": {
+            "$ref": "#/components/responses/Throttled"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          }
+        },
+        "x-siget-permission": "scheduled_load.board",
+        "parameters": [
+          {
+            "name": "contracting_agency_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ]
+      }
+    },
+    "/loads": {
+      "get": {
+        "operationId": "queriesLoadsGet",
+        "summary": "Cargas paginadas; filtros nunca amplían el alcance",
+        "tags": [
+          "Queries"
+        ],
+        "responses": {
+          "200": {
+            "description": "Operación completada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Load"
+                      }
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/Page"
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "meta"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "422": {
+            "$ref": "#/components/responses/Invalid"
+          },
+          "429": {
+            "$ref": "#/components/responses/Throttled"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          }
+        },
+        "x-siget-permission": "scheduled_load.board",
+        "parameters": [
+          {
+            "name": "contracting_agency_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "calendar_import_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "start",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Fecha inclusiva YYYY-MM-DD."
+          },
+          {
+            "name": "end",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Fecha inclusiva YYYY-MM-DD."
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "1–100; predeterminado 25."
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ]
+      }
+    },
+    "/loads/{load}": {
+      "get": {
+        "operationId": "queriesLoadsLoadGet",
+        "summary": "Expediente con entregables visibles de la dirección",
+        "tags": [
+          "Queries"
+        ],
+        "responses": {
+          "200": {
+            "description": "Operación completada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/Load"
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "422": {
+            "$ref": "#/components/responses/Invalid"
+          },
+          "429": {
+            "$ref": "#/components/responses/Throttled"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          }
+        },
+        "x-siget-permission": "scheduled_load.board",
+        "parameters": [
+          {
+            "name": "load",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        ]
+      }
+    },
+    "/calendar/events": {
+      "get": {
+        "operationId": "queriesCalendarEventsGet",
+        "summary": "Eventos con dependencia, fechas, estado y color para todos los lectores",
+        "tags": [
+          "Queries"
+        ],
+        "responses": {
+          "200": {
+            "description": "Operación completada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "integer",
+                        "format": "int64"
+                      },
+                      "title": {
+                        "type": "string"
+                      },
+                      "start": {
+                        "type": "string"
+                      },
+                      "end": {
+                        "type": "string"
+                      },
+                      "display": {
+                        "type": "string"
+                      },
+                      "backgroundColor": {
+                        "type": "string"
+                      },
+                      "borderColor": {
+                        "type": "string"
+                      },
+                      "textColor": {
+                        "type": "string"
+                      },
+                      "classNames": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      },
+                      "extendedProps": {
+                        "type": "object"
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "title",
+                      "start",
+                      "end",
+                      "backgroundColor",
+                      "extendedProps"
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "422": {
+            "$ref": "#/components/responses/Invalid"
+          },
+          "429": {
+            "$ref": "#/components/responses/Throttled"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          }
+        },
+        "x-siget-permission": "calendar.view",
+        "parameters": [
+          {
+            "name": "start",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            },
+            "description": "Inicio incluido YYYY-MM-DD."
+          },
+          {
+            "name": "end",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            },
+            "description": "Fin excluido YYYY-MM-DD; máximo 93 días desde start."
+          },
+          {
+            "name": "contracting_agency_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ]
+      }
+    },
+    "/imports": {
+      "post": {
+        "operationId": "pautasImportsPost",
+        "summary": "Validar pauta Excel por X o por fecha del nombre de bitácora",
+        "tags": [
+          "Pautas"
+        ],
+        "responses": {
+          "201": {
+            "description": "Operación completada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/Import"
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "422": {
+            "$ref": "#/components/responses/Invalid"
+          },
+          "429": {
+            "$ref": "#/components/responses/Throttled"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          }
+        },
+        "x-siget-permission": "calendar.import",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "contracting_agency_id": {
+                    "type": "integer",
+                    "format": "int64"
+                  },
+                  "schedule_year": {
+                    "type": "integer",
+                    "minimum": 2020,
+                    "maximum": 2100
+                  },
+                  "calendar_file": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "XLSX o XLS; máximo 20 MiB."
+                  }
+                },
+                "required": [
+                  "contracting_agency_id",
+                  "schedule_year",
+                  "calendar_file"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/imports/{import}": {
+      "get": {
+        "operationId": "pautasImportsImportGet",
+        "summary": "Vista previa de la pauta y filas paginadas",
+        "tags": [
+          "Pautas"
+        ],
+        "responses": {
+          "200": {
+            "description": "Operación completada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/Import"
+                    },
+                    "rows": {
+                      "type": "array",
+                      "items": {
+                        "type": "object"
+                      }
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/Page"
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "rows",
+                    "meta"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "422": {
+            "$ref": "#/components/responses/Invalid"
+          },
+          "429": {
+            "$ref": "#/components/responses/Throttled"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          }
+        },
+        "x-siget-permission": "calendar.confirm",
+        "parameters": [
+          {
+            "name": "import",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "1–100."
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ]
+      }
+    },
+    "/imports/{import}/confirm": {
+      "post": {
+        "operationId": "pautasImportsImportConfirmPost",
+        "summary": "Confirmar una sola vez y generar cargas para ambas direcciones",
+        "tags": [
+          "Pautas"
+        ],
+        "responses": {
+          "200": {
+            "description": "Operación completada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/Import"
+                    },
+                    "loads_created": {
+                      "type": "integer",
+                      "format": "int64"
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "loads_created"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "422": {
+            "$ref": "#/components/responses/Invalid"
+          },
+          "429": {
+            "$ref": "#/components/responses/Throttled"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          }
+        },
+        "x-siget-permission": "calendar.confirm",
+        "parameters": [
+          {
+            "name": "import",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        ]
+      }
+    },
+    "/evidences": {
+      "post": {
+        "operationId": "evidenciasEvidencesPost",
+        "summary": "Cargar archivo o nueva versión en el entregable autorizado",
+        "tags": [
+          "Evidencias"
+        ],
+        "responses": {
+          "201": {
+            "description": "Operación completada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/Evidence"
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "422": {
+            "$ref": "#/components/responses/Invalid"
+          },
+          "429": {
+            "$ref": "#/components/responses/Throttled"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          }
+        },
+        "x-siget-permission": "evidence.upload",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "deliverable_id": {
+                    "type": "integer",
+                    "format": "int64"
+                  },
+                  "title": {
+                    "type": "string",
+                    "maxLength": 260,
+                    "nullable": true
+                  },
+                  "file": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "Formatos, cantidad y tamaño según requisito; antivirus obligatorio en producción."
+                  }
+                },
+                "required": [
+                  "deliverable_id",
+                  "file"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/evidences/{evidence}": {
+      "get": {
+        "operationId": "evidenciasEvidencesEvidenceGet",
+        "summary": "Evidencia, versiones, archivos y revisiones autorizadas",
+        "tags": [
+          "Evidencias"
+        ],
+        "responses": {
+          "200": {
+            "description": "Operación completada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/Evidence"
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "422": {
+            "$ref": "#/components/responses/Invalid"
+          },
+          "429": {
+            "$ref": "#/components/responses/Throttled"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          }
+        },
+        "x-siget-permission": "repository.view",
+        "parameters": [
+          {
+            "name": "evidence",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        ]
+      }
+    },
+    "/evidences/{evidence}/submit": {
+      "post": {
+        "operationId": "evidenciasEvidencesEvidenceSubmitPost",
+        "summary": "Enviar y bloquear archivos de la versión actual",
+        "tags": [
+          "Evidencias"
+        ],
+        "responses": {
+          "200": {
+            "description": "Operación completada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/Evidence"
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "422": {
+            "$ref": "#/components/responses/Invalid"
+          },
+          "429": {
+            "$ref": "#/components/responses/Throttled"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          }
+        },
+        "x-siget-permission": "evidence.upload",
+        "parameters": [
+          {
+            "name": "evidence",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        ]
+      }
+    },
+    "/evidences/{evidence}/reviews": {
+      "post": {
+        "operationId": "evidenciasEvidencesEvidenceReviewsPost",
+        "summary": "Registrar revisión de dirección, institucional o fiscalización",
+        "tags": [
+          "Evidencias"
+        ],
+        "responses": {
+          "200": {
+            "description": "Operación completada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/Evidence"
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "422": {
+            "$ref": "#/components/responses/Invalid"
+          },
+          "429": {
+            "$ref": "#/components/responses/Throttled"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          }
+        },
+        "x-siget-permission": "evidence.review",
+        "parameters": [
+          {
+            "name": "evidence",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "decision": {
+                    "type": "string",
+                    "enum": [
+                      "APROBADO",
+                      "OBSERVADO",
+                      "RECHAZADO"
+                    ]
+                  },
+                  "comments": {
+                    "type": "string",
+                    "maxLength": 4000,
+                    "description": "Obligatorio al observar o rechazar."
+                  }
+                },
+                "required": [
+                  "decision"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/files/{file}/download": {
+      "get": {
+        "operationId": "evidenciasFilesFileDownloadGet",
+        "summary": "Descargar archivo privado dentro del alcance",
+        "tags": [
+          "Evidencias"
+        ],
+        "responses": {
+          "200": {
+            "description": "Archivo autorizado.",
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "422": {
+            "$ref": "#/components/responses/Invalid"
+          },
+          "429": {
+            "$ref": "#/components/responses/Throttled"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          }
+        },
+        "x-siget-permission": "repository.download",
+        "parameters": [
+          {
+            "name": "file",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        ]
+      }
+    },
+    "/loads/{load}/checklist": {
+      "post": {
+        "operationId": "cierreLoadsLoadChecklistPost",
+        "summary": "Completar verificaciones institucionales",
+        "tags": [
+          "Cierre"
+        ],
+        "responses": {
+          "200": {
+            "description": "Operación completada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/Load"
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "422": {
+            "$ref": "#/components/responses/Invalid"
+          },
+          "429": {
+            "$ref": "#/components/responses/Throttled"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          }
+        },
+        "x-siget-permission": "scheduled_load.verify",
+        "parameters": [
+          {
+            "name": "load",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "evidences_correct": {
+                    "type": "boolean",
+                    "enum": [
+                      true
+                    ]
+                  },
+                  "package_prepared_for_signature": {
+                    "type": "boolean",
+                    "enum": [
+                      true
+                    ]
+                  },
+                  "observations": {
+                    "type": "string",
+                    "maxLength": 4000
+                  }
+                },
+                "required": [
+                  "evidences_correct",
+                  "package_prepared_for_signature"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/loads/{load}/signature-package": {
+      "post": {
+        "operationId": "cierreLoadsLoadSignature-PackagePost",
+        "summary": "Generar expediente PDF para firma después de validar ambas direcciones",
+        "tags": [
+          "Cierre"
+        ],
+        "responses": {
+          "200": {
+            "description": "Expediente PDF.",
+            "content": {
+              "application/pdf": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "422": {
+            "$ref": "#/components/responses/Invalid"
+          },
+          "429": {
+            "$ref": "#/components/responses/Throttled"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          }
+        },
+        "x-siget-permission": "scheduled_load.signature_package",
+        "parameters": [
+          {
+            "name": "load",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        ]
+      }
+    },
+    "/loads/{load}/signed-document": {
+      "post": {
+        "operationId": "cierreLoadsLoadSigned-DocumentPost",
+        "summary": "Adjuntar documento firmado validado por antivirus",
+        "tags": [
+          "Cierre"
+        ],
+        "responses": {
+          "201": {
+            "description": "Operación completada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/Load"
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "422": {
+            "$ref": "#/components/responses/Invalid"
+          },
+          "429": {
+            "$ref": "#/components/responses/Throttled"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          }
+        },
+        "x-siget-permission": "scheduled_load.upload_signed",
+        "parameters": [
+          {
+            "name": "load",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "Máximo 512 MiB y formatos de la plantilla."
+                  },
+                  "signer_name": {
+                    "type": "string",
+                    "maxLength": 220
+                  },
+                  "signer_position": {
+                    "type": "string",
+                    "maxLength": 220
+                  },
+                  "signed_on": {
+                    "type": "string",
+                    "format": "date"
+                  },
+                  "official_number": {
+                    "type": "string",
+                    "maxLength": 120
+                  },
+                  "observations": {
+                    "type": "string",
+                    "maxLength": 2000
+                  }
+                },
+                "required": [
+                  "file"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/loads/{load}/close": {
+      "post": {
+        "operationId": "cierreLoadsLoadClosePost",
+        "summary": "Cerrar expediente íntegro y conservar manifiesto de hashes",
+        "tags": [
+          "Cierre"
+        ],
+        "responses": {
+          "200": {
+            "description": "Operación completada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/Load"
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "422": {
+            "$ref": "#/components/responses/Invalid"
+          },
+          "429": {
+            "$ref": "#/components/responses/Throttled"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          }
+        },
+        "x-siget-permission": "scheduled_load.close",
+        "parameters": [
+          {
+            "name": "load",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "closing_comment": {
+                    "type": "string",
+                    "maxLength": 4000
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/loads/{load}/corrections": {
+      "post": {
+        "operationId": "cierreLoadsLoadCorrectionsPost",
+        "summary": "Autorizar corrección de entregables seleccionados",
+        "tags": [
+          "Cierre"
+        ],
+        "responses": {
+          "200": {
+            "description": "Operación completada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/Load"
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "422": {
+            "$ref": "#/components/responses/Invalid"
+          },
+          "429": {
+            "$ref": "#/components/responses/Throttled"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          }
+        },
+        "x-siget-permission": "scheduled_load.verify",
+        "parameters": [
+          {
+            "name": "load",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Correction"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/loads/{load}/reopen": {
+      "post": {
+        "operationId": "cierreLoadsLoadReopenPost",
+        "summary": "Reabrir con historial y exigir nueva validación y firma",
+        "tags": [
+          "Cierre"
+        ],
+        "responses": {
+          "200": {
+            "description": "Operación completada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/Load"
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "422": {
+            "$ref": "#/components/responses/Invalid"
+          },
+          "429": {
+            "$ref": "#/components/responses/Throttled"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          }
+        },
+        "x-siget-permission": "scheduled_load.reopen",
+        "parameters": [
+          {
+            "name": "load",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Correction"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/loads/{load}/reschedule": {
+      "post": {
+        "operationId": "cierreLoadsLoadReschedulePost",
+        "summary": "Reprogramar una carga sin capturas en revisión ni cierre",
+        "tags": [
+          "Cierre"
+        ],
+        "responses": {
+          "200": {
+            "description": "Operación completada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/Load"
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "422": {
+            "$ref": "#/components/responses/Invalid"
+          },
+          "429": {
+            "$ref": "#/components/responses/Throttled"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          }
+        },
+        "x-siget-permission": "calendar.reschedule",
+        "parameters": [
+          {
+            "name": "load",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "reason": {
+                    "type": "string",
+                    "minLength": 10,
+                    "maxLength": 4000
+                  },
+                  "opens_at": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "closes_at": {
+                    "type": "string",
+                    "format": "date-time"
+                  }
+                },
+                "required": [
+                  "reason",
+                  "opens_at",
+                  "closes_at"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/loads/{load}/fiscal-assignment": {
+      "put": {
+        "operationId": "cierreLoadsLoadFiscal-AssignmentPut",
+        "summary": "Asignar fiscalizador activo al expediente",
+        "tags": [
+          "Cierre"
+        ],
+        "responses": {
+          "200": {
+            "description": "Operación completada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/Load"
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "422": {
+            "$ref": "#/components/responses/Invalid"
+          },
+          "429": {
+            "$ref": "#/components/responses/Throttled"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          }
+        },
+        "x-siget-permission": "ADMINISTRADOR o ENLACE_INSTITUCIONAL, con alcance del expediente",
+        "parameters": [
+          {
+            "name": "load",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "fiscalizador_id": {
+                    "type": "integer",
+                    "format": "int64"
+                  },
+                  "notes": {
+                    "type": "string",
+                    "maxLength": 2000
+                  }
+                },
+                "required": [
+                  "fiscalizador_id"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/reports/pdf": {
+      "get": {
+        "operationId": "reportesReportsPdfGet",
+        "summary": "Exportar reporte PDF dentro del alcance",
+        "tags": [
+          "Reportes"
+        ],
+        "responses": {
+          "200": {
+            "description": "Reporte generado.",
+            "content": {
+              "application/pdf": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "422": {
+            "$ref": "#/components/responses/Invalid"
+          },
+          "429": {
+            "$ref": "#/components/responses/Throttled"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          }
+        },
+        "x-siget-permission": "reports.export",
+        "parameters": [
+          {
+            "name": "report",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "executive, compliance, pending, evidence, audit o builder."
+          },
+          {
+            "name": "agency_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "pauta_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "organizational_unit_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "ID o IDs separados por comas."
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "responsible_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "deliverable_group",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "pending, review, observed o validated."
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Mes YYYY-MM."
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Mes YYYY-MM, posterior o igual a from."
+          }
+        ]
+      }
+    },
+    "/reports/csv": {
+      "get": {
+        "operationId": "reportesReportsCsvGet",
+        "summary": "Exportar reporte CSV dentro del alcance",
+        "tags": [
+          "Reportes"
+        ],
+        "responses": {
+          "200": {
+            "description": "Reporte generado.",
+            "content": {
+              "text/csv": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "422": {
+            "$ref": "#/components/responses/Invalid"
+          },
+          "429": {
+            "$ref": "#/components/responses/Throttled"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          }
+        },
+        "x-siget-permission": "reports.export",
+        "parameters": [
+          {
+            "name": "report",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "executive, compliance, pending, evidence, audit o builder."
+          },
+          {
+            "name": "agency_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "pauta_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "organizational_unit_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "ID o IDs separados por comas."
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "responsible_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "deliverable_group",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "pending, review, observed o validated."
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Mes YYYY-MM."
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Mes YYYY-MM, posterior o igual a from."
+          }
+        ]
+      }
+    },
+    "/reports/xlsx": {
+      "get": {
+        "operationId": "reportesReportsXlsxGet",
+        "summary": "Exportar reporte XLSX dentro del alcance",
+        "tags": [
+          "Reportes"
+        ],
+        "responses": {
+          "200": {
+            "description": "Reporte generado.",
+            "content": {
+              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "422": {
+            "$ref": "#/components/responses/Invalid"
+          },
+          "429": {
+            "$ref": "#/components/responses/Throttled"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          }
+        },
+        "x-siget-permission": "reports.export",
+        "parameters": [
+          {
+            "name": "report",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "executive, compliance, pending, evidence, audit o builder."
+          },
+          {
+            "name": "agency_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "pauta_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "organizational_unit_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "ID o IDs separados por comas."
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "responsible_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "deliverable_group",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "pending, review, observed o validated."
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Mes YYYY-MM."
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Mes YYYY-MM, posterior o igual a from."
+          }
+        ]
+      }
+    },
+    "/admin/roles": {
+      "get": {
+        "operationId": "administraciónAdminRolesGet",
+        "summary": "Catálogo de perfiles activos",
+        "tags": [
+          "Administración"
+        ],
+        "responses": {
+          "200": {
+            "description": "Operación completada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "integer",
+                            "format": "int64"
+                          },
+                          "code": {
+                            "type": "string"
+                          },
+                          "name": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "422": {
+            "$ref": "#/components/responses/Invalid"
+          },
+          "429": {
+            "$ref": "#/components/responses/Throttled"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          }
+        },
+        "x-siget-permission": "users.manage"
+      }
+    },
+    "/admin/users": {
+      "get": {
+        "operationId": "administraciónAdminUsersGet",
+        "summary": "Usuarios y alcances, sólo administradores",
+        "tags": [
+          "Administración"
+        ],
+        "responses": {
+          "200": {
+            "description": "Operación completada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object"
+                      }
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/Page"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "422": {
+            "$ref": "#/components/responses/Invalid"
+          },
+          "429": {
+            "$ref": "#/components/responses/Throttled"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          }
+        },
+        "x-siget-permission": "users.manage",
+        "parameters": [
+          {
+            "name": "per_page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "1–100."
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ]
+      },
+      "post": {
+        "operationId": "administraciónAdminUsersPost",
+        "summary": "Crear cuenta individual o perfil general sin cuentas por dependencia",
+        "tags": [
+          "Administración"
+        ],
+        "responses": {
+          "201": {
+            "description": "Operación completada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "422": {
+            "$ref": "#/components/responses/Invalid"
+          },
+          "429": {
+            "$ref": "#/components/responses/Throttled"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          }
+        },
+        "x-siget-permission": "users.manage",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/UserInput"
+                  },
+                  {
+                    "required": [
+                      "password"
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/users/{user}": {
+      "put": {
+        "operationId": "administraciónAdminUsersUserPut",
+        "summary": "Actualizar identidad y perfil; revocar tokens al cambiar seguridad o alcance",
+        "tags": [
+          "Administración"
+        ],
+        "responses": {
+          "200": {
+            "description": "Operación completada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "422": {
+            "$ref": "#/components/responses/Invalid"
+          },
+          "429": {
+            "$ref": "#/components/responses/Throttled"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          }
+        },
+        "x-siget-permission": "users.manage",
+        "parameters": [
+          {
+            "name": "user",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/users/{user}/status": {
+      "patch": {
+        "operationId": "administraciónAdminUsersUserStatusPatch",
+        "summary": "Activar o desactivar de forma idempotente y revocar accesos",
+        "tags": [
+          "Administración"
+        ],
+        "responses": {
+          "200": {
+            "description": "Operación completada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "422": {
+            "$ref": "#/components/responses/Invalid"
+          },
+          "429": {
+            "$ref": "#/components/responses/Throttled"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          }
+        },
+        "x-siget-permission": "users.manage",
+        "parameters": [
+          {
+            "name": "user",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "ACTIVE",
+                      "INACTIVE"
+                    ]
+                  }
+                },
+                "required": [
+                  "status"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/agencies": {
+      "get": {
+        "operationId": "administraciónAdminAgenciesGet",
+        "summary": "Catálogo institucional y direcciones",
+        "tags": [
+          "Administración"
+        ],
+        "responses": {
+          "200": {
+            "description": "Operación completada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Agency"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "422": {
+            "$ref": "#/components/responses/Invalid"
+          },
+          "429": {
+            "$ref": "#/components/responses/Throttled"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          }
+        },
+        "x-siget-permission": "agencies.manage"
+      },
+      "post": {
+        "operationId": "administraciónAdminAgenciesPost",
+        "summary": "Crear dependencia y preparar sus dos direcciones y plantilla",
+        "tags": [
+          "Administración"
+        ],
+        "responses": {
+          "201": {
+            "description": "Operación completada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/Agency"
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "422": {
+            "$ref": "#/components/responses/Invalid"
+          },
+          "429": {
+            "$ref": "#/components/responses/Throttled"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          }
+        },
+        "x-siget-permission": "agencies.manage",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AgencyInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/agencies/{agency}": {
+      "put": {
+        "operationId": "administraciónAdminAgenciesAgencyPut",
+        "summary": "Actualizar dependencia conservando expedientes",
+        "tags": [
+          "Administración"
+        ],
+        "responses": {
+          "200": {
+            "description": "Operación completada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/Agency"
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "422": {
+            "$ref": "#/components/responses/Invalid"
+          },
+          "429": {
+            "$ref": "#/components/responses/Throttled"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          }
+        },
+        "x-siget-permission": "agencies.manage",
+        "parameters": [
+          {
+            "name": "agency",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AgencyInput"
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "administraciónAdminAgenciesAgencyDelete",
+        "summary": "Desactivar dependencia conservando historial",
+        "tags": [
+          "Administración"
+        ],
+        "responses": {
+          "200": {
+            "description": "Operación completada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/Agency"
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "422": {
+            "$ref": "#/components/responses/Invalid"
+          },
+          "429": {
+            "$ref": "#/components/responses/Throttled"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          }
+        },
+        "x-siget-permission": "agencies.manage",
+        "parameters": [
+          {
+            "name": "agency",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "Sanctum token"
+      }
+    },
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string"
+          },
+          "errors": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "required": [
+          "message"
+        ]
+      },
+      "Login": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "maxLength": 255
+          },
+          "password": {
+            "type": "string",
+            "format": "password",
+            "maxLength": 1024
+          },
+          "device_name": {
+            "type": "string",
+            "maxLength": 100
+          }
+        },
+        "required": [
+          "email",
+          "password",
+          "device_name"
+        ]
+      },
+      "User": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "name": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string"
+          },
+          "contracting_agency_id": {
+            "type": "integer",
+            "nullable": true
+          },
+          "organizational_unit_id": {
+            "type": "integer",
+            "nullable": true
+          },
+          "permissions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "email",
+          "role",
+          "permissions"
+        ]
+      },
+      "Token": {
+        "type": "object",
+        "properties": {
+          "token_type": {
+            "type": "string",
+            "enum": [
+              "Bearer"
+            ]
+          },
+          "access_token": {
+            "type": "string"
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "user": {
+            "$ref": "#/components/schemas/User"
+          }
+        },
+        "required": [
+          "token_type",
+          "access_token",
+          "expires_at",
+          "user"
+        ]
+      },
+      "Agency": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "code": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "legal_name": {
+            "type": "string",
+            "nullable": true
+          },
+          "active": {
+            "type": "boolean"
+          },
+          "units": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "integer",
+                  "format": "int64"
+                },
+                "code": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "active": {
+                  "type": "boolean"
+                }
+              }
+            }
+          }
+        },
+        "required": [
+          "id",
+          "code",
+          "name"
+        ]
+      },
+      "Page": {
+        "type": "object",
+        "properties": {
+          "current_page": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "last_page": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "per_page": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "total": {
+            "type": "integer",
+            "format": "int64"
+          }
+        },
+        "required": [
+          "current_page",
+          "last_page",
+          "total"
+        ]
+      },
+      "File": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "name": {
+            "type": "string"
+          },
+          "size_bytes": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "version": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "download_url": {
+            "type": "string",
+            "format": "uri"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "size_bytes",
+          "sha256",
+          "version",
+          "download_url"
+        ]
+      },
+      "Evidence": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "scheduled_load_id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "deliverable_id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "title": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "version": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "submitted_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "validated_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "files": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/File"
+            }
+          },
+          "reviews": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "integer",
+                  "format": "int64"
+                },
+                "review_type": {
+                  "type": "string"
+                },
+                "decision": {
+                  "type": "string"
+                },
+                "comments": {
+                  "type": "string",
+                  "nullable": true
+                },
+                "evidence_version": {
+                  "type": "integer",
+                  "format": "int64"
+                },
+                "created_at": {
+                  "type": "string",
+                  "format": "date-time",
+                  "nullable": true
+                }
+              }
+            }
+          }
+        },
+        "required": [
+          "id",
+          "scheduled_load_id",
+          "deliverable_id",
+          "status",
+          "version",
+          "files",
+          "reviews"
+        ]
+      },
+      "Deliverable": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "scheduled_load_id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "requirement": {
+            "type": "object",
+            "properties": {
+              "code": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "min_files": {
+                "type": "integer",
+                "format": "int64"
+              },
+              "max_files": {
+                "type": "integer",
+                "nullable": true
+              },
+              "max_size_mb": {
+                "type": "integer",
+                "format": "int64"
+              },
+              "allowed_extensions": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "unit": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "integer",
+                "format": "int64"
+              },
+              "code": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              }
+            }
+          },
+          "responsible_user_id": {
+            "type": "integer",
+            "nullable": true
+          },
+          "status": {
+            "type": "string"
+          },
+          "due_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "evidences": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "integer",
+                  "format": "int64"
+                },
+                "title": {
+                  "type": "string"
+                },
+                "status": {
+                  "type": "string"
+                },
+                "version": {
+                  "type": "integer",
+                  "format": "int64"
+                }
+              }
+            }
+          }
+        },
+        "required": [
+          "id",
+          "scheduled_load_id",
+          "requirement",
+          "unit",
+          "status",
+          "evidences"
+        ]
+      },
+      "Load": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "title": {
+            "type": "string"
+          },
+          "period": {
+            "type": "string",
+            "nullable": true
+          },
+          "agency": {
+            "$ref": "#/components/schemas/Agency"
+          },
+          "calendar_import_id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "opens_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "closes_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "status": {
+            "type": "string"
+          },
+          "completion_percentage": {
+            "type": "number"
+          },
+          "blocked": {
+            "type": "boolean"
+          },
+          "block_reason": {
+            "type": "string",
+            "nullable": true
+          },
+          "appearance": {
+            "type": "object"
+          },
+          "deliverables": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Deliverable"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "agency",
+          "opens_at",
+          "closes_at",
+          "status",
+          "blocked",
+          "appearance"
+        ]
+      },
+      "Import": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "contracting_agency_id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "original_filename": {
+            "type": "string"
+          },
+          "sha256": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "workbook_version": {
+            "type": "string"
+          },
+          "total_rows": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "valid_rows": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "error_rows": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "warnings": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          },
+          "confirmed_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "contracting_agency_id",
+          "original_filename",
+          "status"
+        ]
+      },
+      "UserInput": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "maxLength": 255
+          },
+          "password": {
+            "type": "string",
+            "format": "password",
+            "minLength": 12,
+            "description": "Producción exige mayúscula, minúscula, número y símbolo. En edición es opcional."
+          },
+          "role_id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "contracting_agency_id": {
+            "type": "integer",
+            "nullable": true
+          },
+          "organizational_unit_id": {
+            "type": "integer",
+            "nullable": true
+          },
+          "general_profile": {
+            "type": "boolean",
+            "default": false,
+            "description": "Sólo el administrador puede habilitar todas las dependencias de la misma dirección. Fiscalización siempre requiere expediente asignado."
+          }
+        },
+        "required": [
+          "name",
+          "email",
+          "role_id"
+        ]
+      },
+      "AgencyInput": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "maxLength": 50
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 220
+          },
+          "legal_name": {
+            "type": "string",
+            "maxLength": 260,
+            "nullable": true
+          }
+        },
+        "required": [
+          "code",
+          "name"
+        ]
+      },
+      "Correction": {
+        "type": "object",
+        "properties": {
+          "deliverable_ids": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 10,
+            "maxLength": 4000
+          },
+          "opens_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "closes_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Posterior a opens_at y a la hora actual."
+          }
+        },
+        "required": [
+          "deliverable_ids",
+          "reason",
+          "opens_at",
+          "closes_at"
+        ]
+      },
+      "Dashboard": {
+        "type": "object",
+        "properties": {
+          "kpis": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "number"
+            }
+          },
+          "status_distribution": {
+            "type": "object"
+          },
+          "monthly_trend": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "unit_performance": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "evidence_summary": {
+            "type": "object"
+          },
+          "evidence_by_direction": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "evidence_trend": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "deliverable_funnel": {
+            "type": "object"
+          },
+          "evidence_funnel": {
+            "type": "object"
+          }
+        }
+      }
+    },
+    "responses": {
+      "Unauthorized": {
+        "description": "Token ausente, vencido, revocado o identidad desactivada.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Forbidden": {
+        "description": "Permiso o alcance insuficiente.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Invalid": {
+        "description": "Campos inválidos o transición de flujo rechazada.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Throttled": {
+        "description": "Límite de solicitudes; consulte Retry-After.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Unavailable": {
+        "description": "Mantenimiento o repositorio privado no disponible.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      }
+    }
+  }
+}

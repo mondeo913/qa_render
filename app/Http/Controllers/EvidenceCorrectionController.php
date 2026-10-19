@@ -25,15 +25,7 @@ final class EvidenceCorrectionController extends Controller
         abort_unless($request->user()->hasPermission('calendar.reschedule') && app(\App\Services\AccessScopeService::class)->canManageAgency($request->user(), $load->contracting_agency_id), 403);
         $data = $request->validate(['reason' => ['required', 'string', 'min:10', 'max:4000'],
             'opens_at' => ['required', 'date'], 'closes_at' => ['required', 'date', 'after:opens_at', 'after:now']]);
-        \Illuminate\Support\Facades\DB::transaction(function () use ($request, $load, $service, $data) {
-            $load = ScheduledLoad::query()->lockForUpdate()->findOrFail($load->id);
-            $record = $load->reschedules()->whereIn('status', ['PENDING', 'SCHEDULED'])->latest('id')->first();
-            if (!$record) {
-                $record = $load->reschedules()->create(['old_open_at' => $load->effective_open_at, 'old_close_at' => $load->effective_close_at,
-                    'reason' => $data['reason'], 'status' => 'PENDING']);
-            } else { $record->update(['reason' => $data['reason']]); }
-            $service->assignNewWindow($record, $request->date('opens_at'), $request->date('closes_at'), $request->user()->id);
-        });
+        $service->reschedule($load, $request->user(), $request->date('opens_at'), $request->date('closes_at'), $data['reason']);
         return back()->with('success', 'Carga reprogramada con fechas y motivo registrados.');
     }
 

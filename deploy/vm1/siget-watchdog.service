@@ -1,0 +1,8 @@
+[Unit]
+Description=Verificación y recuperación de servicios SIGET
+After=docker.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/bash @RELEASE_DIR@/deploy/vm1/watchdog.sh
+TimeoutStartSec=120

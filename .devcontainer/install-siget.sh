@@ -158,13 +158,14 @@ fi
 
 echo "6/10 Base de datos y datos ABCD QA..."
 
-if [[ ! -f "${STATE_DIR}/database-initialized" ]]; then
-  php artisan migrate:fresh --seed --force
+EXISTING_TABLES="$(php -r 'require "vendor/autoload.php"; $app = require "bootstrap/app.php"; $app->make(Illuminate\Contracts\Console\Kernel::class)->bootstrap(); echo count(Illuminate\Support\Facades\Schema::getTables()) > 0 ? "t" : "f";')"
+php artisan migrate --force
+if [[ ! -f "${STATE_DIR}/database-initialized" && "${EXISTING_TABLES}" == "f" ]]; then
+  php artisan db:seed --force
 else
-  php artisan migrate --force
+  echo "Instalación existente: se conservan usuarios, cargas y evidencias; no se ejecutan seeds de demostración."
 fi
 
-php artisan siget:qa-init
 touch "${STATE_DIR}/database-initialized"
 
 echo "7/10 Almacenamiento y cachés..."

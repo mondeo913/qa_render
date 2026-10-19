@@ -13,7 +13,6 @@ use App\Models\ScheduledLoad;
 use App\Services\AccessScopeService;
 use App\Services\DashboardAnalyticsService;
 use Barryvdh\DomPDF\Facade\Pdf;
-use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
@@ -34,6 +33,8 @@ class ReportController extends Controller
             'pauta_id' => ['nullable', 'integer', 'min:1'],
             'organizational_unit_id' => ['nullable', 'string', 'max:500'],
             'status' => ['nullable', 'string', 'max:60'],
+            'responsible_id' => ['nullable', 'integer', 'min:1'],
+            'deliverable_group' => ['nullable', 'in:pending,review,observed,validated'],
             'from' => ['nullable', 'date_format:Y-m'],
             'to' => ['nullable', 'date_format:Y-m', 'after_or_equal:from'],
         ]);
@@ -44,16 +45,12 @@ class ReportController extends Controller
     private function evidenceMetrics($loads): array
     {
         $deliverables = $loads->flatMap->deliverables;
-        $evidences = $deliverables->flatMap->evidences;
-        $status = fn ($item) => $item->status instanceof \BackedEnum
-            ? $item->status->value
-            : (string) $item->status;
-
+        $status = fn ($item) => $item->status instanceof \BackedEnum ? $item->status->value : (string) $item->status;
         $expected = $deliverables->count();
-        $received = $evidences->filter(fn ($evidence) => $evidence->submitted_at || $evidence->id)->count();
-        $validated = $evidences->filter(fn ($evidence) => in_array($status($evidence), ['VALIDADO', 'CERRADO'], true))->count();
-        $observed = $evidences->filter(fn ($evidence) => in_array($status($evidence), ['OBSERVADO', 'RECHAZADO'], true))->count();
-        $review = $evidences->filter(fn ($evidence) => $status($evidence) === 'EN_REVISION')->count();
+        $received = $deliverables->filter(fn ($d) => $d->submitted_at !== null || $d->evidences->contains(fn ($e) => $e->submitted_at !== null))->count();
+        $validated = $deliverables->filter(fn ($d) => in_array($status($d), ['VALIDADO', 'CERRADO'], true))->count();
+        $observed = $deliverables->filter(fn ($d) => in_array($status($d), ['OBSERVADO', 'RECHAZADO'], true))->count();
+        $review = $deliverables->filter(fn ($d) => in_array($status($d), ['ENVIADO', 'EN_REVISION'], true))->count();
 
         return [
             'expected' => $expected,
@@ -70,10 +67,7 @@ class ReportController extends Controller
     private function evidenceRow($load): array
     {
         $deliverables = $load->deliverables;
-        $evidences = $deliverables->flatMap->evidences;
-        $status = fn ($item) => $item->status instanceof \BackedEnum ? $item->status->value : (string) $item->status;
-        $expected = $deliverables->count();
-        $received = $evidences->count();
+        $metrics = $this->evidenceMetrics(collect([$load]));
 
         return [
             'id' => $load->id,
@@ -86,79 +80,25 @@ class ReportController extends Controller
             'status' => $load->status instanceof \BackedEnum ? $load->status->value : (string) $load->status,
             'open' => $load->effective_open_at?->format('d/m/Y H:i') ?: '—',
             'close' => $load->effective_close_at?->format('d/m/Y H:i') ?: '—',
-            'expected' => $expected,
-            'received' => $received,
-            'validated' => $evidences->filter(fn ($e) => in_array($status($e), ['VALIDADO', 'CERRADO'], true))->count(),
-            'pending' => max(0, $expected - $received),
-            'observed' => $evidences->filter(fn ($e) => in_array($status($e), ['OBSERVADO', 'RECHAZADO'], true))->count(),
+            'expected' => $metrics['expected'],
+            'received' => $metrics['received'],
+            'validated' => $metrics['validated'],
+            'pending' => $metrics['pending'],
+            'observed' => $metrics['observed'],
             'progress' => (float) $load->completion_percentage,
             'risk' => $this->riskLevel($load),
         ];
     }
 
-    private function applyFilters(
-        $query,
-        array $filters
-    ) {
-        if (!empty($filters['pauta_id'])) {
-            $query->where('scheduled_loads.calendar_import_id', (int) $filters['pauta_id']);
-        }
-
-        if (!empty($filters['agency_id'])) {
-            $query->where(
-                'scheduled_loads.contracting_agency_id',
-                (int) $filters['agency_id']
-            );
-        }
-
-        if (!empty($filters['organizational_unit_id'])) {
-            $unitIds = collect(
-                explode(',', (string) $filters['organizational_unit_id'])
-            )
-                ->map(fn ($id) => (int) trim($id))
-                ->filter()
-                ->unique()
-                ->values()
-                ->all();
-
-            if ($unitIds) {
-                $query->whereHas(
-                    'deliverables',
-                    fn ($deliverables) => $deliverables->whereIn(
-                        'organizational_unit_id',
-                        $unitIds
-                    )
-                );
-            }
-        }
-
-        if (!empty($filters['status'])) {
-            $query->where(
-                'scheduled_loads.status',
-                $filters['status']
-            );
-        }
-
-        // Reportes trabaja con periodos mensuales completos, igual que el tablero.
-        if (!empty($filters['from'])) {
-            $from = CarbonImmutable::createFromFormat('!Y-m', $filters['from'])->startOfMonth();
-            $query->where(
-                'scheduled_loads.effective_open_at',
-                '>=',
-                $from
-            );
-        }
-
-        if (!empty($filters['to'])) {
-            $to = CarbonImmutable::createFromFormat('!Y-m', $filters['to'])->endOfMonth();
-            $query->where(
-                'scheduled_loads.effective_open_at',
-                '<=',
-                $to
-            );
-        }
-
-        return $query;
+    private function reportQuery(Request $request, array $filters)
+    {
+        $analytics = app(DashboardAnalyticsService::class);
+        $visibleDeliverables = $analytics->deliverablesForUser($request->user(), $filters)->select('scheduled_load_deliverables.id');
+        return $analytics->loadsForUser($request->user(), $filters)->with([
+            'agency', 'calendarImport',
+            'deliverables' => fn ($q) => $q->whereIn('scheduled_load_deliverables.id', $visibleDeliverables)
+                ->with(['organizationalUnit', 'responsibleUser', 'templateRequirement', 'evidences.files']),
+        ]);
     }
 
     private function uniqueOrganizationalUnits($units)
@@ -191,21 +131,7 @@ class ReportController extends Controller
         array $filters,
         AccessScopeService $access
     ) {
-        $query = $access->scopeLoads(
-            ScheduledLoad::query()->with([
-                'agency',
-                'calendarImport',
-                'deliverables.organizationalUnit',
-                'deliverables.responsibleUser',
-                'deliverables.templateRequirement',
-                'deliverables.evidences.files',
-            ]),
-            $request->user()
-        );
-
-        return $this->applyFilters($query, $filters)
-            ->orderBy('scheduled_loads.effective_open_at')
-            ->get();
+        return $this->reportQuery($request, $filters)->orderBy('scheduled_loads.effective_open_at')->get();
     }
 
     public function index(
@@ -293,12 +219,7 @@ class ReportController extends Controller
         } elseif (RoleCode::isDirectionDirector($role) || RoleCode::isOperator($role)) {
             // El universo ya está filtrado por AccessScopeService. Para Directores
             // esto significa todas las dependencias que tengan su misma Dirección.
-            $agencies = $loads
-                ->map(fn ($load) => $load->agency)
-                ->filter()
-                ->unique('id')
-                ->sortBy('name')
-                ->values();
+            $agencies = app(\App\Services\AccessScopeService::class)->availableAgencies($request->user());
 
             $units = $loads
                 ->flatMap(fn ($load) => $load->deliverables)
@@ -336,6 +257,7 @@ class ReportController extends Controller
             'REPROGRAMADA',
             'VALIDADO_Y_CERRADO',
             'VENCIDA',
+            'CANCELADA',
         ];
 
         $statuses = $statuses->filter(
@@ -387,18 +309,7 @@ class ReportController extends Controller
         $this->authorizeReports($request, 'reports.export');
         $filters = $this->filters($request);
 
-        $query = $access->scopeLoads(
-            ScheduledLoad::query()->with([
-                'agency',
-                'deliverables.organizationalUnit',
-                'deliverables.responsibleUser',
-                'deliverables.evidences.files',
-            ]),
-            $request->user()
-        );
-
-        $query = $this->applyFilters($query, $filters)
-            ->orderBy('effective_open_at');
+        $query = $this->reportQuery($request, $filters)->orderBy('scheduled_loads.effective_open_at');
 
         ReportExport::query()->create([
             'requested_by' => $request->user()->id,
@@ -437,25 +348,7 @@ class ReportController extends Controller
                     $deliverables = $load->deliverables;
                     $evidences = $deliverables->flatMap->evidences;
 
-                    $validated = $evidences
-                        ->filter(function ($evidence) {
-                            $status = $evidence->status instanceof \BackedEnum
-                                ? $evidence->status->value
-                                : (string) $evidence->status;
-
-                            return $status === 'VALIDADO';
-                        })
-                        ->count();
-
-                    $observed = $evidences
-                        ->filter(function ($evidence) {
-                            $status = $evidence->status instanceof \BackedEnum
-                                ? $evidence->status->value
-                                : (string) $evidence->status;
-
-                            return in_array($status, ['OBSERVADO', 'RECHAZADO'], true);
-                        })
-                        ->count();
+                    $metrics = $this->evidenceMetrics(collect([$load]));
 
                     $files = $evidences
                         ->sum(fn ($evidence) => $evidence->files->count());
@@ -488,10 +381,10 @@ class ReportController extends Controller
                         $load->completion_percentage,
                         $deliverables->count(),
                         $deliverables->count(),
-                        $evidences->count(),
-                        $validated,
-                        max(0, $deliverables->count() - $evidences->count()),
-                        $observed,
+                        $metrics['received'],
+                        $metrics['validated'],
+                        $metrics['pending'],
+                        $metrics['observed'],
                         $files,
                     ]);
                 }
@@ -558,25 +451,7 @@ class ReportController extends Controller
                 ->unique()
                 ->implode(' / ');
 
-            $validated = $evidences
-                ->filter(function ($evidence) {
-                    $status = $evidence->status instanceof \BackedEnum
-                        ? $evidence->status->value
-                        : (string) $evidence->status;
-
-                    return $status === 'VALIDADO';
-                })
-                ->count();
-
-            $observed = $evidences
-                ->filter(function ($evidence) {
-                    $status = $evidence->status instanceof \BackedEnum
-                        ? $evidence->status->value
-                        : (string) $evidence->status;
-
-                    return in_array($status, ['OBSERVADO', 'RECHAZADO'], true);
-                })
-                ->count();
+            $metrics = $this->evidenceMetrics(collect([$load]));
 
             $files = $evidences
                 ->sum(fn ($evidence) => $evidence->files->count());
@@ -597,10 +472,10 @@ class ReportController extends Controller
                 $load->completion_percentage,
                 $deliverables->count(),
                 $deliverables->count(),
-                $evidences->count(),
-                $validated,
-                max(0, $deliverables->count() - $evidences->count()),
-                $observed,
+                $metrics['received'],
+                $metrics['validated'],
+                $metrics['pending'],
+                $metrics['observed'],
                 $files,
             ];
 

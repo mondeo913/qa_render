@@ -15,6 +15,14 @@ RUN rm -f \
       /etc/apt/sources.list.d/yarn*.list \
     || true
 
+# Binarios 15 y 16: reabrir datos existentes con su misma versión mayor.
+RUN apt-get update -o Acquire::Retries=5 \
+    && apt-get install -y --no-install-recommends ca-certificates curl \
+    && install -d /usr/share/postgresql-common/pgdg \
+    && curl -fL --retry 5 https://www.postgresql.org/media/keys/ACCC4CF8.asc \
+       -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc \
+    && echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt bookworm-pgdg main" > /etc/apt/sources.list.d/pgdg.list
+
 # Dependencias del ambiente SIGET K2.
 # PostgreSQL server is included because the K2 startup scripts manage a local
 # PostgreSQL instance on 127.0.0.1:5432 inside the dev container.
@@ -31,8 +39,9 @@ RUN apt-get update -o Acquire::Retries=5 \
         libpng-dev \
         libpq-dev \
         libzip-dev \
-        postgresql \
-        postgresql-client \
+        postgresql-15 \
+        postgresql-16 \
+        postgresql-client-16 \
         procps \
         supervisor \
         unzip \
@@ -67,7 +76,7 @@ RUN set -eux; \
       "${mailpit_url}" -o /tmp/mailpit.tar.gz; \
     tar -xzf /tmp/mailpit.tar.gz -C /usr/local/bin mailpit; \
     chmod 0755 /usr/local/bin/mailpit; \
-    /usr/local/bin/mailpit version; \
+    /usr/local/bin/mailpit version --no-release-check; \
     rm -f /tmp/mailpit.tar.gz
 
 # Configuracion PHP SIGET.

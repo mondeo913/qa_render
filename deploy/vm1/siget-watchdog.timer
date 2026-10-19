@@ -1,0 +1,10 @@
+[Unit]
+Description=Vigilancia SIGET cada minuto
+
+[Timer]
+OnBootSec=3min
+OnUnitActiveSec=1min
+Unit=siget-watchdog.service
+
+[Install]
+WantedBy=timers.target

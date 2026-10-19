@@ -35,10 +35,10 @@
 
 
 <div class="card siget-card mb-4">
-<div class="card-header"><div><h2>Catálogo de dependencias</h2><p>Solo aparecen dependencias con cargas pertenecientes al alcance autorizado. La Pauta identifica el archivo Excel importado por Enlace Institucional.</p></div><span class="badge text-bg-light">Cumplimiento promedio: {{ $summary['completion'] }}%</span></div>
+<div class="card-header"><div><h2>Catálogo de dependencias</h2><p>Las tarjetas muestran dependencias con cargas. Los filtros incluyen las dependencias autorizadas y sus pautas confirmadas.</p></div><span class="badge text-bg-light">Cumplimiento promedio: {{ $summary['completion'] }}%</span></div>
 <div class="card-body">
 @if($dependencyCards->isEmpty())<div class="text-center py-4 text-secondary">No existen dependencias con cargas dentro de su alcance.</div>
-@else<div class="siget-dependency-grid">@foreach($dependencyCards as $card)@php $agency=$card['agency']; $selected=(int)($filters['agency_id']??0)===(int)$agency->id; $url=request()->fullUrlWithQuery(['agency_id'=>$selected?null:$agency->id]); @endphp
+@else<div class="siget-dependency-grid">@foreach($dependencyCards as $card)@php $agency=$card['agency']; $selected=(int)($filters['agency_id']??0)===(int)$agency->id; $url=request()->fullUrlWithQuery(['agency_id'=>$selected?null:$agency->id,'pauta_id'=>null,'from'=>null,'to'=>null]); @endphp
 <a href="{{ $url }}" class="siget-dependency-card {{ $selected?'active':'' }}"><div class="siget-dependency-top">@if($card['logo_url'])<img src="{{ $card['logo_url'] }}" alt="Logo de {{ $agency->name }}" class="siget-dependency-logo">@else<span class="siget-dependency-logo siget-dependency-initials">{{ $card['initials'] }}</span>@endif<div class="min-w-0"><strong>{{ $agency->name }}</strong><small>{{ $agency->code }}</small></div>@if($selected)<i class="bi bi-check-circle-fill ms-auto"></i>@endif</div><div class="siget-dependency-stats"><span><b>{{ $card['summary']['todo'] }}</b> por hacer</span><span><b>{{ $card['summary']['progress'] }}</b> progreso</span><span><b>{{ $card['summary']['review'] }}</b> revisión</span><span><b>{{ $card['summary']['done'] }}</b> cerradas</span></div><div class="progress mt-3"><div class="progress-bar" style="width: {{ $card['summary']['completion'] }}%"></div></div><div class="d-flex justify-content-between mt-2 small text-secondary"><span>{{ $card['summary']['completion'] }}% avance</span><span>@if($card['next_due']) Próximo: {{ $card['next_due']->format('d/m/Y') }} @else Sin pendientes @endif</span></div></a>
 @endforeach</div>@endif
 </div></div>
@@ -183,8 +183,17 @@ document.addEventListener('DOMContentLoaded',function(){
    });
  });
 
- agency?.addEventListener('change',syncPautas);
- pauta?.addEventListener('change',()=>custom?.classList.remove('d-none'));
+ const resetPeriod=()=>{if(from)from.value='';if(to)to.value='';};
+ agency?.addEventListener('change',()=>{
+   if(pauta)pauta.value='';
+   resetPeriod();
+   syncPautas();
+   form?.requestSubmit();
+ });
+ pauta?.addEventListener('change',()=>{
+   resetPeriod();
+   form?.requestSubmit();
+ });
  from?.addEventListener('change',syncMonths);
  to?.addEventListener('change',syncMonths);
  syncPautas();

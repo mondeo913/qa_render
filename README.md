@@ -1,82 +1,50 @@
-# SIGET — Ambiente QA consolidado
+# SIGET — Web institucional y API v1
 
-## Objetivo
+Sistema de Gestión de Evidencias de Transmisión: pautas Excel, calendario, entregables por Dirección, evidencias versionadas, validación de Dirección, revisión institucional, firma, cierre y auditoría.
 
-Este repositorio contiene la versión QA consolidada de **SIGET — Sistema de Gestión de Evidencias de Transmisión**.
+## Documentación vigente
 
-La línea QA debe representar una sola versión funcional vigente, sin conservar paquetes, respaldos, instaladores sustituidos o reportes históricos dentro del código fuente.
+- [Entrega a infraestructura, dos VM y respaldos mensuales](docs/ENTREGA_INFRAESTRUCTURA_API.md).
+- [API v1 y contrato de integración](docs/API_V1.md).
+- [Flujo, responsabilidades y actualización](docs/FLUJO_SIGET_CONTROLADO.md).
+- [Crear, reanudar y verificar Codespaces](docs/codespaces/GUIA_PASO_A_PASO.md).
+- [Pruebas automáticas y aceptación manual](docs/PLAN_PRUEBAS_QA.md).
+- [Repositorio y tablero](docs/REPOSITORIO_Y_TABLERO.md).
+- [Matriz funcional](docs/01_MATRIZ_CUMPLIMIENTO_ABCD.md).
+- [Pendientes de certificación productiva](docs/04_LIMITACIONES_Y_SIGUIENTE_ETAPA.md).
 
-## Funcionalidad integrada
+## Codespaces
 
-- autenticación y recuperación de acceso;
-- administración de usuarios, roles y permisos;
-- Direcciones, dependencias y unidades organizacionales;
-- tablero de cargas y seguimiento operativo;
-- calendario y pautas;
-- carga y gestión de evidencias;
-- repositorios y revisión institucional;
-- validación y cierre;
-- dashboards por alcance de usuario;
-- reportes ejecutivos e indicadores;
-- exportaciones y diagnóstico QA.
+Crear un Codespace desde `main` o ejecutar **Codespaces: Rebuild Container** en uno existente. No importar ZIP, overlays ni paquetes antiguos.
 
-## Alcance por rol
+- Creación: `.devcontainer/install-siget.sh`.
+- Inicio y reanudación: `.devcontainer/qa-runtime.sh`.
+- Recuperación manual: `RECUPERAR_SIGET.sh`, que llama al mismo arranque.
+- Los workers, scheduler, PostgreSQL y Mailpit siguen gestionados por Supervisor y los watchdogs vigentes.
 
-- **Administrador:** administración global y configuración.
-- **Enlace Institucional:** revisión, observación, validación y cierre institucional según su alcance.
-- **Director General:** supervisión institucional consolidada.
-- **Director de Transmisión:** supervisión de su Dirección y unidades descendientes.
-- **Director de Programación y Continuidad:** supervisión de su Dirección y unidades descendientes.
-- **Operativos:** captura, corrección, envío y seguimiento de cargas y evidencias.
-- **Fiscalizador:** revisión especializada definida por el modelo vigente.
+## Comandos
 
-## Ambiente QA
+| Acción | Comando |
+|---|---|
+| Iniciar o recuperar | `bash INICIAR_SIGET.sh` |
+| Verificar servicios | `make verify` |
+| Diagnóstico | `make diagnose` |
+| Pruebas y verificación web | `make test` |
+| Validación integral QA | `make validate` |
+| Mostrar URLs | `bash MOSTRAR_URLS.sh` |
+| Respaldar PostgreSQL QA | `bash RESPALDAR_BASE_QA.sh` |
+| Detener servicios | `make stop` |
 
-La ruta vigente de Codespaces es:
+La validación integral aplica migraciones y sincroniza permisos QA. No usarla como procedimiento de actualización productiva; seguir la guía de actualización.
 
-```text
-.devcontainer/devcontainer.json
-        ↓
-Dockerfile.k2
-        ↓
-install-siget.sh
-        ↓
-repair-runtime.sh
-        ↓
-qa-runtime.sh
-```
+SIGET utiliza el puerto 8000 y Mailpit el 8025. Las credenciales de demostración se consultan en el archivo local `.codespace/ACCESOS.txt` generado por la instalación; no son cuentas productivas.
 
-El ambiente utiliza PHP 8.3, PostgreSQL, Supervisor y Mailpit. Node se proporciona mediante la configuración de Dev Containers.
+## Mantenimiento
 
-## Reconstrucción
+Esta estructura contiene una sola línea de scripts y guías vigentes. Las copias `.bak`, comandos duplicados y manuales sustituidos se retiraron del árbol actual; su historial sigue disponible en Git. Conservar las migraciones históricas: siguen siendo necesarias para crear y actualizar instalaciones existentes.
 
-Abrir el repositorio en GitHub Codespaces y ejecutar **Codespaces: Rebuild Container** cuando sea necesario. El `postCreateCommand` ejecuta `.devcontainer/install-siget.sh`.
+## Entrega API v1 y dos máquinas virtuales
 
-## Verificación
+La instalación para infraestructura se encuentra en [docs/ENTREGA_INFRAESTRUCTURA_API.md](docs/ENTREGA_INFRAESTRUCTURA_API.md). Incluye asistente, HTTPS, repositorio privado en VM2, watchdog y **respaldos mensuales** con verificación y restauración de prueba. La API y su contrato están en [docs/API_V1.md](docs/API_V1.md) y [docs/api/openapi.json](docs/api/openapi.json).
 
-```bash
-bash .devcontainer/verify-siget.sh
-bash K2_CERTIFICAR_COMPLETO.sh
-```
-
-## Servicios QA
-
-- SIGET: `8000`
-- Mailpit: `8025`
-
-## Diagnóstico
-
-```bash
-bash INICIAR_SIGET.sh
-bash DIAGNOSTICAR_SIGET.sh
-bash MOSTRAR_URLS.sh
-bash .devcontainer/verify-siget.sh
-```
-
-## Certificación
-
-La instalación no equivale a certificación. Antes de promover el sistema se debe reconstruir QA y comprobar dependencias, PostgreSQL, migraciones, seeders, PHPUnit, Vite, permisos por rol, dashboards, filtros, cargas, evidencias, validación, cierre y reportes.
-
-## Regla de mantenimiento
-
-No reincorporar ZIP de entregas anteriores, archivos `backup`, hashes de paquetes, reportes históricos ni instaladores sustituidos. Toda nueva modificación debe partir de la línea vigente y consolidarse antes de preproducción o producción.
+Las instrucciones de Codespaces de este README corresponden al ambiente de desarrollo y QA; producción se instala con `sudo bash deploy/vm1/install.sh` y no usa datos demostrativos.

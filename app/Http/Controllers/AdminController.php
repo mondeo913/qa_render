@@ -30,9 +30,18 @@ class AdminController extends Controller
     {
         $this->authorizeAdmin($request, 'users.manage');
 
+        if ($request->is('api/*')) {
+            $request->validate(['per_page' => ['nullable', 'integer', 'min:1', 'max:100'], 'page' => ['nullable', 'integer', 'min:1']]);
+            $page = User::with('role')->where(fn ($q) => $q->whereNull('metadata->qa_retired')->orWhere('metadata->qa_retired', false))
+                ->orderBy('id')->paginate($request->integer('per_page', 25));
+            return response()->json(['data' => $page->getCollection()->map(fn ($user) => \App\Http\Controllers\Api\ApiData::managedUser($user)),
+                'meta' => ['total' => $page->total(), 'current_page' => $page->currentPage(), 'last_page' => $page->lastPage()]]);
+        }
+
         return view('admin.users', [
             'users' => User::query()
-                ->with(['role', 'agency', 'organizationalUnit'])
+                ->with(['role', 'agency', 'organizationalUnit', 'scopes.agency'])
+                ->where(fn ($query) => $query->whereNull('metadata->qa_retired')->orWhere('metadata->qa_retired', false))
                 ->orderBy('name')
                 ->paginate(30),
             'roles' => Role::query()->where('active', true)->orderBy('name')->get(),
@@ -44,32 +53,39 @@ class AdminController extends Controller
         ]);
     }
 
-    public function storeUser(Request $request): RedirectResponse
+    public function storeUser(Request $request): \Symfony\Component\HttpFoundation\Response
     {
         $this->authorizeAdmin($request, 'users.manage');
 
         $data = $request->validate([
             'name' => ['required', 'string', 'max:200'],
             'email' => ['required', 'email', 'max:255', 'unique:users,email'],
-            'password' => ['required', 'string', 'min:10'],
+            'password' => ['required', 'string', app()->environment('production') ? \Illuminate\Validation\Rules\Password::min(12)->mixedCase()->numbers()->symbols() : 'min:10'],
             'role_id' => ['required', 'exists:roles,id'],
             'contracting_agency_id' => ['nullable', 'exists:contracting_agencies,id'],
             'organizational_unit_id' => ['nullable', 'exists:organizational_units,id'],
+            'general_profile' => ['sometimes', 'boolean'],
+        ], [
+            'email.email' => 'Escriba un correo completo, por ejemplo enlace_institucional@siget.local. No puede terminar en @.',
+            'email.unique' => 'Este correo de acceso ya pertenece a otro usuario.',
         ]);
 
         $this->validateUserAssignment($data);
-        $user = User::query()->create($data + [
-            'status' => 'ACTIVE',
-            'email_verified_at' => now(),
-        ]);
+        $user = DB::transaction(function () use ($data) {
+            $user = User::query()->create(\Illuminate\Support\Arr::except($data, 'general_profile') + ['status' => 'ACTIVE']);
+            if (array_key_exists('general_profile', $data)) app(\App\Services\UserProfileScopeService::class)->apply($user, (bool) $data['general_profile']);
+            return $user;
+        });
 
         app(\App\Services\AuditService::class)->record('user.created', $user);
-        return back()->with('success', 'Usuario creado.');
+        return $request->is('api/*') ? response()->json(['data' => \App\Http\Controllers\Api\ApiData::managedUser($user->fresh())], 201)
+            : back()->with('success', 'Usuario creado.');
     }
 
-    public function updateUser(Request $request, User $user): RedirectResponse
+    public function updateUser(Request $request, User $user): \Symfony\Component\HttpFoundation\Response
     {
         $this->authorizeAdmin($request, 'users.manage');
+        abort_if(($user->metadata['qa_retired'] ?? false) === true, 422, 'Esta cuenta fue consolidada; utilice la cuenta general del perfil.');
 
         $data = $request->validate([
             'name' => ['required', 'string', 'max:200'],
@@ -79,21 +95,38 @@ class AdminController extends Controller
                 'max:255',
                 Rule::unique('users', 'email')->ignore($user->id),
             ],
-            'password' => ['nullable', 'string', 'min:10'],
+            'password' => ['nullable', 'string', app()->environment('production') ? \Illuminate\Validation\Rules\Password::min(12)->mixedCase()->numbers()->symbols() : 'min:10'],
             'role_id' => ['required', 'exists:roles,id'],
             'contracting_agency_id' => ['nullable', 'exists:contracting_agencies,id'],
             'organizational_unit_id' => ['nullable', 'exists:organizational_units,id'],
+            'general_profile' => ['sometimes', 'boolean'],
+        ], [
+            'email.email' => 'Escriba un correo completo, por ejemplo enlace_institucional@siget.local. No puede terminar en @.',
+            'email.unique' => 'Este correo de acceso ya pertenece a otro usuario.',
         ]);
 
         if (blank($data['password'] ?? null)) {
             unset($data['password']);
         }
 
-        $this->validateUserAssignment($data);
-        $user->update($data);
-        app(\App\Services\AuditService::class)->record('user.updated', $user, [], ['role_id' => $user->role_id, 'organizational_unit_id' => $user->organizational_unit_id]);
+        $data += $user->only(['contracting_agency_id', 'organizational_unit_id']);
+        $this->validateUserAssignment($data, $user);
+        $auditFields = ['name', 'email', 'role_id', 'contracting_agency_id', 'organizational_unit_id'];
+        $before = $user->only($auditFields);
+        DB::transaction(function () use ($user, $data) {
+            $roleChanged = (int) $data['role_id'] !== (int) $user->role_id;
+            $assignmentChanged = (array_key_exists('organizational_unit_id', $data) && (int) $data['organizational_unit_id'] !== (int) $user->organizational_unit_id)
+                || (array_key_exists('contracting_agency_id', $data) && (int) $data['contracting_agency_id'] !== (int) $user->contracting_agency_id);
+            $general = array_key_exists('general_profile', $data) ? (bool) $data['general_profile']
+                : isset($user->metadata['standard_profile']);
+            $user->update(\Illuminate\Support\Arr::except($data, 'general_profile'));
+            $user->unsetRelation('role');
+            if ($roleChanged || ($general && $assignmentChanged) || array_key_exists('general_profile', $data)) app(\App\Services\UserProfileScopeService::class)->apply($user, $general, $roleChanged || ($general && $assignmentChanged));
+        });
+        app(\App\Services\AuditService::class)->record('user.updated', $user, $before, $user->only($auditFields));
 
-        return back()->with('success', 'Usuario actualizado correctamente.');
+        return $request->is('api/*') ? response()->json(['data' => \App\Http\Controllers\Api\ApiData::managedUser($user->fresh())])
+            : back()->with('success', 'Usuario actualizado correctamente.');
     }
 
     public function destroyUser(Request $request, User $user): RedirectResponse
@@ -119,11 +152,17 @@ class AdminController extends Controller
         return back()->with('success', 'Usuario eliminado correctamente.');
     }
 
-    public function toggleUser(Request $request, User $user): RedirectResponse
+    public function toggleUser(Request $request, User $user): \Symfony\Component\HttpFoundation\Response
     {
         $this->authorizeAdmin($request, 'users.manage');
+        abort_if(($user->metadata['qa_retired'] ?? false) === true, 422, 'Esta cuenta fue consolidada; utilice la cuenta general del perfil.');
 
         abort_if($user->is($request->user()), 422, 'No puede desactivar su propia cuenta.');
+
+        if ($request->is('api/*')) {
+            $request->validate(['status' => ['required', 'in:ACTIVE,INACTIVE']]);
+            if ($user->status === $request->input('status')) return response()->json(['data' => \App\Http\Controllers\Api\ApiData::managedUser($user)]);
+        }
 
         $user->update([
             'status' => $user->status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE',
@@ -134,10 +173,11 @@ class AdminController extends Controller
             DB::table('sessions')->where('user_id', $user->id)->delete();
         }
         app(\App\Services\AuditService::class)->record('user.status_changed', $user, [], ['status' => $user->status]);
-        return back()->with('success', 'Estado del usuario actualizado.');
+        return $request->is('api/*') ? response()->json(['data' => \App\Http\Controllers\Api\ApiData::managedUser($user->fresh())])
+            : back()->with('success', 'Estado del usuario actualizado.');
     }
 
-    private function validateUserAssignment(array $data): void
+    private function validateUserAssignment(array $data, ?User $existingUser = null): void
     {
         $role = Role::query()->where('active', true)->find($data['role_id']);
         $unit = isset($data['organizational_unit_id']) ? OrganizationalUnit::query()->where('active', true)->find($data['organizational_unit_id']) : null;
@@ -159,7 +199,11 @@ class AdminController extends Controller
             };
             if ($unit && $unit->code !== $expected) { $errors['organizational_unit_id'] = 'La dirección no corresponde al perfil.'; }
         }
-        if ($role?->code === 'ENLACE_INSTITUCIONAL' && empty($data['contracting_agency_id']) && !$unit) {
+        $hasExistingAgencyScopes = $existingUser?->role?->code === 'ENLACE_INSTITUCIONAL'
+            && !(array_key_exists('general_profile', $data) && !$data['general_profile'] && isset($existingUser->metadata['standard_profile']))
+            && $existingUser->scopes()->where('can_read', true)
+                ->whereHas('agency', fn ($query) => $query->where('active', true))->exists();
+        if ($role?->code === 'ENLACE_INSTITUCIONAL' && empty($data['contracting_agency_id']) && !$unit && !$hasExistingAgencyScopes && !($data['general_profile'] ?? false)) {
             $errors['contracting_agency_id'] = 'El enlace requiere una dependencia o dirección asignada.';
         }
         if ($errors) { throw \Illuminate\Validation\ValidationException::withMessages($errors); }
@@ -199,6 +243,9 @@ class AdminController extends Controller
     {
         $this->authorizeAdmin($request, 'agencies.manage');
 
+        if ($request->is('api/*')) return response()->json(['data' => ContractingAgency::with('units')->orderBy('name')->get()->map(fn ($agency) =>
+            $agency->only(['id', 'code', 'name', 'legal_name', 'active']) + ['units' => $agency->units->map(fn ($unit) => $unit->only(['id', 'code', 'name', 'active']))])]);
+
         return view('admin.agencies', [
             'agencies' => ContractingAgency::query()
                 ->with('units')
@@ -207,7 +254,7 @@ class AdminController extends Controller
         ]);
     }
 
-    public function storeAgency(Request $request): RedirectResponse
+    public function storeAgency(Request $request): \Symfony\Component\HttpFoundation\Response
     {
         $this->authorizeAdmin($request, 'agencies.manage');
 
@@ -217,35 +264,17 @@ class AdminController extends Controller
             'legal_name' => ['nullable', 'string', 'max:260'],
         ]);
 
-        $agency = ContractingAgency::query()->create($data + ['active' => true]);
-        $this->ensureDefaultDirections($agency);
+        $agency = DB::transaction(function () use ($data) {
+            $agency = ContractingAgency::query()->create($data + ['active' => true]);
+            app(\App\Services\AgencyWorkflowService::class)->provision($agency);
+            return $agency;
+        });
 
-        return back()->with('success', 'Dependencia creada.');
+        return $request->is('api/*') ? response()->json(['data' => $agency->only(['id', 'code', 'name', 'legal_name', 'active'])], 201)
+            : back()->with('success', 'Dependencia creada.');
     }
 
-    private function ensureDefaultDirections(ContractingAgency $agency): void
-    {
-        $directions = [
-            'DIR_A' => 'Dirección de Transmisión',
-            'DIR_B' => 'Dirección de Programación y Continuidad',
-        ];
-
-        foreach ($directions as $code => $name) {
-            OrganizationalUnit::query()->updateOrCreate(
-                [
-                    'contracting_agency_id' => $agency->id,
-                    'code' => $code,
-                ],
-                [
-                    'name' => $name,
-                    'unit_type' => 'DIRECTION',
-                    'active' => true,
-                ]
-            );
-        }
-    }
-
-    public function updateAgency(Request $request, ContractingAgency $agency): RedirectResponse
+    public function updateAgency(Request $request, ContractingAgency $agency): \Symfony\Component\HttpFoundation\Response
     {
         $this->authorizeAdmin($request, 'agencies.manage');
 
@@ -262,16 +291,18 @@ class AdminController extends Controller
 
         $agency->update($data);
 
-        return back()->with('success', 'Dependencia actualizada.');
+        return $request->is('api/*') ? response()->json(['data' => $agency->only(['id', 'code', 'name', 'legal_name', 'active'])])
+            : back()->with('success', 'Dependencia actualizada.');
     }
 
-    public function destroyAgency(Request $request, ContractingAgency $agency): RedirectResponse
+    public function destroyAgency(Request $request, ContractingAgency $agency): \Symfony\Component\HttpFoundation\Response
     {
         $this->authorizeAdmin($request, 'agencies.manage');
 
         $agency->update(['active' => false]);
         app(\App\Services\AuditService::class)->record('agency.archived', $agency);
-        return back()->with('success', 'Dependencia desactivada; expedientes e historial conservados.');
+        return $request->is('api/*') ? response()->json(['data' => $agency->only(['id', 'code', 'name', 'active'])])
+            : back()->with('success', 'Dependencia desactivada; expedientes e historial conservados.');
     }
 
     public function storeUnit(Request $request): RedirectResponse

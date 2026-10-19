@@ -80,6 +80,17 @@ class WorkflowHardeningTest extends TestCase
         return app(InstitutionalClosureService::class)->close($this->load->fresh(), $this->enlace->id, 'Cierre de aceptación');
     }
 
+    public function test_consolidated_identity_cannot_review_its_retired_alias_submission(): void
+    {
+        $evidence = $this->upload('A');
+        $alias = $this->user('DIRECTOR_TRANSMISION', ['organizational_unit_id' => $this->directors['A']->organizational_unit_id,
+            'status' => 'INACTIVE', 'metadata' => ['qa_merged_into' => $this->directors['A']->id]]);
+        $evidence->update(['submitted_by' => $alias->id, 'status' => 'ENVIADO']);
+        $this->expectException(WorkflowException::class);
+        $this->expectExceptionMessage('su propia entrega');
+        app(EvidenceWorkflowService::class)->review($evidence->fresh(), $this->directors['A'], 'APROBADO', 'Conforme');
+    }
+
     public function test_database_roundtrip_preserves_institutional_window_instants(): void
     {
         $load = $this->load->fresh();
@@ -223,6 +234,46 @@ class WorkflowHardeningTest extends TestCase
         $this->assertSame('VALIDADO_Y_CERRADO', $this->load->fresh()->status->value);
         Storage::disk('local')->assertExists($firstCertificate);
         $this->assertDatabaseHas('load_status_history', ['scheduled_load_id' => $this->load->id, 'new_status' => 'REABIERTA']);
+    }
+
+    public function test_dashboards_reconcile_through_capture_review_signature_closure_and_reopening(): void
+    {
+        $analytics = app(\App\Services\DashboardAnalyticsService::class);
+        $summary = fn (User $u) => $analytics->forUser($u)['workspace']['summary'];
+        $this->assertSame(2, $summary($this->enlace)['pending']);
+        $e = $this->upload('A');
+        $this->assertSame(1, $summary($this->operators['A'])['pending']);
+        app(EvidenceWorkflowService::class)->submit($e, $this->operators['A']);
+        $this->assertSame(1, $summary($this->directors['A'])['review']);
+        $this->actingAs($this->directors['A'])->get(route('dashboard'))->assertOk()->assertSee('Revisar evidencia');
+        app(EvidenceWorkflowService::class)->review($e->fresh(), $this->directors['A'], 'APROBADO', 'Dirección conforme');
+        $this->assertSame(1, $summary($this->enlace)['review']);
+        $this->actingAs($this->enlace)->get(route('dashboard'))->assertOk()->assertSee('Revisar evidencia');
+        app(EvidenceWorkflowService::class)->review($e->fresh(), $this->enlace, 'APROBADO', 'Institucional conforme');
+        $this->assertSame(1, $summary($this->directors['A'])['validated']);
+        $this->assertSame(1, $summary($this->operators['B'])['pending']);
+        $this->approve('B');
+        $this->travel(2)->hours();
+        $this->assertSame(0, $summary($this->enlace)['overdue']);
+        app(InstitutionalClosureService::class)->updateChecklist($this->load->fresh(), $this->enlace->id, true, true, 'Completo');
+        app(InstitutionalClosureService::class)->uploadSignedDocument($this->load->fresh(), UploadedFile::fake()->create('firma-dashboard.pdf', 10), $this->enlace->id);
+        $closure = app(InstitutionalClosureService::class)->close($this->load->fresh(), $this->enlace->id, 'Cierre verificado');
+        $before = [$this->load->fresh()->getAttributes(), $closure->fresh()->getAttributes(), EvidenceFile::count(), AuditLog::count()];
+        foreach ([$this->enlace, ...array_values($this->directors), ...array_values($this->operators)] as $u) {
+            $data = $analytics->forUser($u);
+            $expected = $u->id === $this->enlace->id ? 2 : 1;
+            $this->assertSame($expected, $data['workspace']['summary']['validated']);
+            $this->assertSame($expected, (int) ($data['evidence_funnel']['CERRADO'] ?? 0) + (int) ($data['evidence_funnel']['VALIDADO'] ?? 0));
+            $this->assertSame(1, $data['kpis']['closed']);
+            $this->actingAs($u)->get(route('dashboard'))->assertOk();
+        }
+        $this->assertSame($before, [$this->load->fresh()->getAttributes(), $closure->fresh()->getAttributes(), EvidenceFile::count(), AuditLog::count()]);
+        app(EvidenceCorrectionService::class)->authorize($this->load->fresh(), $this->enlace,
+            [$this->deliverables['A']->id], now()->subMinute(), now()->addHour(), 'Corrección de versión', true);
+        $this->assertSame(1, $summary($this->operators['A'])['observed']);
+        $this->assertSame(1, $summary($this->operators['B'])['validated']);
+        $this->assertSame(0, $analytics->forUser($this->enlace)['kpis']['closed']);
+        $this->assertTrue($closure->fresh()->reopened);
     }
 
     public function test_closed_checklist_and_submission_cannot_mutate_state(): void

@@ -9,3 +9,7 @@ Schedule::command('siget:refresh-indicators')->hourly()->withoutOverlapping();
 Schedule::command('siget:health')->everyFiveMinutes()->withoutOverlapping();
 Schedule::command('siget:queue-watch')->everyFiveMinutes()->withoutOverlapping();
 Schedule::command('siget:evaluate-alerts')->everyFiveMinutes()->withoutOverlapping();
+Schedule::command('sanctum:prune-expired --hours=24')->daily();
+// El respaldo completo se ejecuta una vez al mes mediante siget-backup.timer en VM1.
+// El comando de vigilancia comprueba antigüedad; no genera respaldos adicionales.
+if (app()->environment('production')) Schedule::command('siget:backup-status')->dailyAt('09:00')->withoutOverlapping();

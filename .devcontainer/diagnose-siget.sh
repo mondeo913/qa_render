@@ -11,15 +11,20 @@ echo "============================================================"
 
 echo
 echo "Versiones"
-php -v | head -n 2
-composer --version
-node --version
-npm --version
-psql --version
-mailpit version
+for tool in php composer node npm psql mailpit; do
+  if command -v "${tool}" >/dev/null 2>&1; then
+    if [[ "${tool}" == "mailpit" ]]; then "${tool}" version --no-release-check || true; else "${tool}" --version | head -n 2 || true; fi
+  else
+    echo "FALTA: ${tool}; reconstruya el contenedor SIGET."
+  fi
+done
+if [[ -f "${PGDATA}/PG_VERSION" ]]; then
+  echo "Versión del directorio de datos: $(cat "${PGDATA}/PG_VERSION")"
+fi
+find_postgres_bin || true
 
 echo
-show_service_status
+show_service_status || true
 
 echo
 echo "Laravel"

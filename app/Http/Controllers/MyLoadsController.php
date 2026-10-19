@@ -62,8 +62,7 @@ class MyLoadsController extends Controller
             // Un unit_id manipulado nunca puede ampliar su alcance.
             $scopedQuery->whereHas('deliverables', function ($query) use ($access, $user, $operatorUnitId) {
                 $access->scopeDeliverables($query, $user);
-                $query->where('organizational_unit_id', $operatorUnitId)
-                    ->whereDoesntHave('evidences');
+                $query->whereDoesntHave('evidences');
             });
         } elseif ($request->filled('unit_id')) {
             $unitId = $request->integer('unit_id');
@@ -120,10 +119,10 @@ class MyLoadsController extends Controller
             ->values();
 
         if ($operatorUnitId !== null) {
-            $filterUnits = $filterUnits->where('id', $operatorUnitId)->values();
+            $filterUnits = $filterUnits->whereIn('id', $unitIds)->values();
         }
 
-        $agencies = $filterLoads->pluck('agency')->filter()->unique('id')->sortBy('name')->values();
+        $agencies = $access->availableAgencies($user);
 
         $selectedAgencyId = $request->filled('agency_id') ? $request->integer('agency_id') : null;
         $agencyFilterLoads = $selectedAgencyId !== null

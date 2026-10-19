@@ -15,6 +15,10 @@ class SigetQaInitialize extends Command
 
     public function handle(): int
     {
+        if (!app()->environment(['local', 'qa', 'testing'])) {
+            $this->error('Los datos QA están deshabilitados en este ambiente.');
+            return self::FAILURE;
+        }
         if ($this->option('reset')) {
             $this->warn('Reconstruyendo completamente la base QA...');
             Artisan::call('migrate:fresh', [
