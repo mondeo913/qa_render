@@ -178,7 +178,11 @@ final class EvidenceService
                     : 'EN_CAPTURA',
             ]);
 
-            if (in_array($load->status->value, ['PROGRAMADA', 'ABIERTA', 'REPROGRAMADA_ABIERTA'], true)) {
+            $captureStatuses = ['PROGRAMADA', 'ABIERTA', 'REPROGRAMADA_ABIERTA'];
+            if ($load->isRetroactiveBackfillActive()) {
+                $captureStatuses[] = 'VENCIDA';
+            }
+            if (in_array($load->status->value, $captureStatuses, true)) {
                 $this->loadStatus->transition($load, 'EN_CAPTURA', $user, 'Captura de evidencias iniciada.', ['organizational_unit_id' => $deliverable->organizational_unit_id, 'evidence_id' => $evidence->id]);
             }
             $this->progress->recalculate($deliverable->scheduledLoad);
