@@ -1,0 +1,89 @@
+/* SIGET · Acceso Centro de Control · solo afecta a la pantalla de ingreso */
+html body.siget-login{background:#041021;color:#f5fbff;min-height:100vh;color-scheme:dark;font-family:Inter,system-ui,-apple-system,"Segoe UI",Arial,sans-serif}
+body.siget-login *,body.siget-login *::before,body.siget-login *::after{box-sizing:border-box}
+body.siget-login .sx-scene{position:relative;isolation:isolate;min-height:100vh;min-height:100svh;overflow:hidden;background:radial-gradient(ellipse at 47% 48%,#0a395c84,transparent 41%),radial-gradient(ellipse at 4% 0%,#0e345280,transparent 46%),linear-gradient(115deg,#031020 0%,#051b35 55%,#020a17 100%)}
+body.siget-login .sx-scene::before{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;opacity:.42;background:radial-gradient(circle at 4% 9%,#2675dc 0 4px,transparent 5px),radial-gradient(circle at 34% 5%,#1d6eb3 0 2px,transparent 3px),radial-gradient(circle at 49% 70%,#1e87e9 0 2px,transparent 3px),radial-gradient(circle at 85% 11%,#1875b9 0 2px,transparent 3px)}
+body.siget-login .sx-grid{position:absolute;z-index:-1;bottom:-25%;left:-12%;width:130%;height:58%;pointer-events:none;opacity:.48;transform:perspective(650px) rotateX(62deg) rotateZ(-4deg);transform-origin:center bottom;background-image:radial-gradient(circle,#1e8dea 1.2px,transparent 1.7px);background-size:19px 22px;mask-image:linear-gradient(to bottom,transparent,black 44%,transparent)}
+body.siget-login .sx-orbit{position:absolute;z-index:-1;top:49%;left:49%;width:min(62vw,810px);aspect-ratio:1;transform:translate(-50%,-50%);pointer-events:none;opacity:.97;filter:drop-shadow(0 0 19px #13b4e62d)}
+body.siget-login .sx-orbit svg{width:100%;height:100%;display:block}
+body.siget-login .sx-ring-one,body.siget-login .sx-ring-two{transform-origin:360px 360px}
+body.siget-login .sx-ring-one{animation:sx-orbit 145s linear infinite}
+body.siget-login .sx-ring-two{animation:sx-orbit 98s linear infinite reverse}
+@keyframes sx-orbit{to{transform:rotate(360deg)}}
+body.siget-login .sx-layout{width:min(100%,1780px);margin:auto;min-height:100vh;min-height:100svh;position:relative;z-index:1;display:grid;grid-template-columns:minmax(0,1.18fr) minmax(390px,.82fr);gap:clamp(26px,4.5vw,80px);align-items:center;padding:clamp(24px,4vw,69px) clamp(24px,5.6vw,100px)}
+body.siget-login .sx-hero{align-self:stretch;min-width:0;display:flex;flex-direction:column;justify-content:space-between}
+body.siget-login .sx-brand,body.siget-login .sx-card-brand{display:flex;align-items:center;gap:15px}
+body.siget-login .sx-mark{flex:none;display:grid;place-items:center;width:60px;height:60px;background:linear-gradient(135deg,#e5f7ff,#8ad6ff 53%,#3bdfee);box-shadow:inset 0 2px 3px #fff8,0 9px 35px #13a5e31e;border-radius:14px;font-size:37px;line-height:1;font-weight:900;color:#05213d}
+body.siget-login .sx-wordmark,body.siget-login .sx-card-brand>div{min-width:0}
+body.siget-login .sx-wordmark strong,body.siget-login .sx-card-brand strong{display:block;color:#fff;font-size:24px;line-height:1.1;letter-spacing:-.035em;font-weight:850}
+body.siget-login .sx-wordmark small,body.siget-login .sx-card-brand small{display:block;color:#a5bbd9;letter-spacing:.18em;font-size:9px;font-weight:700;line-height:1.55;text-transform:uppercase;margin-top:6px}
+body.siget-login .sx-hero-body{padding:42px 0 48px;max-width:710px}
+body.siget-login .sx-hero h1{font-size:clamp(49px,5.1vw,91px);line-height:1.02;letter-spacing:-.065em;font-weight:850;white-space:nowrap;color:#fff;margin:0;text-shadow:0 3px 14px #0003}
+body.siget-login .sx-hero h1 span{display:block;width:max-content;max-width:100%;color:#56e9f4;background:linear-gradient(100deg,#43f2f0,#72b5ff);background-clip:text;-webkit-background-clip:text;-webkit-text-fill-color:transparent;padding-bottom:.06em}
+body.siget-login .sx-tagline{color:#b7cae2;font-size:clamp(17px,1.7vw,27px);letter-spacing:-.025em;line-height:1.4;margin:15px 0 21px}
+body.siget-login .sx-accent{width:76px;height:2px;background:#49eee9;box-shadow:0 0 15px #49eee988;margin-bottom:25px}
+body.siget-login .sx-description{max-width:545px;font-size:clamp(14px,1.13vw,18px);line-height:1.75;color:#aec8e6;margin:0}
+body.siget-login .sx-feature{margin-top:51px;display:flex;align-items:center;gap:19px;max-width:590px}
+body.siget-login .sx-feature-icon{flex:none;width:59px;height:59px;border:1px solid #145277;border-radius:13px;color:#44eef2;background:linear-gradient(145deg,#0d3d5b9c,#052139a9);display:grid;place-items:center}
+body.siget-login .sx-feature-icon svg{width:31px;height:31px}
+body.siget-login .sx-feature strong{font-size:17px;line-height:1.3;font-weight:730;color:#f8fbff;display:block}
+body.siget-login .sx-feature small{display:block;margin-top:6px;font-size:13px;line-height:1.5;color:#b3c9e4}
+body.siget-login .sx-hero-footer{font-size:11px;color:#819ab8;margin:0}
+body.siget-login .sx-auth{display:flex;justify-content:center;align-items:center;min-width:0}
+body.siget-login .sx-card{width:100%;max-width:525px;border:1px solid #3bbce8;border-radius:23px;padding:clamp(26px,3.0vw,48px);background:linear-gradient(145deg,rgba(7,30,57,.95),rgba(3,16,35,.95));box-shadow:0 0 0 1px #0bbbe715,0 18px 70px #01081093,0 0 45px #18a9e529,inset 0 1px 25px #1480b314;position:relative;overflow:hidden}
+body.siget-login .sx-card::after{content:"";position:absolute;width:150px;height:90px;right:-40px;bottom:-70px;background:#3dcaf4;filter:blur(55px);opacity:.22;pointer-events:none}
+body.siget-login .sx-card-header{display:flex;justify-content:space-between;align-items:center;gap:16px}
+body.siget-login .sx-mark-sm{width:55px;height:55px;font-size:35px;border-radius:13px}
+body.siget-login .sx-card-brand{gap:13px}
+body.siget-login .sx-card-brand strong{font-size:23px}
+body.siget-login .sx-card-brand small{font-size:8px;line-height:1.4;letter-spacing:.12em}
+body.siget-login .sx-theme{flex:none;border:1px solid #31577c;background:#081e38;color:#f4fbff;width:40px;height:40px;border-radius:11px;display:grid;place-items:center;cursor:pointer}
+body.siget-login .sx-theme:hover{border-color:#64eeef}
+body.siget-login .sx-theme svg{width:21px;height:21px}
+body.siget-login .sx-card-content{padding-top:40px}
+body.siget-login .sx-card h2{font-size:36px;letter-spacing:-.05em;line-height:1.1;font-weight:820;color:#fff;margin:0 0 9px}
+body.siget-login .sx-subtitle{font-size:15px;line-height:1.55;color:#a9bfdc;margin:0 0 29px}
+body.siget-login .sx-field{margin-bottom:23px}
+body.siget-login .sx-field label{display:block;font-size:13px;font-weight:720;color:#f3f9ff;margin:0 0 9px}
+body.siget-login .sx-label-row{display:flex;align-items:baseline;justify-content:space-between;gap:9px}
+body.siget-login .sx-label-row a{color:#43edf1;text-decoration:none;font-size:12px;font-weight:700;white-space:nowrap}
+body.siget-login .sx-label-row a:hover{text-decoration:underline}
+body.siget-login .sx-input{position:relative}
+body.siget-login .sx-input>svg{position:absolute;left:17px;top:50%;width:20px;height:20px;transform:translateY(-50%);color:#9abbdd;pointer-events:none}
+body.siget-login .sx-input input{display:block;width:100%;height:53px;border:1px solid #395f86;border-radius:10px;background:#071b36;color:#f5fbff;padding:0 48px 0 50px;font-size:14px;line-height:1.4;outline:none;box-shadow:none}
+body.siget-login .sx-input input::placeholder{color:#8ea9cc;opacity:1}
+body.siget-login .sx-input input:focus{border-color:#57e8ee;box-shadow:0 0 0 3px #49e3ee2b}
+body.siget-login .sx-input input[aria-invalid=true]{border-color:#ff9d9d}
+body.siget-login .sx-reveal{position:absolute;top:50%;right:7px;transform:translateY(-50%);border:0;border-radius:8px;padding:8px;background:transparent;color:#9bbce0;display:grid;place-items:center;cursor:pointer}
+body.siget-login .sx-reveal:hover{color:#50edf3}
+body.siget-login .sx-reveal svg{height:21px;width:21px}
+body.siget-login .sx-remember{display:flex;align-items:center;gap:11px;color:#e0f0ff;font-size:13px;cursor:pointer;margin:0 0 29px}
+body.siget-login .sx-remember input{appearance:none;width:20px;height:20px;border:1px solid #6387ac;border-radius:5px;background:#0c2c4a;margin:0;flex:none;display:grid;place-items:center;cursor:pointer}
+body.siget-login .sx-remember input:checked{background:#43e4ee;border-color:#43e4ee}
+body.siget-login .sx-remember input:checked::after{content:"";width:10px;height:6px;transform:rotate(-45deg) translate(1px,-1px);border-left:2px solid #05213c;border-bottom:2px solid #05213c}
+body.siget-login .sx-submit{width:100%;min-height:62px;border:0;border-radius:11px;display:flex;align-items:center;justify-content:center;gap:13px;padding:10px;color:#092740;font-size:15px;font-weight:800;cursor:pointer;background:linear-gradient(100deg,#41efed,#68beff 65%,#47e1ee);box-shadow:0 10px 30px #03c0e72d;transition:transform .16s,filter .16s,box-shadow .16s}
+body.siget-login .sx-submit:hover:not(:disabled){transform:translateY(-2px);filter:brightness(1.05);box-shadow:0 14px 35px #03c0e747}
+body.siget-login .sx-submit:disabled{opacity:.72;cursor:progress}
+body.siget-login .sx-submit svg{width:20px;height:20px;flex:none}
+body.siget-login .sx-card-footer{margin-top:26px;border-top:1px solid #2f5778;padding-top:20px;display:flex;align-items:center;gap:12px;color:#93aece;font-size:11px;line-height:1.55}
+body.siget-login .sx-card-footer svg{width:20px;height:20px;flex:none}
+body.siget-login .sx-message{border:1px solid #317d9c;background:#0a334d;color:#ddfaff;border-radius:9px;padding:11px 13px;margin:0 0 16px;font-size:13px}
+body.siget-login .sx-message-error{border-color:#ae6677;background:#402031;color:#ffe1e1}
+body.siget-login :is(a,button,input):focus-visible{outline:3px solid #71fcfb;outline-offset:3px}
+@media(max-width:1260px){body.siget-login .sx-layout{grid-template-columns:minmax(0,1fr) minmax(365px,.93fr);gap:34px}body.siget-login .sx-hero h1{font-size:clamp(45px,5vw,68px)}body.siget-login .sx-card{padding:32px 28px}body.siget-login .sx-orbit{width:650px;left:44%}}
+@media(max-width:990px){body.siget-login .sx-layout{grid-template-columns:minmax(0,1fr) minmax(330px,1fr);gap:20px;padding:34px 26px}body.siget-login .sx-hero h1{font-size:clamp(40px,4.7vw,53px)}body.siget-login .sx-brand .sx-mark{width:48px;height:48px;font-size:29px}body.siget-login .sx-wordmark strong{font-size:21px}body.siget-login .sx-wordmark small{letter-spacing:.08em;font-size:8px}body.siget-login .sx-tagline{font-size:18px}body.siget-login .sx-card{padding:27px 23px}body.siget-login .sx-orbit{width:540px;left:47%}}
+@media(max-width:760px){body.siget-login .sx-layout{display:flex;flex-direction:column;align-items:stretch;padding:25px 20px 36px;gap:29px}body.siget-login .sx-hero{display:block}body.siget-login .sx-hero-body{padding:42px 0 0}body.siget-login .sx-hero h1{font-size:clamp(42px,8.5vw,68px)}body.siget-login .sx-hero-footer{display:none}body.siget-login .sx-orbit{left:65%;top:220px;width:550px;opacity:.25}body.siget-login .sx-feature{margin-top:28px}body.siget-login .sx-card{max-width:620px;margin:auto;padding:31px 27px}body.siget-login .sx-card-content{padding-top:28px}body.siget-login .sx-subtitle{margin-bottom:25px}}
+@media(max-width:480px){body.siget-login .sx-layout{padding:22px 15px 30px;gap:24px}body.siget-login .sx-brand{gap:10px}body.siget-login .sx-brand .sx-mark{width:43px;height:43px;font-size:27px;border-radius:11px}body.siget-login .sx-wordmark strong{font-size:19px}body.siget-login .sx-wordmark small{font-size:7px;letter-spacing:.04em}body.siget-login .sx-hero-body{padding-top:36px}body.siget-login .sx-hero h1{font-size:clamp(35px,10vw,49px);white-space:normal}body.siget-login .sx-tagline{font-size:16px;margin:11px 0 18px}body.siget-login .sx-accent{margin-bottom:16px}body.siget-login .sx-description{font-size:13px;line-height:1.65}body.siget-login .sx-feature-icon{width:45px;height:45px}body.siget-login .sx-feature{gap:10px;margin-top:23px}body.siget-login .sx-feature strong{font-size:14px}body.siget-login .sx-feature small{font-size:11px}body.siget-login .sx-card{padding:24px 18px}body.siget-login .sx-card-brand{gap:10px}body.siget-login .sx-mark-sm{width:45px;height:45px;font-size:29px}body.siget-login .sx-card-brand strong{font-size:20px}body.siget-login .sx-card-brand small{font-size:7px}body.siget-login .sx-card h2{font-size:30px}body.siget-login .sx-card-content{padding-top:29px}body.siget-login .sx-input input{height:51px}body.siget-login .sx-submit{min-height:56px}body.siget-login .sx-label-row a{font-size:11px}body.siget-login .sx-orbit{width:480px}}
+@media(prefers-reduced-motion:reduce){body.siget-login *,body.siget-login *::before,body.siget-login *::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+/* Si el usuario selecciona Claro desde su preferencia Zenith, el formulario también responde */
+html[data-bs-theme=light] body.siget-login .sx-scene{background:radial-gradient(ellipse at 48% 50%,#a0e5ff66,transparent 48%),linear-gradient(118deg,#e9f8ff,#c8e3fa)}
+html[data-bs-theme=light] body.siget-login .sx-hero h1,html[data-bs-theme=light] body.siget-login .sx-wordmark strong{color:#0d2946;text-shadow:none}
+html[data-bs-theme=light] body.siget-login .sx-tagline,html[data-bs-theme=light] body.siget-login .sx-description,html[data-bs-theme=light] body.siget-login .sx-feature small,html[data-bs-theme=light] body.siget-login .sx-hero-footer,html[data-bs-theme=light] body.siget-login .sx-wordmark small{color:#446583}
+html[data-bs-theme=light] body.siget-login .sx-feature strong{color:#12334f}
+html[data-bs-theme=light] body.siget-login .sx-card{background:linear-gradient(145deg,#f6fcff,#e6f5ff);border-color:#4c9ac8;box-shadow:0 20px 65px #3f7ba52a}
+html[data-bs-theme=light] body.siget-login .sx-card h2,html[data-bs-theme=light] body.siget-login .sx-card-brand strong,html[data-bs-theme=light] body.siget-login .sx-field label{color:#12334f}
+html[data-bs-theme=light] body.siget-login .sx-card-brand small,html[data-bs-theme=light] body.siget-login .sx-subtitle,html[data-bs-theme=light] body.siget-login .sx-card-footer{color:#486884}
+html[data-bs-theme=light] body.siget-login .sx-input input{background:#f7fcff;border-color:#92b7d4;color:#133c5d}
+html[data-bs-theme=light] body.siget-login .sx-remember{color:#294a66}
+html[data-bs-theme=light] body.siget-login .sx-theme{color:#103c62;background:#e4f3ff}
+html[data-bs-theme=light] body.siget-login .sx-orbit{opacity:.33}
