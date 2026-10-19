@@ -171,6 +171,7 @@ final class InstitutionalClosureService
     ): InstitutionalReview {
         return DB::transaction(function () use ($load, $userId, $evidencesCorrect, $packagePrepared, $observations) {
             $load = ScheduledLoad::query()->lockForUpdate()->findOrFail($load->id);
+            $operationalAt = $load->operationalTimestamp();
         $this->assertInstitutionalActor($load, $userId, 'scheduled_load.verify');
         if ($load->is_blocked) {
             throw new RuntimeException('El expediente está bloqueado.');
@@ -187,8 +188,8 @@ final class InstitutionalClosureService
                 'evidences_correct'=>$evidencesCorrect,
                 'package_prepared_for_signature'=>$packagePrepared,
                 'observations'=>$observations,
-                'started_at'=>now(),
-                'verified_at'=>$evidencesCorrect && $packagePrepared && $validation['ready'] ? now() : null,
+                'started_at'=>$operationalAt,
+                'verified_at'=>$evidencesCorrect && $packagePrepared && $validation['ready'] ? $operationalAt : null,
             ]
         );
 
@@ -244,6 +245,7 @@ final class InstitutionalClosureService
 
         return DB::transaction(function () use ($load,$file,$userId,$metadata,$extension,$antivirusStatus) {
             $load = ScheduledLoad::query()->lockForUpdate()->findOrFail($load->id);
+            $operationalAt = $load->operationalTimestamp();
             if ($load->is_blocked || $load->status->value !== 'VALIDADA' || !$this->validateExpediente($load)['ready'] || !$load->institutionalReview?->verified_at) {
                 throw new RuntimeException('La validación institucional cambió; revise el expediente.');
             }
@@ -282,7 +284,7 @@ final class InstitutionalClosureService
 
             $load->update([
                 'traffic_light'=>TrafficLight::GREEN,
-                'validated_at'=>$load->validated_at ?? now(),
+                'validated_at'=>$load->validated_at ?? $operationalAt,
                 'validated_by'=>$load->validated_by ?? $userId,
             ]);
 
@@ -296,6 +298,7 @@ final class InstitutionalClosureService
         $this->assertInstitutionalActor($load, $userId);
         return DB::transaction(function () use ($load,$userId,$comment) {
             $load = ScheduledLoad::query()->lockForUpdate()->findOrFail($load->id);
+            $operationalAt = $load->operationalTimestamp();
             $load->load(['deliverables.templateRequirement','institutionalReview','signedDocuments.files']);
 
             $loadStatus = $load->status instanceof \BackedEnum
@@ -341,7 +344,7 @@ final class InstitutionalClosureService
             $manifest = [
                 'scheduled_load_id'=>$load->id,
                 'closed_by'=>$userId,
-                'closed_at'=>now()->toIso8601String(),
+                'closed_at'=>$operationalAt->toIso8601String(),
                 'deliverables'=>$load->deliverables->pluck('id')->all(),
                 'signed_document_id'=>$signed->id,
                 'file_hashes'=>$files->pluck('sha256')->all(),
@@ -357,7 +360,7 @@ final class InstitutionalClosureService
                     'signed_document_id'=>$signed->id,
                     'closed_by'=>$userId,
                     'reopened'=>false, 'reopened_reason'=>null, 'reopened_by'=>null, 'reopened_at'=>null,
-                    'closed_at'=>now(),
+                    'closed_at'=>$operationalAt,
                     'closing_comment'=>$comment,
                     'package_sha256'=>$packageHash,
                     'integrity_manifest'=>$manifest,
@@ -378,7 +381,7 @@ final class InstitutionalClosureService
                 'traffic_light'=>TrafficLight::DARK_GREEN,
                 'is_blocked'=>true,
                 'block_reason'=>'Expediente de dependencia validado y cerrado',
-                'closed_at'=>now(),
+                'closed_at'=>$operationalAt,
                 'closed_by'=>$userId,
                 'row_version'=>$load->row_version + 1,
             ]);
