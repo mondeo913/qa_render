@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\AuditLog;
+use App\Models\LoadStatusHistory;
 use App\Models\CalendarImport;
 use App\Models\CalendarImportRow;
 use App\Models\ContractingAgency;
@@ -216,6 +217,15 @@ class EvidenceWorkflowTest extends TestCase
         $this->assertGreaterThanOrEqual(4, $auditRows->count());
         $this->assertTrue($auditRows->every(
             fn (AuditLog $event) => $event->created_at->toDateString() === '2026-10-19'
+        ));
+
+        $historyRows = LoadStatusHistory::query()->where('scheduled_load_id', $load->id)->get();
+        $this->assertGreaterThanOrEqual(3, $historyRows->count());
+        $this->assertTrue($historyRows->every(
+            fn (LoadStatusHistory $event) => $event->created_at->toDateString() === '2026-10-19'
+        ));
+        $this->assertTrue($historyRows->every(
+            fn (LoadStatusHistory $event) => data_get($event->metadata, 'operational_date') === '2026-07-01'
         ));
     }
 
