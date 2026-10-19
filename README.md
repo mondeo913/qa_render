@@ -6,6 +6,7 @@ Sistema de Gestión de Evidencias de Transmisión: pautas Excel, calendario, ent
 
 - [Entrega a infraestructura, dos VM y respaldos mensuales](docs/ENTREGA_INFRAESTRUCTURA_API.md).
 - [API v1 y contrato de integración](docs/API_V1.md).
+- [Cliente externo Node.js, pruebas de contrato y smoke API](docs/INTEGRACION_CLIENTES_API.md).
 - [Flujo, responsabilidades y actualización](docs/FLUJO_SIGET_CONTROLADO.md).
 - [Crear, reanudar y verificar Codespaces](docs/codespaces/GUIA_PASO_A_PASO.md).
 - [Pruebas automáticas y aceptación manual](docs/PLAN_PRUEBAS_QA.md).

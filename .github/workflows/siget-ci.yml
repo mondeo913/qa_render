@@ -178,6 +178,9 @@ jobs:
       - name: npm security audit
         run: npm audit
 
+      - name: SIGET API Node integration tests
+        run: node --test integrations/node/siget-client.test.mjs
+
       - name: npm build
         run: npm run build
 

@@ -4,6 +4,8 @@ Base: `https://URL_INSTITUCIONAL/api/v1`. Contrato importable en Swagger o Postm
 
 La URL del portal puede ser accesible en la red autorizada. Los datos y archivos requieren una cuenta activa y permisos; no existe registro público. El asistente se ejecuta en VM1 por infraestructura, no en las computadoras de los usuarios.
 
+Para integrar sistemas externos de forma segura, consulte [Integración de clientes API (Node.js y pruebas QA)](INTEGRACION_CLIENTES_API.md). El acceso web Laravel conserva su sesión y CSRF; no utiliza tokens Bearer en el navegador.
+
 ## Autenticación
 
 `POST /auth/token` recibe JSON con `email`, `password` y `device_name`. Una cuenta válida obtiene `201` con `token_type: Bearer`, `access_token`, `expires_at` y sus permisos. El token completo se entrega una vez; en la base se conserva su hash. Su vigencia predeterminada es 480 minutos, limitada a 24 horas por token. Nunca guarde tokens en URLs, repositorios ni logs.
