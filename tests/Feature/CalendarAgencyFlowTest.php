@@ -1,7 +1,7 @@
 <?php
 namespace Tests\Feature;
 
-use App\Models\{CalendarImport, ContractingAgency, ReviewAssignment, ScheduledLoad, User};
+use App\Models\{AuditLog, CalendarImport, ContractingAgency, ReviewAssignment, ScheduledLoad, User};
 use App\Services\{AccessScopeService, CalendarImportService, QaUserStandardService};
 use Database\Seeders\{AgencyTemplateSeeder, RolePermissionSeeder};
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -71,6 +71,22 @@ class CalendarAgencyFlowTest extends TestCase
                 'contracting_agency_id' => $agency->id, 'date' => '2026-07-07']));
             $loads = ScheduledLoad::where('calendar_import_id', $import->id)->with('deliverables')->get();
             $this->assertCount(2, $loads);
+            foreach ($loads as $load) {
+                $this->assertTrue($load->retroactive);
+                $this->assertTrue($load->isRetroactiveBackfillActive(now()));
+                $this->assertSame($load->original_open_at->format('Y-m-d H:i:s'), $load->effective_open_at->format('Y-m-d H:i:s'));
+                $this->assertSame($load->original_close_at->format('Y-m-d H:i:s'), $load->effective_close_at->format('Y-m-d H:i:s'));
+                $this->assertTrue(app(\App\Services\CalendarAvailabilityService::class)->isEnabled($load, now()));
+                foreach ($load->deliverables as $deliverable) {
+                    $this->assertSame($load->effective_close_at->format('Y-m-d H:i:s'), $deliverable->due_at->format('Y-m-d H:i:s'));
+                }
+            }
+            $confirmationLog = AuditLog::query()
+                ->where('event', 'calendar.import.confirmed')
+                ->where('entity_id', (string) $import->id)
+                ->firstOrFail();
+            $this->assertSame('2026-10-15', $confirmationLog->created_at->toDateString());
+            $this->assertSame(2, data_get($confirmationLog->new_values, 'retroactive_scheduled_load_count'));
             $this->assertSame(2, \App\Models\RepositoryFolder::whereIn('scheduled_load_id', $loads->pluck('id'))->where('folder_type', 'SCHEDULED_LOAD')->count());
             $this->assertSame(4, \App\Models\RepositoryFolder::whereIn('scheduled_load_id', $loads->pluck('id'))->where('folder_type', 'OPERATIONAL_UNIT')->count());
             foreach ($loads as $load) {
