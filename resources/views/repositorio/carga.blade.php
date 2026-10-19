@@ -22,6 +22,9 @@
             </div>
             <div class="text-end"><span class="badge siget-status fs-6">{{ $status }}</span><div class="mt-2"><strong>{{ $load->completion_percentage }}% completado</strong></div><div class="progress mt-2" style="width:240px"><div class="progress-bar" style="width:{{ $load->completion_percentage }}%"></div></div></div>
         </div>
+        @if(($load->metadata['retroactive_registration'] ?? false))
+            <div class="alert alert-info mt-3 mb-0"><strong>Registro retroactivo del ejercicio 2026.</strong> Se conservan las fechas originales y efectivas de la pauta. Las acciones realizadas en SIGET conservarán su fecha y hora reales en la trazabilidad.</div>
+        @endif
         @if($load->is_blocked)<div class="alert alert-warning mt-3 mb-0"><i class="bi bi-lock"></i> {{ $load->block_reason }}</div>@endif
     </div>
 </div>
@@ -112,5 +115,5 @@
 <button class="btn btn-warning mt-3">{{ $status === 'VALIDADO_Y_CERRADO' ? 'Reabrir y autorizar corrección' : 'Autorizar ventana de corrección' }}</button></form></div></div>
 @endif
 
-<div class="card siget-card mt-4"><div class="card-header"><div><h2>Trazabilidad del expediente</h2><p>Historial de transiciones institucionales</p></div></div><div class="table-responsive"><table class="table mb-0"><thead><tr><th>Fecha</th><th>Anterior</th><th>Nuevo</th><th>Usuario</th><th>Motivo</th></tr></thead><tbody>@forelse($load->statusHistory->sortByDesc('created_at') as $item)<tr><td>{{ $item->created_at?->format('d/m/Y H:i') }}</td><td>{{ $item->old_status }}</td><td>{{ $item->new_status }}</td><td>{{ $item->user?->name }}</td><td>{{ $item->reason }}</td></tr>@empty<tr><td colspan="5" class="text-center text-secondary py-4">Sin cambios registrados.</td></tr>@endforelse</tbody></table></div></div>
+<div class="card siget-card mt-4"><div class="card-header"><div><h2>Trazabilidad del expediente</h2><p>Historial de transiciones institucionales</p></div></div><div class="table-responsive"><table class="table mb-0"><thead><tr><th>Fecha del evento</th><th>Fecha operativa</th><th>Anterior</th><th>Nuevo</th><th>Usuario</th><th>Motivo</th></tr></thead><tbody>@forelse($load->statusHistory->sortByDesc('created_at') as $item)<tr><td>{{ $item->created_at?->format('d/m/Y H:i') }}</td><td>{{ data_get($item->metadata,'operational_date') ? \Illuminate\Support\Carbon::parse(data_get($item->metadata,'operational_date'))->format('d/m/Y') : '—' }}</td><td>{{ $item->old_status }}</td><td>{{ $item->new_status }}</td><td>{{ $item->user?->name }}</td><td>{{ $item->reason }}</td></tr>@empty<tr><td colspan="6" class="text-center text-secondary py-4">Sin cambios registrados.</td></tr>@endforelse</tbody></table></div></div>
 @endsection

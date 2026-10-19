@@ -13,17 +13,32 @@ final class CalendarAvailabilityService
             return false;
         }
 
-        if (in_array($load->status, [
-            ScheduledLoadStatus::SUSPENDIDA,
-            ScheduledLoadStatus::REPROGRAMADA,
-            ScheduledLoadStatus::VALIDADO_Y_CERRADO,
-            ScheduledLoadStatus::CANCELADA,
-            ScheduledLoadStatus::VENCIDA,
+        $status = $load->status instanceof \BackedEnum
+            ? $load->status->value
+            : (string) $load->status;
+        $retroactive = $load->isRetroactiveBackfillActive($moment);
+
+        if (in_array($status, [
+            ScheduledLoadStatus::SUSPENDIDA->value,
+            ScheduledLoadStatus::REPROGRAMADA->value,
+            ScheduledLoadStatus::VALIDADO_Y_CERRADO->value,
+            ScheduledLoadStatus::CANCELADA->value,
         ], true)) {
             return false;
         }
 
-        if ($this->isSuspended($load, $moment)) { return false; }
+        if ($status === ScheduledLoadStatus::VENCIDA->value && !$retroactive) {
+            return false;
+        }
+
+        if ($this->isSuspended($load, $moment)) {
+            return false;
+        }
+
+        // This is an intake exception, not a rewrite of the source dates or action timestamps.
+        if ($retroactive) {
+            return true;
+        }
 
         return $moment->between($load->effective_open_at, $load->effective_close_at, true);
     }
@@ -40,7 +55,6 @@ final class CalendarAvailabilityService
                     ->orWhere('contracting_agency_id', $load->contracting_agency_id);
             })
             ->exists();
-
     }
 
     public function tooltip(ScheduledLoad $load): string
@@ -50,6 +64,10 @@ final class CalendarAvailabilityService
             ScheduledLoadStatus::REPROGRAMADA,
         ], true)) {
             return 'Carga suspendida o reprogramada; consulte su nueva ventana autorizada.';
+        }
+
+        if ($load->isRetroactiveBackfillActive()) {
+            return 'Registro retroactivo de 2026 habilitado para regularización. La pauta conserva sus fechas originales y la trazabilidad usa la fecha real de cada acción.';
         }
 
         if ($this->isEnabled($load, now())) {

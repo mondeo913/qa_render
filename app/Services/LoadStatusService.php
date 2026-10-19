@@ -31,6 +31,11 @@ final class LoadStatusService
         }
         $load->update(['status' => $newStatus]);
 
+        if ($load->isRetroactiveBackfillActive()) {
+            $metadata['operational_date'] = $load->operationalTimestamp()->toDateString();
+            $metadata['retroactive_policy_year'] = ScheduledLoad::RETROACTIVE_POLICY_YEAR;
+        }
+
         LoadStatusHistory::query()->create([
             'scheduled_load_id' => $load->id,
             'old_status' => $oldStatus,

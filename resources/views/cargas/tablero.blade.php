@@ -92,6 +92,7 @@
     </div>
     <div class="load-card-badges">
         <span class="badge siget-status">{{ $load->board_status_label }}</span>
+        @if(($load->metadata['retroactive_registration'] ?? false))<span class="badge text-bg-warning">Retroactiva 2026</span>@endif
         <span class="badge siget-priority siget-priority-{{ strtolower($priority) }}">{{ $priority }}</span>
         @if($load->board_overdue)<span class="badge text-bg-danger">Vencida</span>@endif
         @if($load->is_blocked)<span class="badge text-bg-secondary">Bloqueada</span>@endif

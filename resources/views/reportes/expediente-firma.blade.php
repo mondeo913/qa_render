@@ -13,6 +13,7 @@ th{background:#eef2f7}.muted{color:#64748b}.page-break{page-break-before:always}
 <p><strong>Periodo:</strong> {{ $load->period_label }}</p>
 <p><strong>Fecha original:</strong> {{ $load->original_open_at->format('d/m/Y H:i') }} - {{ $load->original_close_at->format('d/m/Y H:i') }}</p>
 <p><strong>Fecha efectiva:</strong> {{ $load->effective_open_at->format('d/m/Y H:i') }} - {{ $load->effective_close_at->format('d/m/Y H:i') }}</p>
+@if($load->metadata['retroactive_registration'] ?? false)<p><strong>Registro retroactivo:</strong> ejercicio 2026. La fecha de pauta se conserva; los eventos del flujo corresponden a la fecha y hora reales registradas por SIGET.</p>@endif
 
 <h2>Entregables integrados</h2>
 <table>

@@ -94,16 +94,26 @@ final class CalendarImportService
                 ]);
             }
 
+            $hasRetroactiveDates = now()->year === ScheduledLoad::RETROACTIVE_POLICY_YEAR
+                && collect($items)->contains(fn ($item) =>
+                    $item['date']->year === ScheduledLoad::RETROACTIVE_POLICY_YEAR
+                    && $item['date']->endOfDay()->lt(now())
+                );
+            $warnings = [
+                'Los registros de una misma fecha se agruparán en una sola carga. Si existe la columna Nombre del Archivo para bitácora, la fecha se obtiene de _AA.MM.DD.TESTIGO; en otras pautas se utilizan las marcas X.',
+                'Cada carga generará los entregables configurados para las dos direcciones.',
+            ];
+            if ($hasRetroactiveDates) {
+                $warnings[] = 'Las fechas vencidas del ejercicio 2026 se registrarán como retroactivas: se conserva la fecha de la pauta y el historial de SIGET guarda la fecha y hora reales de cada acción. Esta excepción operativa aplica únicamente durante 2026.';
+            }
+
             $import->update([
                 'status' => 'VALIDATED',
                 'workbook_version' => (collect($items)->contains(fn ($item) => ($item['format'] ?? '') === 'BITACORA_FILENAME') ? 'BITACORA-FILENAME-' : 'HORIZONTAL-X-').$scheduleYear,
                 'total_rows' => count($items),
                 'valid_rows' => count($items),
                 'error_rows' => 0,
-                'warnings' => [
-                    'Los registros de una misma fecha se agruparán en una sola carga. Si existe la columna Nombre del Archivo para bitácora, la fecha se obtiene de _AA.MM.DD.TESTIGO; en otras pautas se utilizan las marcas X.',
-                    'Cada carga generará los entregables configurados para las dos direcciones.',
-                ],
+                'warnings' => $warnings,
             ]);
 
             $this->audit->record('calendar.import.horizontal_validated', $import, [], [
@@ -158,9 +168,13 @@ final class CalendarImportService
                 );
 
             $created = 0;
+            $retroactiveLoads = [];
 
             foreach ($groups as $date => $rows) {
                 $dateObject = CarbonImmutable::parse($date, config('app.timezone'));
+                $isRetroactive = now()->year === ScheduledLoad::RETROACTIVE_POLICY_YEAR
+                    && $dateObject->year === ScheduledLoad::RETROACTIVE_POLICY_YEAR
+                    && $dateObject->endOfDay()->lt(now());
                 $serviceItems = $rows->map(fn (CalendarImportRow $row) => [
                     'sheet' => $row->sheet_name,
                     'row' => $row->row_number,
@@ -189,14 +203,25 @@ final class CalendarImportService
                     'traffic_light' => 'GRAY',
                     'priority' => count($serviceItems) >= 5 ? 'ALTA' : 'NORMAL',
                     'completion_percentage' => 0,
+                    'retroactive' => $isRetroactive,
                     'metadata' => [
                         'format' => $rows->first()->payload['format'] ?? 'HORIZONTAL_X',
+                        'source_schedule_date' => $dateObject->toDateString(),
+                        'retroactive_registration' => $isRetroactive,
+                        'retroactive_policy_year' => $isRetroactive ? ScheduledLoad::RETROACTIVE_POLICY_YEAR : null,
                         'source_sha256' => $import->sha256,
                         'source_rows' => $rows->pluck('id')->all(),
                         'service_count' => count($serviceItems),
                         'services' => $serviceItems,
                     ],
                 ]);
+
+                if ($isRetroactive) {
+                    $retroactiveLoads[] = [
+                        'scheduled_load_id' => $load->id,
+                        'date' => $dateObject->toDateString(),
+                    ];
+                }
 
                 foreach ($template->requirements()->where('active', true)->get() as $requirement) {
                     if (!$requirement->responsible_unit_id) {
@@ -251,6 +276,9 @@ final class CalendarImportService
             $this->audit->record('calendar.import.confirmed', $import, [], [
                 'created_scheduled_loads' => $created,
                 'source_marks' => $import->valid_rows,
+                'retroactive_policy_year' => ScheduledLoad::RETROACTIVE_POLICY_YEAR,
+                'retroactive_scheduled_load_count' => count($retroactiveLoads),
+                'retroactive_loads' => $retroactiveLoads,
             ]);
 
             return $created;

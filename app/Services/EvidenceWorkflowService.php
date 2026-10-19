@@ -36,8 +36,9 @@ final class EvidenceWorkflowService
                 throw new RuntimeException(implode(' ', $errors));
             }
             $window = $this->rules->activeWindow($deliverable);
-            $evidence->update(['status' => 'ENVIADO', 'submitted_at' => now(), 'submitted_by' => $user->id]);
-            $deliverable->update(['status' => 'ENVIADO', 'submitted_at' => now(), 'validated_at' => null, 'validated_by' => null]);
+            $operationalAt = $load->operationalTimestamp();
+            $evidence->update(['status' => 'ENVIADO', 'submitted_at' => $operationalAt, 'submitted_by' => $user->id]);
+            $deliverable->update(['status' => 'ENVIADO', 'submitted_at' => $operationalAt, 'validated_at' => null, 'validated_by' => null]);
             $window?->update(['used_at' => now(), 'evidence_version' => $evidence->current_version]);
             $this->rules->invalidateInstitutionalValidation($load);
             $this->loadStatus->transition($load, $this->aggregateStatus($load), $user, 'Evidencia enviada para validación de su Dirección.', ['organizational_unit_id' => $deliverable->organizational_unit_id, 'evidence_id' => $evidence->id]);
@@ -101,8 +102,9 @@ final class EvidenceWorkflowService
                     ? ($type === 'DIRECTION' ? 'EN_REVISION' : 'VALIDADO')
                     : ($decision === 'OBSERVADO' ? 'OBSERVADO' : 'RECHAZADO');
                 $validated = $status === 'VALIDADO';
-                $evidence->update(['status' => $status, 'validated_at' => $validated ? now() : null, 'validated_by' => $validated ? $reviewer->id : null]);
-                $evidence->deliverable->update(['status' => $status, 'validated_at' => $validated ? now() : null,
+                $operationalAt = $load->operationalTimestamp();
+                $evidence->update(['status' => $status, 'validated_at' => $validated ? $operationalAt : null, 'validated_by' => $validated ? $reviewer->id : null]);
+                $evidence->deliverable->update(['status' => $status, 'validated_at' => $validated ? $operationalAt : null,
                     'validated_by' => $validated ? $reviewer->id : null, 'observations' => $comments]);
                 $this->rules->invalidateInstitutionalValidation($load);
                 $this->loadStatus->transition($load, $this->aggregateStatus($load), $reviewer, $comments ?: 'Revisión '.$type.' registrada.', ['organizational_unit_id' => $evidence->deliverable->organizational_unit_id, 'evidence_id' => $evidence->id]);
