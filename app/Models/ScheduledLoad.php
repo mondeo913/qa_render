@@ -36,6 +36,19 @@ class ScheduledLoad extends Model {
             && $this->original_close_at->lt($moment);
     }
 
+    /**
+     * Date used by business workflow fields during 2026 backfill. Eloquent created_at/updated_at,
+     * audit_logs and load_status_history intentionally retain the real execution timestamp.
+     */
+    public function operationalTimestamp(): CarbonInterface
+    {
+        if ($this->isRetroactiveBackfillActive() && $this->effective_close_at instanceof CarbonInterface) {
+            return $this->effective_close_at;
+        }
+
+        return now();
+    }
+
     public function agency(): BelongsTo { return $this->belongsTo(ContractingAgency::class,'contracting_agency_id'); }
     public function calendarImport(): BelongsTo { return $this->belongsTo(CalendarImport::class,'calendar_import_id'); }
     public function template(): BelongsTo { return $this->belongsTo(EvidenceTemplate::class,'template_id'); }
