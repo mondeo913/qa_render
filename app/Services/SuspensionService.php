@@ -10,6 +10,12 @@ final class SuspensionService
 {
     public function applyToLoad(ScheduledLoad $load): bool
     {
+        // These deliveries were tracked manually while SIGET was under development.
+        // Preserve source dates rather than treating them as newly rescheduled work.
+        if ($load->isRetroactiveBackfillActive()) {
+            return false;
+        }
+
         $suspension = CalendarSuspension::query()
             ->where('active', true)
             ->where(function ($query) use ($load) {
