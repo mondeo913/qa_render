@@ -22,6 +22,9 @@
             </div>
             <div class="text-end"><span class="badge siget-status fs-6">{{ $status }}</span><div class="mt-2"><strong>{{ $load->completion_percentage }}% completado</strong></div><div class="progress mt-2" style="width:240px"><div class="progress-bar" style="width:{{ $load->completion_percentage }}%"></div></div></div>
         </div>
+        @if(($load->metadata['retroactive_registration'] ?? false))
+            <div class="alert alert-info mt-3 mb-0"><strong>Registro retroactivo del ejercicio 2026.</strong> Se conservan las fechas originales y efectivas de la pauta. Las acciones realizadas en SIGET conservarán su fecha y hora reales en la trazabilidad.</div>
+        @endif
         @if($load->is_blocked)<div class="alert alert-warning mt-3 mb-0"><i class="bi bi-lock"></i> {{ $load->block_reason }}</div>@endif
     </div>
 </div>
