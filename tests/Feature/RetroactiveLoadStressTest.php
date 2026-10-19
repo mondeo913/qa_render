@@ -51,6 +51,7 @@ class RetroactiveLoadStressTest extends TestCase
                 $this->assertSame($date->toDateString(), $load->original_open_at->toDateString());
                 $this->assertSame($date->toDateString(), $load->effective_open_at->toDateString());
                 $this->assertSame($date->toDateString(), $load->original_close_at->toDateString());
+                $this->assertSame($closeAt->format('Y-m-d H:i:s'), $load->operationalTimestamp()->format('Y-m-d H:i:s'));
                 $checked++;
             }
         }
@@ -75,6 +76,7 @@ class RetroactiveLoadStressTest extends TestCase
         ]);
 
         $this->assertFalse($expired->isRetroactiveBackfillActive(now()));
+        $this->assertSame(now()->format('Y-m-d H:i:s'), $expired->operationalTimestamp()->format('Y-m-d H:i:s'));
         $this->assertFalse($availability->isEnabled($expired, now()));
     }
 }
