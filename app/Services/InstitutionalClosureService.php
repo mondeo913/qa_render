@@ -144,7 +144,7 @@ final class InstitutionalClosureService
                 $authorized = \App\Models\EvidenceCorrectionWindow::query()->where('deliverable_id', $deliverable->id)
                     ->whereNotNull('used_at')->whereNull('revoked_at')->where('evidence_version', $evidence->current_version)
                     ->where('opens_at', '<=', $deliverable->submitted_at)->where('closes_at', '>=', $deliverable->submitted_at)->exists();
-                if (!$authorized) {
+                if (!$authorized && !$load->isRetroactiveBackfillActive()) {
                     $errors[] = "{$unitName}: '{$requirement?->name}' fue entregado fuera de una ventana autorizada.";
                 }
             }
