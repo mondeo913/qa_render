@@ -48,7 +48,6 @@ final class RoleMenu
                 ['label' => 'Calendario y pautas', 'route' => 'calendar.index', 'icon' => 'bi-calendar3'],
                 ['label' => 'Bandeja de revisión', 'route' => 'review.inbox', 'icon' => 'bi-clipboard-check'],
                 ['label' => 'Tablero de cargas', 'route' => 'loads.board', 'icon' => 'bi-kanban'],
-                ['label' => 'Plantillas', 'route' => 'admin.templates', 'icon' => 'bi-file-earmark-text'],
                 ['label' => 'Repositorio de revisión', 'route' => 'repository.index', 'icon' => 'bi-files'],
                 ['label' => 'Notificaciones', 'route' => 'alerts.index', 'icon' => 'bi-bell'],
                 ['label' => 'Reportes', 'route' => 'reports.index', 'icon' => 'bi-file-bar-graph'],

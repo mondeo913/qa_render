@@ -94,7 +94,7 @@ class RolePermissionSeeder extends Seeder
             'ENLACE_INSTITUCIONAL' => [
                 'intelligence.view',
                 'dashboard.view','calendar.view','calendar.import','calendar.confirm','calendar.reschedule','scheduled_load.board',
-                'templates.manage','evidence.review','repository.view','repository.download',
+                'evidence.review','repository.view','repository.download',
                 'scheduled_load.review','scheduled_load.verify','scheduled_load.signature_package',
                 'scheduled_load.upload_signed','scheduled_load.close','scheduled_load.reopen','reports.view','reports.export',
                 'alerts.view','operations.view','backups.view',

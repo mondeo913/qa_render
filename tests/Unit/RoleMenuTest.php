@@ -15,9 +15,13 @@ class RoleMenuTest extends TestCase
         $operatorTx = collect(RoleMenu::for('OPERADOR_TRANSMISION'))->pluck('route');
         $operatorPc = collect(RoleMenu::for('OPERADOR_PROGRAMACION_CONTINUIDAD'))->pluck('route');
         $fiscalizador = collect(RoleMenu::for('FISCALIZADOR'))->pluck('route');
+        $enlace = collect(RoleMenu::for('ENLACE_INSTITUCIONAL'))->pluck('route');
 
         $this->assertTrue($admin->contains('intelligence'));
         $this->assertTrue($admin->contains('admin.templates'));
+        $this->assertFalse($enlace->contains('admin.templates'));
+        $this->assertTrue($enlace->contains('review.inbox'));
+        $this->assertTrue($enlace->contains('loads.board'));
         $this->assertSame($directorTx->all(), $directorPc->all());
         $this->assertTrue($directorTx->contains('loads.board'));
         $this->assertTrue($directorTx->contains('repository.index'));
